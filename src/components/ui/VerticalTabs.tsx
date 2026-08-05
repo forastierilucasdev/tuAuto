@@ -39,9 +39,9 @@ export function VerticalTabs({
         {tabs.map((tab) => (
           <div
             key={tab.id}
-            className="rounded-2xl border border-border bg-surface p-4 shadow-card"
+            className="rounded-2xl border border-border bg-surface p-4 text-center shadow-card"
           >
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-navy">
+            <h3 className="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-navy">
               {tab.icon}
               {tab.label}
             </h3>
