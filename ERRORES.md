@@ -24,6 +24,8 @@ Al reportar un problema a soporte, incluir siempre:
 - **Título no editable**: el título de la publicación siempre es Marca + Modelo + Año, generado automáticamente; no hay forma de personalizarlo.
 - **Sin Content-Security-Policy estricta todavía**: se configuraron headers de seguridad básicos (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`), pero falta una CSP granular — queda para el endurecimiento previo a producción.
 - **Fotos genéricas en los datos de prueba**: las publicaciones del seed usan imágenes de stock (Picsum), no fotos reales.
+- **Recuperar contraseña simulado**: el formulario de "Recuperar contraseña" no envía ningún email real todavía (no hay proveedor de emails configurado); siempre muestra el mismo mensaje genérico. Integrar un proveedor de email + tokens de reseteo queda pendiente.
+- **Foto de perfil sin editor de recorte**: la imagen se centra y recorta automáticamente dentro del círculo (`object-cover`), pero no hay una herramienta para que el usuario reposicione manualmente el recorte.
 
 ## Historial de errores resueltos
 

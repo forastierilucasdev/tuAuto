@@ -14,7 +14,7 @@ export default async function ConcesionariasPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-2xl font-bold text-navy sm:text-3xl">Concesionarias</h1>
-      <p className="mt-1 text-muted-foreground">Agencias y concesionarias que publican en tuAuto.</p>
+      <p className="mt-1 text-muted-foreground">Agencias y concesionarias que publican en Motoresya.</p>
 
       {agencies.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">

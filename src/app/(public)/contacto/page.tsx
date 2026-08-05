@@ -46,7 +46,7 @@ export default function ContactoPage() {
             <Mail className="mt-0.5 h-5 w-5 text-primary" />
             <div>
               <p className="font-medium text-foreground">Email</p>
-              <p className="text-sm text-muted-foreground">soporte@tuauto.com.ar</p>
+              <p className="text-sm text-muted-foreground">soporte@motoresya.com.ar</p>
             </div>
           </div>
           <div className="flex items-start gap-3">

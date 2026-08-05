@@ -5,6 +5,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-06) — Rebranding, sesión persistente, filtros mobile y perfil
+- **Renombrado el proyecto a "Motoresya"** (antes "tuAuto"): nombre de la app, metadata, mensaje de WhatsApp, textos de Concesionarias/Contacto y `package.json`. El repositorio de GitHub no se renombró (queda a decisión del usuario).
+- **Sesión persistente**: se agregó `SessionProvider` (Auth.js) envolviendo la app (`src/components/Providers.tsx`) y el `Header` ahora lee el estado de sesión con `useSession()` en vez de mostrar siempre "Vende tu Auto" — evita que quede una vista "desactualizada" al navegar hacia atrás con el botón del navegador. Logueado, el botón pasa a decir "Mi cuenta" y lleva al dashboard.
+- **Header mobile**: se agregó el botón "Vende tu Auto"/"Mi cuenta" al lado del ícono de menú (antes solo estaba dentro del desplegable).
+- **Hero del home**: en mobile ahora es una foto de fondo a página completa con degradé oscuro y el buscador superpuesto encima (como pediste); en desktop se mantiene el layout separado (texto/buscador a un lado, foto al otro).
+- **Filtros del catálogo en mobile**: dejaron de ocupar espacio fijo arriba de los resultados. Ahora los resultados se muestran primero, con un botón "Filtros" (arriba a la derecha) que abre un panel deslizable desde la izquierda (`CatalogFiltersDrawer`), con cruz para cerrar o alternando el mismo botón. En desktop se mantiene la barra lateral fija de siempre.
+- **Login**: contraseña con botón de mostrar/ocultar (`PasswordInput`, reutilizado también en el registro) y link "¿Olvidaste tu contraseña?" a una página de recuperación (`/recuperar-password`) — mockeada por ahora, sin envío real de emails (ver `ERRORES.md`).
+- **Mi perfil**: nuevo campo `avatarUrl` en `User` (migración `20260805140549_user_avatar`). El formulario de perfil permite subir una foto que se centra y recorta dentro de un círculo, con vista previa inmediata; se sube a un bucket nuevo de Supabase Storage (`avatars`) al guardar. Se extrajo la validación de imágenes (`lib/image-validation.ts`) y la subida a Storage (`uploadAvatarImage`) a helpers compartidos con la carga de fotos de publicaciones, en vez de duplicar la lógica.
+
 ### Changed (2026-08-05, noche) — Ajuste responsive del detalle de publicación
 - `VerticalTabs` ya no usa pestañas-píldora en mobile (se cortaban / no entraban en pantalla): en mobile todas las secciones se listan apiladas una debajo de la otra, con un ícono + título liviano en vez de botones con borde, aprovechando el scroll vertical natural del teléfono. En desktop (`sm:` en adelante) se mantiene el comportamiento de pestañas verticales clásico.
 - En la página de detalle, el orden de Título/Galería de fotos ahora depende del tamaño de pantalla (vía `order-*` de flexbox): en mobile las fotos van primero y el título después; en desktop el título va primero y las fotos después.

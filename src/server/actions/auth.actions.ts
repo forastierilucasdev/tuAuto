@@ -3,7 +3,7 @@
 import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
 import { signIn } from "@/lib/auth";
-import { loginSchema, registerSchema } from "@/lib/validations/auth";
+import { forgotPasswordSchema, loginSchema, registerSchema } from "@/lib/validations/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import {
   createBusinessUser,
@@ -107,4 +107,32 @@ export async function loginAction(
     }
     throw error;
   }
+}
+
+export type ForgotPasswordState =
+  | { error?: string; fieldErrors?: Record<string, string[]>; success?: boolean }
+  | undefined;
+
+/**
+ * Mock: todavía no hay envío de emails configurado (ver ERRORES.md), así que
+ * esta acción no genera ni envía ningún link de recuperación real. Siempre
+ * devuelve el mismo mensaje genérico exista o no la cuenta, para no revelar
+ * qué emails están registrados (buena práctica de seguridad, más allá del mock).
+ */
+export async function forgotPasswordAction(
+  _prevState: ForgotPasswordState,
+  formData: FormData
+): Promise<ForgotPasswordState> {
+  const raw = Object.fromEntries(formData);
+  const parsed = forgotPasswordSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
+  }
+
+  const limited = rateLimit(`forgot-password:${parsed.data.email}`, { max: 5, windowMs: 15 * 60_000 });
+  if (!limited.success) {
+    return { error: "Demasiados intentos. Probá de nuevo en unos minutos." };
+  }
+
+  return { success: true };
 }

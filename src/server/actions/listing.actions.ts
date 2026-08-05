@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { createListingSchema, updateListingSchema } from "@/lib/validations/listing";
 import { uploadListingImage } from "@/lib/supabase-storage";
+import { validateImageFile } from "@/lib/image-validation";
 import {
   attachListingImages,
   createListing,
@@ -19,9 +20,6 @@ export type ListingActionState =
 
 const MAX_IMAGES = 6;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-// Whitelist explícita (no "image/*"): excluye formatos como image/svg+xml,
-// que pueden contener script embebido y no son seguros de servir tal cual.
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
 
 function getImageFiles(formData: FormData) {
   return formData.getAll("images").filter((entry): entry is File => entry instanceof File && entry.size > 0);
@@ -31,8 +29,8 @@ function validateImages(files: File[]): string | null {
   if (files.length === 0) return "Subí al menos una foto del vehículo.";
   if (files.length > MAX_IMAGES) return `Máximo ${MAX_IMAGES} fotos por publicación.`;
   for (const file of files) {
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) return "Solo se permiten imágenes JPG, PNG, WEBP, GIF o AVIF.";
-    if (file.size > MAX_FILE_SIZE_BYTES) return "Cada imagen debe pesar menos de 5MB.";
+    const error = validateImageFile(file, MAX_FILE_SIZE_BYTES);
+    if (error) return error;
   }
   return null;
 }

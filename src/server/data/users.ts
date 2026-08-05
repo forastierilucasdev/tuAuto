@@ -39,6 +39,7 @@ export async function getFullProfile(id: string) {
       accountType: true,
       dni: true,
       phone: true,
+      avatarUrl: true,
       createdAt: true,
       agencyProfile: {
         select: { businessName: true, city: true, province: true, description: true, cuit: true },
@@ -107,7 +108,7 @@ export async function createBusinessUser(data: {
 
 export async function updateProfile(
   id: string,
-  data: Partial<Pick<User, "fullName" | "phone">> & {
+  data: Partial<Pick<User, "fullName" | "phone" | "avatarUrl">> & {
     agencyProfile?: { businessName?: string; city?: string; province?: string; description?: string };
   }
 ) {

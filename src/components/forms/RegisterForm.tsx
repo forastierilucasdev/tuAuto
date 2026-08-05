@@ -5,6 +5,7 @@ import Link from "next/link";
 import { registerAction, type ActionState } from "@/server/actions/auth.actions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
 import { cn } from "@/lib/utils";
@@ -89,13 +90,7 @@ export function RegisterForm() {
 
       <div>
         <Label htmlFor="password">Contraseña</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-        />
+        <PasswordInput id="password" name="password" autoComplete="new-password" required />
         <p className="mt-1 text-xs text-muted-foreground">
           Mínimo 8 caracteres, con al menos una letra y un número.
         </p>

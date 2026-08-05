@@ -83,6 +83,6 @@ export const NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ] as const;
 
-export const SITE_NAME = "tuAuto";
+export const SITE_NAME = "Motoresya";
 
 export const FALLBACK_IMAGE = "https://picsum.photos/seed/tuauto-placeholder/800/600";

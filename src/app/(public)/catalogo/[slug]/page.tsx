@@ -43,7 +43,7 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
 
   const whatsappHref = buildWhatsAppLink(
     listing.user.phone,
-    `Hola te contacto a través de tuAuto.com.ar, quiero más información sobre la publicación ${listing.title}`
+    `Hola te contacto a través de Motoresya.com.ar, quiero más información sobre la publicación ${listing.title}`
   );
 
   const tabs: VerticalTabItem[] = [

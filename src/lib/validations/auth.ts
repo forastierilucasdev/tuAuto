@@ -41,6 +41,10 @@ export const loginSchema = z.object({
   password: z.string().min(1, { error: "Ingresá tu contraseña." }),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+
 export const registerParticularSchema = z.object({
   accountType: z.literal("PARTICULAR"),
   fullName: fullNameSchema,

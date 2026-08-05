@@ -5,6 +5,7 @@ import Link from "next/link";
 import { loginAction, type ActionState } from "@/server/actions/auth.actions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
 
@@ -22,8 +23,13 @@ export function LoginForm() {
       </div>
 
       <div>
-        <Label htmlFor="password">Contraseña</Label>
-        <Input id="password" name="password" type="password" autoComplete="current-password" required />
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Contraseña</Label>
+          <Link href="/recuperar-password" className="text-xs font-medium text-primary hover:underline">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
+        <PasswordInput id="password" name="password" autoComplete="current-password" required />
         <FieldError messages={state?.fieldErrors?.password} />
       </div>
 

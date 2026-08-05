@@ -73,6 +73,17 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado contra datos reales: filtro Condición=Nuevo devuelve exactamente 3 publicaciones (las 3 sembradas como 0km), detalle de publicación renderiza pestañas y WhatsApp correctamente
 - [ ] Prueba manual en navegador del wizard de publicar completo (los 7 pasos) y de la edición de una publicación existente
 
+## Fase 7 — Rebranding, sesión persistente, mobile UX, perfil (solicitado por el usuario)
+- [x] Proyecto renombrado a "Motoresya" (nombre en la app, metadata, WhatsApp, textos, `package.json`)
+- [x] Sesión persistente vía `SessionProvider` + `useSession()` en el Header (ya no se ve "desactualizado" al volver atrás)
+- [x] Botón "Vende tu Auto"/"Mi cuenta" visible junto al menú hamburguesa en mobile
+- [x] Hero del home: foto de fondo con buscador superpuesto en mobile; separados en desktop
+- [x] Catálogo mobile: resultados primero + botón "Filtros" que abre un panel deslizable desde la izquierda (cruz o el mismo botón para cerrar)
+- [x] Login: mostrar/ocultar contraseña (`PasswordInput`, reutilizado en registro) + "¿Olvidaste tu contraseña?" (mock, sin envío de email real)
+- [x] Mi perfil: subir foto de perfil, centrada y recortada dentro de un círculo (bucket nuevo `avatars` en Supabase Storage)
+- [x] Verificado: build de producción limpio, `/`, `/catalogo`, `/login`, `/registro`, `/recuperar-password` responden 200 contra Supabase real
+- [ ] Prueba manual en navegador: drawer de filtros en mobile, hero mobile, subir avatar y verificar que se vea centrado, mostrar/ocultar contraseña
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

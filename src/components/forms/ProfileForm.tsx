@@ -1,6 +1,8 @@
 "use client";
 
+import * as React from "react";
 import { useActionState } from "react";
+import { Camera, User as UserIcon } from "lucide-react";
 import { updateProfileAction, type ProfileActionState } from "@/server/actions/profile.actions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -17,6 +19,7 @@ type ProfileFormProps = {
   dni: string;
   fullName: string;
   phone: string;
+  avatarUrl: string | null;
   agency?: {
     businessName: string;
     cuit: string;
@@ -26,12 +29,67 @@ type ProfileFormProps = {
   } | null;
 };
 
-export function ProfileForm({ accountType, email, dni, fullName, phone, agency }: ProfileFormProps) {
+export function ProfileForm({
+  accountType,
+  email,
+  dni,
+  fullName,
+  phone,
+  avatarUrl,
+  agency,
+}: ProfileFormProps) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
   const isBusiness = isBusinessAccountType(accountType);
 
+  const [preview, setPreview] = React.useState<string | null>(avatarUrl);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) setPreview(URL.createObjectURL(file));
+  }
+
   return (
     <form action={formAction} className="max-w-xl space-y-5">
+      <div>
+        <Label>Foto de perfil</Label>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-full border border-border bg-surface-muted"
+          >
+            {preview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={preview}
+                alt="Foto de perfil"
+                className="h-full w-full object-cover object-center"
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-muted-foreground">
+                <UserIcon className="h-10 w-10" />
+              </span>
+            )}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white">
+              <Camera className="h-6 w-6" />
+            </span>
+          </button>
+          <div className="text-xs text-muted-foreground">
+            <p>Click en el círculo para cambiar la foto.</p>
+            <p>La imagen se centra y recorta automáticamente.</p>
+          </div>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          name="avatar"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
+      </div>
+
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <Label>Email</Label>

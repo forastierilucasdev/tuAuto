@@ -35,25 +35,27 @@ src/
   app/
     (public)/            page.tsx (home), catalogo/, catalogo/[slug]/,
                           concesionarias/, concesionarias/[id]/, blog/, contacto/
-    (auth)/               login/, registro/
+    (auth)/               login/, registro/, recuperar-password/
     (dashboard)/dashboard/ perfil/, publicaciones/, publicaciones/nueva/,
                            publicaciones/[id]/editar/, pago/  (todas protegidas)
     api/auth/[...nextauth]/  Route Handler de Auth.js
   components/
-    ui/                  Button, Input, Select, Textarea, Label, Card, Badge, FieldError, VerticalTabs
-    layout/              Header, Footer
+    Providers.tsx        SessionProvider de Auth.js (client) que envuelve toda la app en el layout raíz
+    ui/                  Button, Input, PasswordInput, Select, Textarea, Label, Card, Badge, FieldError, VerticalTabs
+    layout/              Header (reactivo a la sesión vía useSession), Footer
     home/                HeroSearch
-    vehicles/            VehicleCard, CatalogFilters, VehicleGallery (con lightbox), CategoryGrid
-    forms/               LoginForm, RegisterForm, ProfileForm, ListingForm (wizard), AddPaymentMethodForm
+    vehicles/            VehicleCard, CatalogFilters, CatalogFiltersDrawer (panel mobile), VehicleGallery (con lightbox), CategoryGrid
+    forms/               LoginForm, RegisterForm, ProfileForm (con avatar), ListingForm (wizard), ForgotPasswordForm, AddPaymentMethodForm
     dashboard/           OwnerListingCard
   hooks/
     useVehicleTaxonomy.ts  Cascada Tipo→Marca→Modelo→Año reutilizada por HeroSearch, CatalogFilters y ListingForm
   lib/
-    auth.ts              Config de Auth.js
+    auth.ts              Config de Auth.js (incluye trustHost: true para producción)
     prisma.ts            Singleton de PrismaClient (con adapter-pg, usa DATABASE_URL)
-    supabase-storage.ts  Subida de fotos a Supabase Storage (server-only)
+    supabase-storage.ts  Subida a Supabase Storage (server-only): fotos de publicaciones (bucket "listing-images") y avatares (bucket "avatars")
+    image-validation.ts  Whitelist de tipos MIME y validación de tamaño, compartida entre publicaciones y avatar
     rate-limit.ts        Limitador in-memory (ver limitaciones en ERRORES.md)
-    constants.ts         VEHICLE_TYPES, CONDITION_OPTIONS, TRANSMISSION_OPTIONS, ACCOUNT_TYPE_LABELS, NAV_LINKS
+    constants.ts         VEHICLE_TYPES, CONDITION_OPTIONS, TRANSMISSION_OPTIONS, ACCOUNT_TYPE_LABELS, NAV_LINKS, SITE_NAME
     validations/         auth.ts, profile.ts, listing.ts (schemas Zod)
     utils.ts             cn, formatCurrency, formatKm, slugify, buildWhatsAppLink
   server/
@@ -68,7 +70,7 @@ prisma/
 
 ## 4. Modelo de datos (resumen)
 
-- **User**: cuenta base (email, hash de contraseña, tipo de cuenta, DNI, teléfono, nombre). `accountType` es `PARTICULAR | AGENCIA | CONCESIONARIA` — Agencia y Concesionaria son tipos de cuenta independientes (distinta etiqueta/registro), pero comparten la misma forma de perfil de negocio.
+- **User**: cuenta base (email, hash de contraseña, tipo de cuenta, DNI, teléfono, nombre, `avatarUrl` opcional). `accountType` es `PARTICULAR | AGENCIA | CONCESIONARIA` — Agencia y Concesionaria son tipos de cuenta independientes (distinta etiqueta/registro), pero comparten la misma forma de perfil de negocio.
 - **AgencyProfile**: datos adicionales 1:1 para cuentas `AGENCIA` o `CONCESIONARIA` (CUIT, nombre comercial, ciudad, dirección, logo). Separado de `User` para no tener columnas huérfanas en cuentas particulares, y para alimentar la página pública "Concesionarias". El nombre de la tabla quedó como `AgencyProfile` por continuidad histórica, pero representa a ambos tipos de cuenta de negocio.
 - **Brand / Model**: taxonomía seedeada (no texto libre) para que el filtro en cascada Tipo→Marca→Modelo sea confiable. `Model.vehicleType` vincula cada modelo a un tipo de vehículo; una marca puede tener modelos de varios tipos (ej. Honda autos y motos).
 - **Listing**: la publicación. Incluye `vehicleType`, `brand`, `model`, `year`, `version` (opcional, ej. "XEI CVT"), `condition` (NUEVO/USADO), `transmission` (MECANICA/ASISTIDA, opcional), `price` + `currency` (ARS o USD) + `priceNegotiable`/`acceptsTrade`/`acceptsFinancing` (checks que solo se muestran en el detalle si son `true`), `mileageKm`, `contactAddress` (opcional), `status` (ACTIVE/EXPIRED/SOLD/DRAFT) y `featured` + `featuredUntil`.

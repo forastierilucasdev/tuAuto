@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CatalogFilters } from "@/components/vehicles/CatalogFilters";
+import { CatalogFiltersDrawer } from "@/components/vehicles/CatalogFiltersDrawer";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import { getCatalogResults } from "@/server/data/listings";
 import type { Currency, VehicleCondition, VehicleType } from "@/generated/prisma/client";
@@ -43,37 +44,43 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
         {total} publicaci{total === 1 ? "ón encontrada" : "ones encontradas"}
       </p>
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-[280px_1fr]">
-        <CatalogFilters />
+      <div className="mt-6 lg:grid lg:grid-cols-[280px_1fr] lg:gap-8">
+        <div className="hidden lg:block">
+          <CatalogFilters />
+        </div>
 
-        <div className="space-y-10">
-          {featured.length > 0 && (
+        <div>
+          <CatalogFiltersDrawer />
+
+          <div className="space-y-10">
+            {featured.length > 0 && (
+              <section>
+                <h2 className="mb-4 text-lg font-bold text-navy">Publicaciones destacadas</h2>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {featured.map((vehicle) => (
+                    <VehicleCard key={vehicle.slug} vehicle={vehicle} />
+                  ))}
+                </div>
+              </section>
+            )}
+
             <section>
-              <h2 className="mb-4 text-lg font-bold text-navy">Publicaciones destacadas</h2>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {featured.map((vehicle) => (
-                  <VehicleCard key={vehicle.slug} vehicle={vehicle} />
-                ))}
-              </div>
+              {featured.length > 0 && rest.length > 0 && (
+                <h2 className="mb-4 text-lg font-bold text-navy">Resto del catálogo</h2>
+              )}
+              {total === 0 ? (
+                <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
+                  No encontramos publicaciones con esos filtros. Probá ajustarlos.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {rest.map((vehicle) => (
+                    <VehicleCard key={vehicle.slug} vehicle={vehicle} />
+                  ))}
+                </div>
+              )}
             </section>
-          )}
-
-          <section>
-            {featured.length > 0 && rest.length > 0 && (
-              <h2 className="mb-4 text-lg font-bold text-navy">Resto del catálogo</h2>
-            )}
-            {total === 0 ? (
-              <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-                No encontramos publicaciones con esos filtros. Probá ajustarlos.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {rest.map((vehicle) => (
-                  <VehicleCard key={vehicle.slug} vehicle={vehicle} />
-                ))}
-              </div>
-            )}
-          </section>
+          </div>
         </div>
       </div>
     </div>

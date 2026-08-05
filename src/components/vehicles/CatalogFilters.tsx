@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
 import type { VehicleType } from "@/generated/prisma/client";
 
-export function CatalogFilters() {
+export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -44,6 +44,7 @@ export function CatalogFilters() {
     if (kmMin) params.set("kmMin", kmMin);
     if (kmMax) params.set("kmMax", kmMax);
     router.push(params.toString() ? `${pathname}?${params.toString()}` : pathname);
+    onApply?.();
   }
 
   function clearFilters() {
@@ -58,6 +59,7 @@ export function CatalogFilters() {
     setKmMin("");
     setKmMax("");
     router.push(pathname);
+    onApply?.();
   }
 
   return (

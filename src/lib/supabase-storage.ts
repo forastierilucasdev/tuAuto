@@ -1,7 +1,8 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
-const BUCKET = "listing-images";
+const LISTING_IMAGES_BUCKET = "listing-images";
+const AVATARS_BUCKET = "avatars";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,24 +13,23 @@ function getAdminClient() {
   return createClient(url, serviceRoleKey, { auth: { persistSession: false } });
 }
 
-let bucketReady: Promise<void> | null = null;
+const bucketsReady = new Map<string, Promise<void>>();
 
 // Crea el bucket público la primera vez que hace falta, para no requerir un
 // paso manual extra de setup en Supabase Storage.
-function ensureBucket() {
-  if (!bucketReady) {
-    bucketReady = (async () => {
+function ensureBucket(bucket: string, fileSizeLimit: string) {
+  let ready = bucketsReady.get(bucket);
+  if (!ready) {
+    ready = (async () => {
       const client = getAdminClient();
-      const { data } = await client.storage.getBucket(BUCKET);
+      const { data } = await client.storage.getBucket(bucket);
       if (!data) {
-        await client.storage.createBucket(BUCKET, {
-          public: true,
-          fileSizeLimit: "5MB",
-        });
+        await client.storage.createBucket(bucket, { public: true, fileSizeLimit });
       }
     })();
+    bucketsReady.set(bucket, ready);
   }
-  return bucketReady;
+  return ready;
 }
 
 // Extensión derivada del content-type validado por el servidor, nunca del
@@ -43,23 +43,30 @@ const EXTENSION_BY_MIME: Record<string, string> = {
   "image/avif": "avif",
 };
 
-export async function uploadListingImage(file: File, listingId: string, index: number) {
+async function uploadImage(bucket: string, fileSizeLimit: string, file: File, path: string) {
   const extension = EXTENSION_BY_MIME[file.type];
   if (!extension) {
     throw new Error(`Formato de imagen no soportado: ${file.type}`);
   }
 
-  await ensureBucket();
+  await ensureBucket(bucket, fileSizeLimit);
   const client = getAdminClient();
 
-  const path = `${listingId}/${Date.now()}-${index}.${extension}`;
-
-  const { error } = await client.storage.from(BUCKET).upload(path, file, {
+  const fullPath = `${path}.${extension}`;
+  const { error } = await client.storage.from(bucket).upload(fullPath, file, {
     contentType: file.type,
     upsert: true,
   });
   if (error) throw new Error(`No se pudo subir la imagen: ${error.message}`);
 
-  const { data } = client.storage.from(BUCKET).getPublicUrl(path);
+  const { data } = client.storage.from(bucket).getPublicUrl(fullPath);
   return data.publicUrl;
+}
+
+export function uploadListingImage(file: File, listingId: string, index: number) {
+  return uploadImage(LISTING_IMAGES_BUCKET, "5MB", file, `${listingId}/${Date.now()}-${index}`);
+}
+
+export function uploadAvatarImage(file: File, userId: string) {
+  return uploadImage(AVATARS_BUCKET, "2MB", file, `${userId}/${Date.now()}`);
 }

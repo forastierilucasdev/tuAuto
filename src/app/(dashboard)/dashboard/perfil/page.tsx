@@ -22,6 +22,7 @@ export default async function PerfilPage() {
         dni={profile.dni}
         fullName={profile.fullName}
         phone={profile.phone}
+        avatarUrl={profile.avatarUrl}
         agency={profile.agencyProfile}
       />
     </div>

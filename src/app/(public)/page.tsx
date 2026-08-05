@@ -15,7 +15,34 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="border-b border-border bg-gradient-to-b from-surface-muted to-background">
+      {/* Mobile: foto de fondo con el buscador superpuesto */}
+      <section className="relative lg:hidden">
+        <div className="relative flex min-h-[32rem] w-full flex-col justify-end overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://picsum.photos/seed/tuauto-hero/900/700"
+            alt="Vehículo destacado"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/60 to-navy/10" />
+
+          <div className="relative px-4 pb-6 pt-24">
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">
+              Encontrá el vehículo de tus sueños.
+            </h1>
+            <p className="mt-3 max-w-xl text-base text-white/85">
+              Autos, camionetas, motos y más, publicados por particulares y concesionarias de
+              todo el país.
+            </p>
+            <div className="mt-6">
+              <HeroSearch />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Desktop: texto/buscador y foto separados */}
+      <section className="hidden border-b border-border bg-gradient-to-b from-surface-muted to-background lg:block">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-20">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-navy sm:text-4xl lg:text-5xl">
@@ -30,7 +57,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="hidden aspect-[4/3] overflow-hidden rounded-2xl bg-surface-muted shadow-card lg:block">
+          <div className="aspect-4/3 overflow-hidden rounded-2xl bg-surface-muted shadow-card">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://picsum.photos/seed/tuauto-hero/900/700"
