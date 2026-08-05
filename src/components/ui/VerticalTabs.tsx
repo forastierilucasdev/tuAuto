@@ -34,11 +34,14 @@ export function VerticalTabs({
 
   return (
     <div>
-      {/* Mobile: secciones apiladas, siempre visibles */}
-      <div className="space-y-6 sm:hidden">
+      {/* Mobile: secciones apiladas en cajas separadas, siempre visibles */}
+      <div className="space-y-4 sm:hidden">
         {tabs.map((tab) => (
-          <div key={tab.id}>
-            <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-navy">
+          <div
+            key={tab.id}
+            className="rounded-2xl border border-border bg-surface p-4 shadow-card"
+          >
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-navy">
               {tab.icon}
               {tab.label}
             </h3>
