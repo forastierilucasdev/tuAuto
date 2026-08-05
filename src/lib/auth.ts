@@ -9,6 +9,9 @@ import { findUserForAuth, touchLastLogin } from "@/server/data/users";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  // Necesario detrás del proxy de Vercel (y de cualquier reverse proxy) para
+  // que Auth.js confíe en el header `Host` al armar las URLs de callback.
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {
