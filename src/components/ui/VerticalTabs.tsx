@@ -14,10 +14,13 @@ export type VerticalTabItem = {
 };
 
 /**
- * Pestañas verticales en desktop (una sección a la vez) que se convierten en
- * una fila horizontal scrolleable en mobile — mismo componente, layout
- * distinto vía flexbox (`flex-col sm:flex-row`), reutilizable en cualquier
- * pantalla que necesite este patrón.
+ * En mobile no hay pestañas: todas las secciones se listan una debajo de la
+ * otra (con un ícono + título liviano, sin botones/píldoras) para aprovechar
+ * el scroll vertical natural del teléfono y no esconder información detrás
+ * de un click. En desktop (`sm:` en adelante) se comporta como pestañas
+ * verticales clásicas: una barra lateral y un panel con la sección activa.
+ * Mismo componente, dos layouts vía CSS (`sm:hidden` / `hidden sm:flex`) —
+ * sin duplicar el contenido de cada sección.
  */
 export function VerticalTabs({
   tabs,
@@ -30,29 +33,45 @@ export function VerticalTabs({
   const activeTab = tabs.find((tab) => tab.id === active) ?? tabs[0];
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-card sm:flex-row">
-      <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-border p-2 sm:w-56 sm:flex-col sm:overflow-visible sm:border-r sm:border-b-0 sm:p-3">
-        {tabs.map((tab) => {
-          const isActive = activeTab?.id === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActive(tab.id)}
-              className={cn(
-                "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground"
-              )}
-            >
+    <div>
+      {/* Mobile: secciones apiladas, siempre visibles */}
+      <div className="space-y-6 sm:hidden">
+        {tabs.map((tab) => (
+          <div key={tab.id}>
+            <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-navy">
               {tab.icon}
-              <span className="whitespace-nowrap">{tab.label}</span>
-            </button>
-          );
-        })}
+              {tab.label}
+            </h3>
+            {tab.content}
+          </div>
+        ))}
       </div>
-      <div className="min-w-0 flex-1 p-5">{activeTab?.content}</div>
+
+      {/* Desktop: pestañas verticales clásicas */}
+      <div className="hidden overflow-hidden rounded-2xl border border-border bg-surface shadow-card sm:flex">
+        <div className="flex w-56 shrink-0 flex-col gap-1 border-r border-border p-3">
+          {tabs.map((tab) => {
+            const isActive = activeTab?.id === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActive(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+                )}
+              >
+                {tab.icon}
+                <span className="whitespace-nowrap">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="min-w-0 flex-1 p-5">{activeTab?.content}</div>
+      </div>
     </div>
   );
 }

@@ -5,6 +5,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-05, noche) — Ajuste responsive del detalle de publicación
+- `VerticalTabs` ya no usa pestañas-píldora en mobile (se cortaban / no entraban en pantalla): en mobile todas las secciones se listan apiladas una debajo de la otra, con un ícono + título liviano en vez de botones con borde, aprovechando el scroll vertical natural del teléfono. En desktop (`sm:` en adelante) se mantiene el comportamiento de pestañas verticales clásico.
+- En la página de detalle, el orden de Título/Galería de fotos ahora depende del tamaño de pantalla (vía `order-*` de flexbox): en mobile las fotos van primero y el título después; en desktop el título va primero y las fotos después.
+
 ### Changed (2026-08-05, tarde) — Rediseño de búsqueda, publicación y detalle
 - **Tercer tipo de cuenta**: se agregó `CONCESIONARIA` como tipo de cuenta independiente de `AGENCIA` (antes unificados). Migración `20260805121035_listing_details_and_account_types`.
 - **Nuevos campos en `Listing`**: `version`, `condition` (Nuevo/Usado), `transmission` (Mecánica/Asistida), `priceNegotiable`, `acceptsTrade`, `acceptsFinancing`, `contactAddress`; `description` ("Observaciones") pasó a ser opcional.

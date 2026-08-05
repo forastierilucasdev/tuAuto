@@ -151,12 +151,17 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
   ];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <VehicleGallery images={listing.images} title={listing.title} />
+    <div className="mx-auto flex max-w-5xl flex-col px-4 py-8 sm:px-6 lg:px-8">
+      {/* Mobile: fotos primero. Desktop (sm+): título primero, luego fotos. */}
+      <h1 className="order-2 mt-6 text-2xl font-bold text-navy sm:order-1 sm:mt-0 sm:mb-6 sm:text-3xl">
+        {listing.title}
+      </h1>
 
-      <h1 className="mt-6 text-2xl font-bold text-navy sm:text-3xl">{listing.title}</h1>
+      <div className="order-1 sm:order-2">
+        <VehicleGallery images={listing.images} title={listing.title} />
+      </div>
 
-      <div className="mt-4">
+      <div className="order-3 mt-6 sm:mt-4">
         <VerticalTabs tabs={tabs} />
       </div>
 
@@ -164,7 +169,7 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
         href={whatsappHref}
         target="_blank"
         rel="noopener noreferrer"
-        className={cn(buttonVariants({ variant: "primary", size: "lg" }), "mt-4 w-full sm:w-auto")}
+        className={cn(buttonVariants({ variant: "primary", size: "lg" }), "order-4 mt-4 w-full sm:w-auto")}
       >
         <MessageCircle className="h-4 w-4" />
         Contactar por WhatsApp
