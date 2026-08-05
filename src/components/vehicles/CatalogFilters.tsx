@@ -6,16 +6,10 @@ import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import { VEHICLE_TYPES } from "@/lib/constants";
+import { VEHICLE_TYPES, CONDITION_OPTIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import {
-  getAvailableYearsAction,
-  getBrandsForTypeAction,
-  getModelsForBrandAction,
-} from "@/server/actions/taxonomy.actions";
+import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
 import type { VehicleType } from "@/generated/prisma/client";
-
-type Option = { id: string; name: string; slug: string };
 
 export function CatalogFilters() {
   const router = useRouter();
@@ -28,32 +22,14 @@ export function CatalogFilters() {
   const [marca, setMarca] = React.useState(searchParams.get("marca") ?? "");
   const [modelo, setModelo] = React.useState(searchParams.get("modelo") ?? "");
   const [anio, setAnio] = React.useState(searchParams.get("anio") ?? "");
+  const [condicion, setCondicion] = React.useState(searchParams.get("condicion") ?? "");
   const [moneda, setMoneda] = React.useState(searchParams.get("moneda") ?? "ARS");
   const [precioMin, setPrecioMin] = React.useState(searchParams.get("precioMin") ?? "");
   const [precioMax, setPrecioMax] = React.useState(searchParams.get("precioMax") ?? "");
   const [kmMin, setKmMin] = React.useState(searchParams.get("kmMin") ?? "");
   const [kmMax, setKmMax] = React.useState(searchParams.get("kmMax") ?? "");
 
-  const [brands, setBrands] = React.useState<Option[]>([]);
-  const [models, setModels] = React.useState<Option[]>([]);
-  const [years, setYears] = React.useState<number[]>([]);
-
-  React.useEffect(() => {
-    getBrandsForTypeAction(tipo || undefined).then(setBrands);
-  }, [tipo]);
-
-  React.useEffect(() => {
-    const request = marca ? getModelsForBrandAction(marca, tipo || undefined) : Promise.resolve([]);
-    request.then(setModels);
-  }, [marca, tipo]);
-
-  React.useEffect(() => {
-    getAvailableYearsAction({
-      vehicleType: tipo || undefined,
-      brandSlug: marca || undefined,
-      modelSlug: modelo || undefined,
-    }).then(setYears);
-  }, [tipo, marca, modelo]);
+  const { brands, models, years } = useVehicleTaxonomy(tipo, marca, modelo);
 
   function applyFilters() {
     const params = new URLSearchParams();
@@ -61,6 +37,7 @@ export function CatalogFilters() {
     if (marca) params.set("marca", marca);
     if (modelo) params.set("modelo", modelo);
     if (anio) params.set("anio", anio);
+    if (condicion) params.set("condicion", condicion);
     if (precioMin || precioMax) params.set("moneda", moneda);
     if (precioMin) params.set("precioMin", precioMin);
     if (precioMax) params.set("precioMax", precioMax);
@@ -74,6 +51,7 @@ export function CatalogFilters() {
     setMarca("");
     setModelo("");
     setAnio("");
+    setCondicion("");
     setMoneda("ARS");
     setPrecioMin("");
     setPrecioMax("");
@@ -147,6 +125,18 @@ export function CatalogFilters() {
           {years.map((y) => (
             <option key={y} value={y}>
               {y}
+            </option>
+          ))}
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="f-condicion">Condición</Label>
+        <Select id="f-condicion" value={condicion} onChange={(e) => setCondicion(e.target.value)}>
+          <option value="">Nuevo o usado</option>
+          {CONDITION_OPTIONS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
             </option>
           ))}
         </Select>

@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
+import { auth } from "@/lib/auth";
+import { getFullProfile } from "@/server/data/users";
+import { isBusinessAccountType } from "@/lib/constants";
 import { ListingForm } from "@/components/forms/ListingForm";
 
 export const metadata: Metadata = { title: "Publicar vehículo" };
 
-export default function NuevaPublicacionPage() {
+export default async function NuevaPublicacionPage() {
+  const session = await auth();
+  const profile = await getFullProfile(session!.user.id);
+  if (!profile) return null;
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-navy">Publicar vehículo</h1>
@@ -11,7 +18,16 @@ export default function NuevaPublicacionPage() {
         Completá los datos de tu vehículo. Podés publicar aunque no tengas una suscripción activa;
         para destacarlo, hacelo luego desde &quot;Método de pago&quot;.
       </p>
-      <ListingForm mode="create" />
+      <ListingForm
+        mode="create"
+        seller={{
+          fullName: profile.fullName,
+          phone: profile.phone,
+          businessName: isBusinessAccountType(profile.accountType)
+            ? profile.agencyProfile?.businessName
+            : undefined,
+        }}
+      />
     </div>
   );
 }

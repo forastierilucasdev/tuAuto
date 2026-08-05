@@ -59,9 +59,24 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] `npm run build` sin errores (TypeScript + producción)
 - [x] Documentación final actualizada (`CHANGELOG.md`, `ARCHITECTURE.md`, `ERRORES.md`)
 
+## Fase 6 — Rediseño de búsqueda, publicación y detalle (solicitado por el usuario)
+- [x] Tercer tipo de cuenta: Particular / Agencia / Concesionaria (registro, perfil, badges)
+- [x] Nuevos campos de publicación: versión, condición (Nuevo/Usado), transmisión (Mecánica/Asistida), checks (negociable/permuta/financiamiento), dirección de contacto; observaciones (antes "descripción") ahora opcional
+- [x] Título siempre autogenerado (Marca + Modelo + Año), ya no es texto libre
+- [x] Buscador principal (home) con cascada completa Tipo→Marca→Modelo→Año + Condición
+- [x] Filtros de catálogo: se agregó Condición
+- [x] Hook reutilizable `useVehicleTaxonomy` (cascada Tipo→Marca→Modelo→Año, usado por buscador, filtros y formulario de publicar)
+- [x] Tarjetas de resultado rediseñadas: ícono de Km, Ubicación, Tipo de vendedor, Condición + Año
+- [x] Detalle de publicación: galería con lightbox modal (click para expandir, cruz para cerrar, flechas), pestañas verticales reutilizables (`VerticalTabs`) para Datos principales / Precio / Ubicación / Observaciones / Contacto, botón de WhatsApp con texto pre-armado
+- [x] Formulario de publicar reconstruido como wizard multi-paso (Datos → Precio → Ubicación → Contacto → Fotos → Observaciones → Publicar/Guardar), con selección de foto de portada
+- [x] Todo responsive con flexbox (`flex-col` en mobile → `flex-row` en desktop)
+- [x] Verificado contra datos reales: filtro Condición=Nuevo devuelve exactamente 3 publicaciones (las 3 sembradas como 0km), detalle de publicación renderiza pestañas y WhatsApp correctamente
+- [ ] Prueba manual en navegador del wizard de publicar completo (los 7 pasos) y de la edición de una publicación existente
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
 - [ ] Integración real de Mercado Pago (reemplaza la aprobación simulada)
 - [ ] Content-Security-Policy estricta
 - [ ] Rate limiting distribuido (Redis / Upstash) para despliegue multi-instancia
+- [ ] Permitir borrar/reordenar fotos ya subidas al editar una publicación (hoy solo se pueden agregar más)

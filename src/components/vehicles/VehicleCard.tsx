@@ -1,12 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, Gauge } from "lucide-react";
+import { Building2, Gauge, MapPin, Tag, User } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, formatKm } from "@/lib/utils";
+import { accountTypeLabel, conditionLabel, isBusinessAccountType } from "@/lib/constants";
 import type { VehicleCardData } from "@/types/vehicle";
 
 export function VehicleCard({ vehicle }: { vehicle: VehicleCardData }) {
+  const location = [vehicle.province, vehicle.city].filter(Boolean).join(" - ");
+  const SellerIcon = isBusinessAccountType(vehicle.sellerAccountType) ? Building2 : User;
+
   return (
     <Link href={`/catalogo/${vehicle.slug}`} className="group block h-full">
       <Card className="flex h-full flex-col overflow-hidden p-0 transition-shadow hover:shadow-card-hover">
@@ -29,14 +33,24 @@ export function VehicleCard({ vehicle }: { vehicle: VehicleCardData }) {
           <p className="text-lg font-bold text-primary">
             {formatCurrency(vehicle.price, vehicle.currency)}
           </p>
-          <div className="mt-auto flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Gauge className="h-3.5 w-3.5" />
               {formatKm(vehicle.mileageKm)}
             </span>
+            {location && (
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                {location}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1">
-              <CalendarDays className="h-3.5 w-3.5" />
-              {vehicle.year}
+              <SellerIcon className="h-3.5 w-3.5" />
+              {accountTypeLabel(vehicle.sellerAccountType)}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Tag className="h-3.5 w-3.5" />
+              {conditionLabel(vehicle.condition)} · {vehicle.year}
             </span>
           </div>
         </div>

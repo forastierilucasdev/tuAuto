@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { updateAgencyProfileSchema, updateParticularProfileSchema } from "@/lib/validations/profile";
 import { updateProfile } from "@/server/data/users";
+import { isBusinessAccountType } from "@/lib/constants";
 
 export type ProfileActionState =
   | { error?: string; fieldErrors?: Record<string, string[]>; success?: boolean }
@@ -20,7 +21,7 @@ export async function updateProfileAction(
 
   const raw = Object.fromEntries(formData);
 
-  if (session.user.accountType === "AGENCIA") {
+  if (isBusinessAccountType(session.user.accountType)) {
     const parsed = updateAgencyProfileSchema.safeParse(raw);
     if (!parsed.success) {
       return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };

@@ -10,6 +10,7 @@ datasource db {
 enum AccountType {
   PARTICULAR
   AGENCIA
+  CONCESIONARIA
 }
 
 enum VehicleType {
@@ -38,6 +39,16 @@ enum PaymentStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum VehicleCondition {
+  NUEVO
+  USADO
+}
+
+enum TransmissionType {
+  MECANICA
+  ASISTIDA
 }
 
 model User {
@@ -117,13 +128,22 @@ model Listing {
   year        Int
 
   title       String
-  description String
+  version     String?
+  description String?
 
-  price     Decimal  @db.Decimal(12, 2)
-  currency  Currency @default(ARS)
-  mileageKm Int?
-  province  String?
-  city      String?
+  condition    VehicleCondition  @default(USADO)
+  transmission TransmissionType?
+
+  price            Decimal  @db.Decimal(12, 2)
+  currency         Currency @default(ARS)
+  priceNegotiable  Boolean  @default(false)
+  acceptsTrade     Boolean  @default(false)
+  acceptsFinancing Boolean  @default(false)
+
+  mileageKm      Int?
+  province       String?
+  city           String?
+  contactAddress String?
 
   status        ListingStatus @default(ACTIVE)
   featured      Boolean       @default(false)
@@ -141,6 +161,7 @@ model Listing {
 
   @@index([status, featured, createdAt])
   @@index([vehicleType, brandId, modelId, year])
+  @@index([condition])
   @@index([price])
   @@index([mileageKm])
   @@index([userId])

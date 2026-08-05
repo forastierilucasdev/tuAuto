@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
+import { isBusinessAccountType, type AccountTypeValue } from "@/lib/constants";
 
 const initialState: ProfileActionState = undefined;
 
 type ProfileFormProps = {
-  accountType: "PARTICULAR" | "AGENCIA";
+  accountType: AccountTypeValue;
   email: string;
   dni: string;
   fullName: string;
@@ -27,6 +28,7 @@ type ProfileFormProps = {
 
 export function ProfileForm({ accountType, email, dni, fullName, phone, agency }: ProfileFormProps) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
+  const isBusiness = isBusinessAccountType(accountType);
 
   return (
     <form action={formAction} className="max-w-xl space-y-5">
@@ -45,9 +47,11 @@ export function ProfileForm({ accountType, email, dni, fullName, phone, agency }
         corregirlos.
       </p>
 
-      {accountType === "AGENCIA" && (
+      {isBusiness && (
         <div>
-          <Label htmlFor="businessName">Nombre de la concesionaria / agencia</Label>
+          <Label htmlFor="businessName">
+            Nombre de la {accountType === "CONCESIONARIA" ? "concesionaria" : "agencia"}
+          </Label>
           <Input id="businessName" name="businessName" defaultValue={agency?.businessName} required />
           <FieldError messages={state?.fieldErrors?.businessName} />
         </div>
@@ -65,7 +69,7 @@ export function ProfileForm({ accountType, email, dni, fullName, phone, agency }
         <FieldError messages={state?.fieldErrors?.phone} />
       </div>
 
-      {accountType === "AGENCIA" && (
+      {isBusiness && (
         <>
           <div className="grid gap-5 sm:grid-cols-2">
             <div>

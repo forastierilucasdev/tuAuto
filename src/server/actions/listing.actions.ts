@@ -50,18 +50,26 @@ export async function createListingAction(
     brandSlug: raw.brandSlug,
     modelSlug: raw.modelSlug,
     year: raw.year,
-    title: raw.title,
-    description: raw.description,
+    version: raw.version || undefined,
+    condition: raw.condition,
+    transmission: raw.transmission || undefined,
+    description: raw.description || undefined,
     price: raw.price,
     currency: raw.currency,
+    priceNegotiable: raw.priceNegotiable,
+    acceptsTrade: raw.acceptsTrade,
+    acceptsFinancing: raw.acceptsFinancing,
     mileageKm: raw.mileageKm || undefined,
     city: raw.city || undefined,
     province: raw.province || undefined,
+    contactAddress: raw.contactAddress || undefined,
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
 
+  // El orden de "images" ya viene con la foto de portada primero (ver
+  // ListingForm): se conserva ese orden al guardar (order = índice).
   const files = getImageFiles(formData);
   const imageError = validateImages(files);
   if (imageError) return { error: imageError };
@@ -88,13 +96,16 @@ export async function updateListingAction(
 
   const raw = Object.fromEntries(formData);
   const parsed = updateListingSchema.safeParse({
-    title: raw.title,
-    description: raw.description,
+    description: raw.description || undefined,
     price: raw.price,
     currency: raw.currency,
+    priceNegotiable: raw.priceNegotiable,
+    acceptsTrade: raw.acceptsTrade,
+    acceptsFinancing: raw.acceptsFinancing,
     mileageKm: raw.mileageKm || undefined,
     city: raw.city || undefined,
     province: raw.province || undefined,
+    contactAddress: raw.contactAddress || undefined,
   });
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
@@ -106,8 +117,10 @@ export async function updateListingAction(
     if (imageError) return { error: imageError };
   }
 
+  let updatedSlug: string;
   try {
-    await updateOwnedListing(listingId, session.user.id, parsed.data);
+    const updated = await updateOwnedListing(listingId, session.user.id, parsed.data);
+    updatedSlug = updated.slug;
 
     if (files.length > 0) {
       const urls = await Promise.all(files.map((file, index) => uploadListingImage(file, listingId, index)));
@@ -118,7 +131,7 @@ export async function updateListingAction(
   }
 
   revalidatePath("/dashboard/publicaciones");
-  revalidatePath(`/catalogo/${listingId}`);
+  revalidatePath(`/catalogo/${updatedSlug}`);
   redirect("/dashboard/publicaciones");
 }
 

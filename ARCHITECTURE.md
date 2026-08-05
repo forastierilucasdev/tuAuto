@@ -40,18 +40,20 @@ src/
                            publicaciones/[id]/editar/, pago/  (todas protegidas)
     api/auth/[...nextauth]/  Route Handler de Auth.js
   components/
-    ui/                  Button, Input, Select, Textarea, Label, Card, Badge, FieldError
+    ui/                  Button, Input, Select, Textarea, Label, Card, Badge, FieldError, VerticalTabs
     layout/              Header, Footer
     home/                HeroSearch
-    vehicles/            VehicleCard, CatalogFilters, VehicleGallery, CategoryGrid
-    forms/               LoginForm, RegisterForm, ProfileForm, ListingForm, AddPaymentMethodForm
+    vehicles/            VehicleCard, CatalogFilters, VehicleGallery (con lightbox), CategoryGrid
+    forms/               LoginForm, RegisterForm, ProfileForm, ListingForm (wizard), AddPaymentMethodForm
     dashboard/           OwnerListingCard
+  hooks/
+    useVehicleTaxonomy.ts  Cascada Tipo→Marca→Modelo→Año reutilizada por HeroSearch, CatalogFilters y ListingForm
   lib/
     auth.ts              Config de Auth.js
     prisma.ts            Singleton de PrismaClient (con adapter-pg, usa DATABASE_URL)
     supabase-storage.ts  Subida de fotos a Supabase Storage (server-only)
     rate-limit.ts        Limitador in-memory (ver limitaciones en ERRORES.md)
-    constants.ts         VEHICLE_TYPES, NAV_LINKS (metadata de presentación)
+    constants.ts         VEHICLE_TYPES, CONDITION_OPTIONS, TRANSMISSION_OPTIONS, ACCOUNT_TYPE_LABELS, NAV_LINKS
     validations/         auth.ts, profile.ts, listing.ts (schemas Zod)
     utils.ts             cn, formatCurrency, formatKm, slugify, buildWhatsAppLink
   server/
@@ -66,21 +68,23 @@ prisma/
 
 ## 4. Modelo de datos (resumen)
 
-- **User**: cuenta base (email, hash de contraseña, tipo de cuenta, DNI, teléfono, nombre).
-- **AgencyProfile**: datos adicionales 1:1 solo para cuentas tipo concesionaria (CUIT, nombre comercial, ciudad, logo). Separado de `User` para no tener columnas huérfanas en cuentas particulares, y para alimentar la página pública "Concesionarias".
+- **User**: cuenta base (email, hash de contraseña, tipo de cuenta, DNI, teléfono, nombre). `accountType` es `PARTICULAR | AGENCIA | CONCESIONARIA` — Agencia y Concesionaria son tipos de cuenta independientes (distinta etiqueta/registro), pero comparten la misma forma de perfil de negocio.
+- **AgencyProfile**: datos adicionales 1:1 para cuentas `AGENCIA` o `CONCESIONARIA` (CUIT, nombre comercial, ciudad, dirección, logo). Separado de `User` para no tener columnas huérfanas en cuentas particulares, y para alimentar la página pública "Concesionarias". El nombre de la tabla quedó como `AgencyProfile` por continuidad histórica, pero representa a ambos tipos de cuenta de negocio.
 - **Brand / Model**: taxonomía seedeada (no texto libre) para que el filtro en cascada Tipo→Marca→Modelo sea confiable. `Model.vehicleType` vincula cada modelo a un tipo de vehículo; una marca puede tener modelos de varios tipos (ej. Honda autos y motos).
-- **Listing**: la publicación. Incluye `vehicleType`, `brand`, `model`, `year`, `price` + `currency` (ARS o USD, a elección del vendedor), `mileageKm`, `status` (ACTIVE/EXPIRED/SOLD/DRAFT) y `featured` + `featuredUntil`.
+- **Listing**: la publicación. Incluye `vehicleType`, `brand`, `model`, `year`, `version` (opcional, ej. "XEI CVT"), `condition` (NUEVO/USADO), `transmission` (MECANICA/ASISTIDA, opcional), `price` + `currency` (ARS o USD) + `priceNegotiable`/`acceptsTrade`/`acceptsFinancing` (checks que solo se muestran en el detalle si son `true`), `mileageKm`, `contactAddress` (opcional), `status` (ACTIVE/EXPIRED/SOLD/DRAFT) y `featured` + `featuredUntil`.
+  - **`title` siempre se compone en el servidor** como `${brand.name} ${model.name} ${year}` (ver `createListing()` en `server/data/listings.ts`) — nunca es un campo de texto libre del formulario.
+  - **`description`** ("Observaciones" en la UI) es opcional, sin longitud mínima.
   - **Regla de vencimiento**: al vencer `expiresAt`, la publicación completa pasa a `EXPIRED` (deja de verse en el catálogo público) hasta que el vendedor la renueve. `SOLD` se marca manualmente por el vendedor desde "Mis publicaciones".
-- **Image**: fotos reales subidas por el vendedor a Supabase Storage (bucket público `listing-images`, creado automáticamente en el primer upload).
+- **Image**: fotos reales subidas por el vendedor a Supabase Storage (bucket público `listing-images`, creado automáticamente en el primer upload). El campo `order` determina cuál es la "foto destacada" (portada): la de `order = 0`, elegida por el vendedor al cargar el anuncio (ver `ListingForm`).
 - **Plan / PaymentMethod / Payment**: estructura lista para Mercado Pago; `PaymentMethod` nunca guarda datos de tarjeta, solo un alias visible. Ver sección 7.
 
 ## 5. Filtros en cascada del catálogo
 
-Tipo → Marca → Modelo → Año se resuelven contra las tablas de taxonomía (no contra texto libre de las publicaciones), evitando duplicados ("Toyota" vs "toyota"). El componente `CatalogFilters` (cliente) llama a Server Actions (`server/actions/taxonomy.actions.ts`) para poblar cada select en cascada, y navega con query params (`?tipo=&marca=&modelo=&anio=`) que la página de catálogo (servidor) usa para consultar `getCatalogResults()`.
+Tipo → Marca → Modelo → Año se resuelven contra las tablas de taxonomía (no contra texto libre de las publicaciones), evitando duplicados ("Toyota" vs "toyota"). La cascada está centralizada en el hook `src/hooks/useVehicleTaxonomy.ts`, que llama a Server Actions (`server/actions/taxonomy.actions.ts`) para poblar cada select — lo usan **tres** componentes cliente distintos: `HeroSearch` (buscador principal del home), `CatalogFilters` (filtros del catálogo) y `ListingForm` (alta de publicación), evitando triplicar la misma lógica de efectos.
 
-Año, Precio y Kilometraje son atributos de `Listing`, filtrados dinámicamente. **El precio se filtra dentro de una única moneda a la vez** (selector ARS/USD en el filtro): combinar ambas monedas en un mismo rango numérico daría resultados sin sentido sin una tasa de conversión real (ver `ERRORES.md`).
+`CatalogFilters` y `HeroSearch` navegan con query params (`?tipo=&marca=&modelo=&anio=&condicion=`) que la página de catálogo (servidor) usa para consultar `getCatalogResults()`. `ListingForm` en cambio usa la cascada para completar los campos de un `Listing` nuevo.
 
-El mismo componente `ListingForm` reutiliza la cascada Tipo→Marca→Modelo para publicar un anuncio nuevo.
+Año, Condición, Precio y Kilometraje son atributos de `Listing`, filtrados dinámicamente. **El precio se filtra dentro de una única moneda a la vez** (selector ARS/USD en el filtro): combinar ambas monedas en un mismo rango numérico daría resultados sin sentido sin una tasa de conversión real (ver `ERRORES.md`).
 
 ## 6. Seguridad
 
@@ -100,7 +104,7 @@ El mismo componente `ListingForm` reutiliza la cascada Tipo→Marca→Modelo par
 La sección "Método de pago" (`/dashboard/pago`) funciona end-to-end pero con **aprobación simulada e instantánea**, sin conexión real a la API de Mercado Pago:
 
 - `server/data/payments.ts` → `purchaseFeaturePlan()`: crea un `Payment` con `status: "APPROVED"` y, en la misma transacción, marca la publicación elegida como `featured: true` con `featuredUntil` según la duración del plan.
-- `purchaseSubscription()`: crea un `Payment` de suscripción (solo visible para cuentas tipo agencia).
+- `purchaseSubscription()`: crea un `Payment` de suscripción (solo visible para cuentas de negocio — Agencia o Concesionaria — vía `isBusinessAccountType()`).
 - Los `Plan` disponibles (`FEATURE_15D`, `FEATURE_30D`, `AGENCY_MONTHLY`) vienen del seed.
 
 Para integrar Mercado Pago real: reemplazar `purchaseFeaturePlan`/`purchaseSubscription` por la creación de una preferencia de pago (Checkout Pro) y agregar un Route Handler `app/api/mercadopago/webhook/route.ts` que reciba la confirmación y recién ahí aplique el efecto (destacar/suscribir), en vez de aprobar instantáneamente. Variables ya reservadas en `.env.example`: `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`.

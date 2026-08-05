@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import type { Currency, Prisma, VehicleType } from "@/generated/prisma/client";
+import type { Currency, Prisma, VehicleCondition, VehicleType } from "@/generated/prisma/client";
 import type { VehicleCardData } from "@/types/vehicle";
 import { FALLBACK_IMAGE } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
@@ -10,6 +10,7 @@ export type CatalogFilters = {
   brandSlug?: string;
   modelSlug?: string;
   year?: number;
+  condition?: VehicleCondition;
   currency?: Currency;
   minPrice?: number;
   maxPrice?: number;
@@ -19,6 +20,7 @@ export type CatalogFilters = {
 
 const CARD_INCLUDE = {
   images: { orderBy: { order: "asc" as const }, take: 1 },
+  user: { select: { accountType: true } },
 } satisfies Prisma.ListingInclude;
 
 type ListingWithCardData = Prisma.ListingGetPayload<{ include: typeof CARD_INCLUDE }>;
@@ -30,10 +32,14 @@ export function toVehicleCardData(listing: ListingWithCardData): VehicleCardData
     price: Number(listing.price),
     currency: listing.currency,
     year: listing.year,
-    mileageKm: listing.mileageKm ?? 0,
+    mileageKm: listing.mileageKm,
     imageUrl: listing.images[0]?.url ?? FALLBACK_IMAGE,
     featured: listing.featured,
     vehicleType: listing.vehicleType,
+    condition: listing.condition,
+    city: listing.city,
+    province: listing.province,
+    sellerAccountType: listing.user.accountType,
   };
 }
 
@@ -44,6 +50,7 @@ function buildWhere(filters: CatalogFilters): Prisma.ListingWhereInput {
   if (filters.brandSlug) where.brand = { slug: filters.brandSlug };
   if (filters.modelSlug) where.model = { slug: filters.modelSlug };
   if (filters.year) where.year = filters.year;
+  if (filters.condition) where.condition = filters.condition;
 
   if (filters.minKm !== undefined || filters.maxKm !== undefined) {
     where.mileageKm = {
@@ -112,7 +119,7 @@ export async function getListingBySlug(slug: string) {
           fullName: true,
           phone: true,
           accountType: true,
-          agencyProfile: { select: { businessName: true, city: true, province: true } },
+          agencyProfile: { select: { businessName: true, city: true, province: true, address: true } },
         },
       },
     },
@@ -158,20 +165,28 @@ export async function createListing(input: {
   brandSlug: string;
   modelSlug: string;
   year: number;
-  title: string;
-  description: string;
+  version?: string;
+  condition: VehicleCondition;
+  transmission?: "MECANICA" | "ASISTIDA";
+  description?: string;
   price: number;
   currency: Currency;
+  priceNegotiable: boolean;
+  acceptsTrade: boolean;
+  acceptsFinancing: boolean;
   mileageKm?: number;
   city?: string;
   province?: string;
+  contactAddress?: string;
 }) {
   const brand = await prisma.brand.findUniqueOrThrow({ where: { slug: input.brandSlug } });
   const model = await prisma.model.findFirstOrThrow({
     where: { slug: input.modelSlug, brandId: brand.id, vehicleType: input.vehicleType },
   });
 
-  const baseSlug = slugify(input.title);
+  // El título siempre se compone Marca + Modelo + Año, nunca es texto libre.
+  const title = `${brand.name} ${model.name} ${input.year}`;
+  const baseSlug = slugify(title);
   let slug = baseSlug;
   let attempt = 1;
   while (await prisma.listing.findUnique({ where: { slug }, select: { id: true } })) {
@@ -186,13 +201,20 @@ export async function createListing(input: {
       brandId: brand.id,
       modelId: model.id,
       year: input.year,
-      title: input.title,
+      title,
+      version: input.version,
+      condition: input.condition,
+      transmission: input.transmission,
       description: input.description,
       price: input.price,
       currency: input.currency,
+      priceNegotiable: input.priceNegotiable,
+      acceptsTrade: input.acceptsTrade,
+      acceptsFinancing: input.acceptsFinancing,
       mileageKm: input.mileageKm,
       city: input.city,
       province: input.province,
+      contactAddress: input.contactAddress,
       status: "ACTIVE",
       publishedAt: new Date(),
       expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
@@ -217,13 +239,16 @@ export async function updateOwnedListing(
   listingId: string,
   userId: string,
   data: {
-    title: string;
-    description: string;
+    description?: string;
     price: number;
     currency: Currency;
+    priceNegotiable: boolean;
+    acceptsTrade: boolean;
+    acceptsFinancing: boolean;
     mileageKm?: number;
     city?: string;
     province?: string;
+    contactAddress?: string;
   }
 ) {
   await assertOwnership(listingId, userId);

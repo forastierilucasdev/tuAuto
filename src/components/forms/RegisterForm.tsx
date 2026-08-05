@@ -8,32 +8,33 @@ import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
 import { cn } from "@/lib/utils";
+import { isBusinessAccountType, type AccountTypeValue } from "@/lib/constants";
 
 const initialState: ActionState = undefined;
 
-type AccountType = "PARTICULAR" | "AGENCIA";
+const ACCOUNT_TYPE_TOGGLE = [
+  { value: "PARTICULAR", label: "Vendedor particular" },
+  { value: "AGENCIA", label: "Agencia" },
+  { value: "CONCESIONARIA", label: "Concesionaria" },
+] as const satisfies ReadonlyArray<{ value: AccountTypeValue; label: string }>;
 
 export function RegisterForm() {
-  const [accountType, setAccountType] = useState<AccountType>("PARTICULAR");
+  const [accountType, setAccountType] = useState<AccountTypeValue>("PARTICULAR");
   const [state, formAction, pending] = useActionState(registerAction, initialState);
+  const isBusiness = isBusinessAccountType(accountType);
 
   return (
     <form action={formAction} className="space-y-5">
       <input type="hidden" name="accountType" value={accountType} />
 
-      <div className="grid grid-cols-2 gap-1 rounded-lg bg-surface-muted p-1 text-sm font-medium">
-        {(
-          [
-            { value: "PARTICULAR", label: "Vendedor particular" },
-            { value: "AGENCIA", label: "Concesionaria / agencia" },
-          ] as const
-        ).map((option) => (
+      <div className="grid grid-cols-3 gap-1 rounded-lg bg-surface-muted p-1 text-sm font-medium">
+        {ACCOUNT_TYPE_TOGGLE.map((option) => (
           <button
             key={option.value}
             type="button"
             onClick={() => setAccountType(option.value)}
             className={cn(
-              "rounded-md px-3 py-2 transition-colors",
+              "rounded-md px-2 py-2 text-center transition-colors",
               accountType === option.value
                 ? "bg-surface text-primary shadow-card"
                 : "text-muted-foreground hover:text-foreground"
@@ -44,10 +45,12 @@ export function RegisterForm() {
         ))}
       </div>
 
-      {accountType === "AGENCIA" && (
+      {isBusiness && (
         <>
           <div>
-            <Label htmlFor="businessName">Nombre de la concesionaria / agencia</Label>
+            <Label htmlFor="businessName">
+              Nombre de la {accountType === "CONCESIONARIA" ? "concesionaria" : "agencia"}
+            </Label>
             <Input id="businessName" name="businessName" required />
             <FieldError messages={state?.fieldErrors?.businessName} />
           </div>

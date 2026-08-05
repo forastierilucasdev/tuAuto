@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CatalogFilters } from "@/components/vehicles/CatalogFilters";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import { getCatalogResults } from "@/server/data/listings";
-import type { Currency, VehicleType } from "@/generated/prisma/client";
+import type { Currency, VehicleCondition, VehicleType } from "@/generated/prisma/client";
 
 export const metadata: Metadata = { title: "Catálogo" };
 
@@ -25,6 +25,7 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
     brandSlug: param(sp, "marca"),
     modelSlug: param(sp, "modelo"),
     year: paramNumber(sp, "anio"),
+    condition: param(sp, "condicion") as VehicleCondition | undefined,
     currency: param(sp, "moneda") as Currency | undefined,
     minPrice: paramNumber(sp, "precioMin"),
     maxPrice: paramNumber(sp, "precioMax"),

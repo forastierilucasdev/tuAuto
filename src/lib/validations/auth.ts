@@ -50,13 +50,26 @@ export const registerParticularSchema = z.object({
   password: passwordSchema,
 });
 
+const businessNameSchema = z
+  .string()
+  .trim()
+  .min(2, { error: "Ingresá el nombre de la agencia o concesionaria." })
+  .max(120);
+
 export const registerAgenciaSchema = z.object({
   accountType: z.literal("AGENCIA"),
-  businessName: z
-    .string()
-    .trim()
-    .min(2, { error: "Ingresá el nombre de la concesionaria o agencia." })
-    .max(120),
+  businessName: businessNameSchema,
+  cuit: cuitSchema,
+  fullName: fullNameSchema,
+  dni: dniSchema,
+  phone: phoneSchema,
+  email: emailSchema,
+  password: passwordSchema,
+});
+
+export const registerConcesionariaSchema = z.object({
+  accountType: z.literal("CONCESIONARIA"),
+  businessName: businessNameSchema,
   cuit: cuitSchema,
   fullName: fullNameSchema,
   dni: dniSchema,
@@ -68,9 +81,11 @@ export const registerAgenciaSchema = z.object({
 export const registerSchema = z.discriminatedUnion("accountType", [
   registerParticularSchema,
   registerAgenciaSchema,
+  registerConcesionariaSchema,
 ]);
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterParticularInput = z.infer<typeof registerParticularSchema>;
 export type RegisterAgenciaInput = z.infer<typeof registerAgenciaSchema>;
+export type RegisterConcesionariaInput = z.infer<typeof registerConcesionariaSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;

@@ -13,13 +13,14 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/utils";
+import { isBusinessAccountType } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Método de pago" };
 
 export default async function PagoPage() {
   const session = await auth();
   const userId = session!.user.id;
-  const isAgency = session!.user.accountType === "AGENCIA";
+  const isAgency = isBusinessAccountType(session!.user.accountType);
 
   const [methods, plans, listings, history] = await Promise.all([
     getPaymentMethods(userId),

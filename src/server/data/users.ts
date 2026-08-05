@@ -84,7 +84,8 @@ export async function createParticularUser(data: {
   return toSafeUser(user);
 }
 
-export async function createAgencyUser(data: {
+export async function createBusinessUser(data: {
+  accountType: "AGENCIA" | "CONCESIONARIA";
   email: string;
   passwordHash: string;
   fullName: string;
@@ -93,11 +94,11 @@ export async function createAgencyUser(data: {
   businessName: string;
   cuit: string;
 }): Promise<SafeUser> {
-  const { businessName, cuit, ...userData } = data;
+  const { businessName, cuit, accountType, ...userData } = data;
   const user = await prisma.user.create({
     data: {
       ...userData,
-      accountType: "AGENCIA",
+      accountType,
       agencyProfile: { create: { businessName, cuit } },
     },
   });

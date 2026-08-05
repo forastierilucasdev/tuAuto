@@ -6,7 +6,7 @@ import { signIn } from "@/lib/auth";
 import { loginSchema, registerSchema } from "@/lib/validations/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import {
-  createAgencyUser,
+  createBusinessUser,
   createParticularUser,
   cuitExists,
   dniExists,
@@ -39,7 +39,7 @@ export async function registerAction(
   if (await dniExists(data.dni)) {
     return { error: "Ya existe una cuenta registrada con ese DNI." };
   }
-  if (data.accountType === "AGENCIA" && (await cuitExists(data.cuit))) {
+  if (data.accountType !== "PARTICULAR" && (await cuitExists(data.cuit))) {
     return { error: "Ya existe una cuenta registrada con ese CUIT." };
   }
 
@@ -54,7 +54,8 @@ export async function registerAction(
       phone: data.phone,
     });
   } else {
-    await createAgencyUser({
+    await createBusinessUser({
+      accountType: data.accountType,
       email: data.email,
       passwordHash,
       fullName: data.fullName,

@@ -20,7 +20,8 @@ Al reportar un problema a soporte, incluir siempre:
 - **Rate limiting**: el límite de intentos de login/registro es en memoria; en un despliegue con múltiples instancias no es 100% preciso (ver `ARCHITECTURE.md`).
 - **Sin rol de administrador**: agregar nuevas marcas/modelos al catálogo requiere una modificación manual de los datos semilla (`prisma/seed.ts`), no hay panel de administración todavía.
 - **Filtro de precio por una sola moneda a la vez**: no se puede filtrar "ARS y USD combinados" en un mismo rango porque no hay una tasa de conversión real integrada.
-- **Edición de publicaciones**: no se puede cambiar el tipo de vehículo, marca, modelo o año después de publicado (si el vendedor se equivocó, tiene que dar de baja y crear una publicación nueva). Tampoco se pueden eliminar fotos individuales ya subidas desde el formulario de edición, solo agregar más.
+- **Edición de publicaciones**: no se puede cambiar el tipo de vehículo, marca, modelo o año después de publicado (si el vendedor se equivocó, tiene que dar de baja y crear una publicación nueva). Tampoco se pueden eliminar ni reordenar fotos ya subidas desde el formulario de edición, solo agregar más — la selección de "foto destacada" (portada) solo aplica a publicaciones nuevas.
+- **Título no editable**: el título de la publicación siempre es Marca + Modelo + Año, generado automáticamente; no hay forma de personalizarlo.
 - **Sin Content-Security-Policy estricta todavía**: se configuraron headers de seguridad básicos (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`), pero falta una CSP granular — queda para el endurecimiento previo a producción.
 - **Fotos genéricas en los datos de prueba**: las publicaciones del seed usan imágenes de stock (Picsum), no fotos reales.
 
@@ -30,4 +31,4 @@ _(Se completa a medida que se detectan y corrigen errores post-lanzamiento del p
 
 | Fecha | Descripción | Estado |
 |---|---|---|
-| — | — | — |
+| 2026-08-05 | La página de detalle de publicación devolvía error 500 (`Functions cannot be passed directly to Client Components`) al pasar íconos como referencia de componente a `VerticalTabs` desde un Server Component. | Resuelto — se pasa el ícono ya renderizado como JSX. |

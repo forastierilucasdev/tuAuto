@@ -13,7 +13,8 @@ export function formatCurrency(amount: number, currency: "ARS" | "USD" = "ARS") 
   }).format(amount);
 }
 
-export function formatKm(km: number) {
+export function formatKm(km: number | null) {
+  if (km === null) return "—";
   return `${new Intl.NumberFormat("es-AR").format(km)} km`;
 }
 
