@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import * as React from "react";
 import Link from "next/link";
-import { registerAction, type ActionState } from "@/server/actions/auth.actions";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { registerAction } from "@/server/actions/auth.actions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -11,8 +13,6 @@ import { FieldError } from "@/components/ui/FieldError";
 import { cn } from "@/lib/utils";
 import { isBusinessAccountType, type AccountTypeValue } from "@/lib/constants";
 
-const initialState: ActionState = undefined;
-
 const ACCOUNT_TYPE_TOGGLE = [
   { value: "PARTICULAR", label: "Vendedor particular" },
   { value: "AGENCIA", label: "Agencia" },
@@ -20,14 +20,51 @@ const ACCOUNT_TYPE_TOGGLE = [
 ] as const satisfies ReadonlyArray<{ value: AccountTypeValue; label: string }>;
 
 export function RegisterForm() {
-  const [accountType, setAccountType] = useState<AccountTypeValue>("PARTICULAR");
-  const [state, formAction, pending] = useActionState(registerAction, initialState);
+  const router = useRouter();
+  const [accountType, setAccountType] = React.useState<AccountTypeValue>("PARTICULAR");
   const isBusiness = isBusinessAccountType(accountType);
 
-  return (
-    <form action={formAction} className="space-y-5">
-      <input type="hidden" name="accountType" value={accountType} />
+  const [pending, setPending] = React.useState(false);
+  const [error, setError] = React.useState<string>();
+  const [errors, setErrors] = React.useState<Record<string, string[]>>();
 
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(undefined);
+    setErrors(undefined);
+
+    const formData = new FormData(event.currentTarget);
+
+    const result = await registerAction(undefined, formData);
+    if (result?.error || result?.fieldErrors) {
+      setError(result.error);
+      setErrors(result.fieldErrors);
+      setPending(false);
+      return;
+    }
+
+    // Igual que en LoginForm: el sign-in se dispara desde el cliente para
+    // que `SessionProvider` quede sincronizado sin necesitar un refresh
+    // manual (ver el comentario en `registerAction`).
+    const signInResult = await signIn("credentials", {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      redirect: false,
+    });
+
+    if (!signInResult || signInResult.error) {
+      setError("La cuenta se creó, pero no pudimos iniciar sesión automáticamente. Ingresá manualmente.");
+      setPending(false);
+      return;
+    }
+
+    router.push("/");
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-3 gap-1 rounded-lg bg-surface-muted p-1 text-sm font-medium">
         {ACCOUNT_TYPE_TOGGLE.map((option) => (
           <button
@@ -53,12 +90,12 @@ export function RegisterForm() {
               Nombre de la {accountType === "CONCESIONARIA" ? "concesionaria" : "agencia"}
             </Label>
             <Input id="businessName" name="businessName" required />
-            <FieldError messages={state?.fieldErrors?.businessName} />
+            <FieldError messages={errors?.businessName} />
           </div>
           <div>
             <Label htmlFor="cuit">CUIT</Label>
             <Input id="cuit" name="cuit" placeholder="30-71234567-1" required />
-            <FieldError messages={state?.fieldErrors?.cuit} />
+            <FieldError messages={errors?.cuit} />
           </div>
         </>
       )}
@@ -66,26 +103,26 @@ export function RegisterForm() {
       <div>
         <Label htmlFor="fullName">Apellido y nombre</Label>
         <Input id="fullName" name="fullName" required />
-        <FieldError messages={state?.fieldErrors?.fullName} />
+        <FieldError messages={errors?.fullName} />
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <Label htmlFor="dni">DNI</Label>
           <Input id="dni" name="dni" placeholder="30111222" required />
-          <FieldError messages={state?.fieldErrors?.dni} />
+          <FieldError messages={errors?.dni} />
         </div>
         <div>
           <Label htmlFor="phone">Teléfono</Label>
           <Input id="phone" name="phone" placeholder="+5491122334455" required />
-          <FieldError messages={state?.fieldErrors?.phone} />
+          <FieldError messages={errors?.phone} />
         </div>
       </div>
 
       <div>
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" autoComplete="email" required />
-        <FieldError messages={state?.fieldErrors?.email} />
+        <FieldError messages={errors?.email} />
       </div>
 
       <div>
@@ -94,10 +131,10 @@ export function RegisterForm() {
         <p className="mt-1 text-xs text-muted-foreground">
           Mínimo 8 caracteres, con al menos una letra y un número.
         </p>
-        <FieldError messages={state?.fieldErrors?.password} />
+        <FieldError messages={errors?.password} />
       </div>
 
-      {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <Button type="submit" disabled={pending} className="w-full" size="lg">
         {pending ? "Creando cuenta..." : "Crear cuenta"}

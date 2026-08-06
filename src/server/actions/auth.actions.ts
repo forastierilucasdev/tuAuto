@@ -1,8 +1,6 @@
 "use server";
 
-import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
-import { signIn } from "@/lib/auth";
 import { forgotPasswordSchema, loginSchema, registerSchema } from "@/lib/validations/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -14,9 +12,19 @@ import {
 } from "@/server/data/users";
 
 export type ActionState =
-  | { error?: string; fieldErrors?: Record<string, string[]> }
+  | { error?: string; fieldErrors?: Record<string, string[]>; success?: boolean }
   | undefined;
 
+/**
+ * Crea la cuenta y valida datos server-side (unicidad de email/DNI/CUIT,
+ * hash de contraseña), pero **no** inicia sesión acá: el sign-in real lo
+ * hace el cliente (`RegisterForm`) llamando a `signIn()` de `next-auth/react`
+ * después de un `success: true`. Si el `signIn()` server-side de Auth.js se
+ * invoca desde una Server Action, el cookie de sesión queda seteado
+ * correctamente pero el estado cliente de `SessionProvider` (usado por
+ * `useSession()` en el Header/AccountMenu) no se entera — solo se actualiza
+ * cuando el sign-in se dispara desde el cliente. Ver ERRORES.md.
+ */
 export async function registerAction(
   _prevState: ActionState,
   formData: FormData
@@ -66,20 +74,16 @@ export async function registerAction(
     });
   }
 
-  try {
-    await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirectTo: "/dashboard",
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: "La cuenta se creó, pero no pudimos iniciar sesión automáticamente. Ingresá manualmente." };
-    }
-    throw error;
-  }
+  return { success: true };
 }
 
+/**
+ * Solo valida el formato y aplica rate limiting — el sign-in real (que
+ * verifica la contraseña vía `authorize()`) lo dispara el cliente
+ * (`LoginForm`) con `signIn()` de `next-auth/react` para que el estado de
+ * sesión del `SessionProvider` quede sincronizado sin necesitar un refresh
+ * manual. Ver el comentario en `registerAction` y ERRORES.md.
+ */
 export async function loginAction(
   _prevState: ActionState,
   formData: FormData
@@ -95,18 +99,7 @@ export async function loginAction(
     return { error: "Demasiados intentos. Probá de nuevo en unos minutos." };
   }
 
-  try {
-    await signIn("credentials", {
-      email: parsed.data.email,
-      password: parsed.data.password,
-      redirectTo: "/dashboard",
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: "Email o contraseña incorrectos." };
-    }
-    throw error;
-  }
+  return { success: true };
 }
 
 export type ForgotPasswordState =

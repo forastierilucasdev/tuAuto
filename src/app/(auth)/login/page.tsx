@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { LoginForm } from "@/components/forms/LoginForm";
 
 export const metadata: Metadata = { title: "Ingresar" };
@@ -10,7 +11,9 @@ export default function LoginPage() {
       <p className="mt-1 mb-6 text-sm text-muted-foreground">
         Ingresá con tu cuenta para publicar y gestionar tus anuncios.
       </p>
-      <LoginForm />
+      <Suspense>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }

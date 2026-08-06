@@ -130,6 +130,16 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con login real contra Supabase: Mi perfil, Verificar perfil, Mis publicaciones (contador visible), pantalla Destacar de una publicación real, Editar
 - [ ] Prueba manual en navegador: diálogo de pausar (Reservada/Pausada), reactivar, eliminar, modal de anuncio publicado, pantalla de destacar, subir fotos de DNI
 
+## Fase 12 — Sesión post-login, header logueado/deslogueado y botón flotante (solicitado por el usuario)
+- [x] Corregido bug crítico: `SessionProvider` no se enteraba del login/registro (sign-in disparado desde el servidor) hasta un refresh manual — ahora `signIn()` se dispara desde el cliente en `LoginForm`/`RegisterForm`
+- [x] Redirección post-login a "/" por defecto, respetando `callbackUrl` saneado si venías de una pantalla protegida
+- [x] `/dashboard` (raíz, la vieja pantalla "Resumen") ahora redirige a `/dashboard/perfil` en vez de mostrarse
+- [x] Header: "Ingresar" al lado de Contacto en desktop, "Iniciar sesión" en el menú mobile de 3 líneas
+- [x] "Publicar anuncio" en mobile: botón flotante que aparece al scrollear, dura 20s visible y desaparece si la pantalla queda quieta
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: `/dashboard` sin sesión rebota a `/login?callbackUrl=...`, `/dashboard` con sesión rebota a `/dashboard/perfil`, `/` muestra "Ingresar" deslogueado
+- [ ] Prueba manual en navegador (imprescindible acá): loguearse y confirmar que el header queda actualizado sin refrescar, tocar el logo después de loguearse, y el comportamiento del botón flotante al scrollear/quedarse quieto — todo esto depende de JS de cliente y no se puede verificar con curl
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

@@ -26,6 +26,12 @@ export function getInitials(fullName: string) {
   return (first + last).toUpperCase();
 }
 
+/** Evita "open redirect": solo acepta una ruta relativa propia del sitio. */
+export function safeRedirectTarget(value: string | null | undefined) {
+  if (value && value.startsWith("/") && !value.startsWith("//")) return value;
+  return "/";
+}
+
 export function buildWhatsAppLink(phone: string, message: string) {
   const digitsOnly = phone.replace(/\D/g, "");
   return `https://wa.me/${digitsOnly}?text=${encodeURIComponent(message)}`;
