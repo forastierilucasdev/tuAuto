@@ -9,8 +9,9 @@ import { validateImageFile } from "@/lib/image-validation";
 import {
   attachListingImages,
   createListing,
+  deleteOwnedListing,
   markListingAsSold,
-  reactivateListing,
+  setListingPauseStatus,
   updateOwnedListing,
 } from "@/server/data/listings";
 
@@ -79,7 +80,7 @@ export async function createListingAction(
 
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
-  redirect("/dashboard/publicaciones");
+  redirect(`/dashboard/publicaciones?published=${listing.slug}`);
 }
 
 export async function updateListingAction(
@@ -145,14 +146,27 @@ export async function markListingSoldAction(formData: FormData) {
   revalidatePath("/catalogo");
 }
 
-export async function reactivateListingAction(formData: FormData) {
+export async function pauseListingAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  const listingId = String(formData.get("listingId") ?? "");
+  const status = String(formData.get("status") ?? "");
+  if (!listingId || (status !== "RESERVADA" && status !== "PAUSADA")) return;
+
+  await setListingPauseStatus(listingId, session.user.id, status);
+  revalidatePath("/dashboard/publicaciones");
+  revalidatePath("/catalogo");
+}
+
+export async function deleteListingAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
   const listingId = String(formData.get("listingId") ?? "");
   if (!listingId) return;
 
-  await reactivateListing(listingId, session.user.id);
+  await deleteOwnedListing(listingId, session.user.id);
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
 }

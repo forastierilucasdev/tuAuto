@@ -335,6 +335,13 @@ async function main() {
     create: { code: "FEATURE_30D", name: "Destacado 30 días", price: 9000, durationDays: 30 },
   });
   await prisma.plan.upsert({
+    where: { code: "FEATURE_LISTING" },
+    update: {},
+    // Plan usado por la pantalla dedicada "Destacar anuncio" (por publicación,
+    // desde "Mis publicaciones"). Precio provisorio, se va a ajustar luego.
+    create: { code: "FEATURE_LISTING", name: "Destacar anuncio", price: 9999, durationDays: 30 },
+  });
+  await prisma.plan.upsert({
     where: { code: "AGENCY_MONTHLY" },
     update: {},
     create: {

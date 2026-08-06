@@ -117,6 +117,19 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con login real contra Supabase: `/`, `/dashboard`, `/dashboard/publicaciones`, `/dashboard/publicaciones/nueva`, `/dashboard/perfil` responden 200 con el contenido esperado
 - [ ] Prueba manual en navegador: animación y orden de los headers, barra de progreso del wizard, cartel de campos faltantes en rojo
 
+## Fase 11 — Estados de publicación, verificación de perfil y destacar por anuncio (solicitado por el usuario)
+- [x] Corregido bug crítico: el wizard publicaba automáticamente sin tocar "Publicar" (submit implícito del navegador en pasos con un solo campo de texto)
+- [x] Estados nuevos `RESERVADA` y `PAUSADA` en el schema, con diálogo de motivo al pausar y aclaración de qué implica cada uno
+- [x] Reactivar (reservada/pausada/vencida) vía "¿conservar tus datos? Sí, editar" → reactiva automáticamente al guardar la edición; vendida no se puede reactivar
+- [x] Eliminar publicación (cualquier estado) con confirmación
+- [x] Contador `activationCount` por usuario, incrementado cada vez que una publicación pasa a Activa, visible en "Mis publicaciones" (todavía sin uso para bloquear cupos)
+- [x] Modal "Anuncio publicado" (Ver / cerrar) tras publicar; publicaciones activas/reservadas clickeables desde "Mis publicaciones"
+- [x] Pantalla dedicada "Destacar anuncio" por publicación (beneficios, costo $9.999 provisorio, botón Pagar), reutiliza el mock de pago existente
+- [x] Verificación de perfil: modelo `VerificationRequest`, bucket privado `verifications` en Supabase Storage (nunca público, a diferencia de listing-images/avatars), formulario con foto de DNI frente/dorso, mensaje de confirmación
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con login real contra Supabase: Mi perfil, Verificar perfil, Mis publicaciones (contador visible), pantalla Destacar de una publicación real, Editar
+- [ ] Prueba manual en navegador: diálogo de pausar (Reservada/Pausada), reactivar, eliminar, modal de anuncio publicado, pantalla de destacar, subir fotos de DNI
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

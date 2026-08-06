@@ -26,8 +26,16 @@ enum VehicleType {
 enum ListingStatus {
   DRAFT
   ACTIVE
+  RESERVADA
+  PAUSADA
   EXPIRED
   SOLD
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum Currency {
@@ -62,13 +70,21 @@ model User {
   avatarUrl    String?
   isActive     Boolean     @default(true)
   lastLoginAt  DateTime?
+
+  // Se incrementa cada vez que una publicación del usuario pasa a estado
+  // ACTIVE (alta o reactivación) — sirve para controlar en el futuro un
+  // cupo de publicaciones gratuitas. Todavía no se usa para bloquear nada.
+  activationCount Int     @default(0)
+  isVerified      Boolean @default(false)
+
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  agencyProfile  AgencyProfile?
-  listings       Listing[]
-  paymentMethods PaymentMethod[]
-  payments       Payment[]
+  agencyProfile        AgencyProfile?
+  listings             Listing[]
+  paymentMethods       PaymentMethod[]
+  payments             Payment[]
+  verificationRequests VerificationRequest[]
 
   @@index([accountType])
 }
@@ -178,6 +194,32 @@ model Image {
   createdAt DateTime @default(now())
 
   @@index([listingId])
+}
+
+/// Solicitud de verificación de identidad (foto de DNI frente/dorso). Las
+/// fotos se guardan en un bucket privado de Supabase Storage (nunca público,
+/// a diferencia de listing-images/avatars) — se guarda la ruta, no una URL
+/// pública. Todavía no hay panel de administración para aprobar/rechazar
+/// (ver ERRORES.md); queda en PENDING hasta que se revise manualmente.
+model VerificationRequest {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName String
+  dni      String
+  phone    String
+
+  dniFrontPath String
+  dniBackPath  String
+
+  status VerificationStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
 /// Estructura lista para Mercado Pago; integración real pendiente (ver ARCHITECTURE.md).

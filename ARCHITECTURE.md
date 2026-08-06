@@ -55,7 +55,7 @@ src/
   lib/
     auth.ts              Config de Auth.js (incluye trustHost: true para producción)
     prisma.ts            Singleton de PrismaClient (con adapter-pg, usa DATABASE_URL)
-    supabase-storage.ts  Subida a Supabase Storage (server-only): fotos de publicaciones (bucket "listing-images") y avatares (bucket "avatars")
+    supabase-storage.ts  Subida a Supabase Storage (server-only): fotos de publicaciones (bucket público "listing-images"), avatares (bucket público "avatars") y DNI de verificación (bucket privado "verifications")
     image-validation.ts  Whitelist de tipos MIME y validación de tamaño, compartida entre publicaciones y avatar
     rate-limit.ts        Limitador in-memory (ver limitaciones en ERRORES.md)
     constants.ts         VEHICLE_TYPES, CONDITION_OPTIONS, TRANSMISSION_OPTIONS, ACCOUNT_TYPE_LABELS, NAV_LINKS, SITE_NAME
@@ -77,12 +77,15 @@ prisma/
 - **User**: cuenta base (email, hash de contraseña, tipo de cuenta, DNI, teléfono, nombre, `avatarUrl` opcional). `accountType` es `PARTICULAR | AGENCIA | CONCESIONARIA` — Agencia y Concesionaria son tipos de cuenta independientes (distinta etiqueta/registro), pero comparten la misma forma de perfil de negocio.
 - **AgencyProfile**: datos adicionales 1:1 para cuentas `AGENCIA` o `CONCESIONARIA` (CUIT, nombre comercial, ciudad, dirección, logo). Separado de `User` para no tener columnas huérfanas en cuentas particulares, y para alimentar la página pública "Concesionarias". El nombre de la tabla quedó como `AgencyProfile` por continuidad histórica, pero representa a ambos tipos de cuenta de negocio.
 - **Brand / Model**: taxonomía seedeada (no texto libre) para que el filtro en cascada Tipo→Marca→Modelo sea confiable. `Model.vehicleType` vincula cada modelo a un tipo de vehículo; una marca puede tener modelos de varios tipos (ej. Honda autos y motos).
-- **Listing**: la publicación. Incluye `vehicleType`, `brand`, `model`, `year`, `version` (opcional, ej. "XEI CVT"), `condition` (NUEVO/USADO), `transmission` (MECANICA/ASISTIDA, opcional), `price` + `currency` (ARS o USD) + `priceNegotiable`/`acceptsTrade`/`acceptsFinancing` (checks que solo se muestran en el detalle si son `true`), `mileageKm`, `contactAddress` (opcional), `status` (ACTIVE/EXPIRED/SOLD/DRAFT) y `featured` + `featuredUntil`.
+- **Listing**: la publicación. Incluye `vehicleType`, `brand`, `model`, `year`, `version` (opcional, ej. "XEI CVT"), `condition` (NUEVO/USADO), `transmission` (MECANICA/ASISTIDA, opcional), `price` + `currency` (ARS o USD) + `priceNegotiable`/`acceptsTrade`/`acceptsFinancing` (checks que solo se muestran en el detalle si son `true`), `mileageKm`, `contactAddress` (opcional), `status` (`DRAFT | ACTIVE | RESERVADA | PAUSADA | EXPIRED | SOLD`) y `featured` + `featuredUntil`.
   - **`title` siempre se compone en el servidor** como `${brand.name} ${model.name} ${year}` (ver `createListing()` en `server/data/listings.ts`) — nunca es un campo de texto libre del formulario.
   - **`description`** ("Observaciones" en la UI) es opcional, sin longitud mínima.
   - **Regla de vencimiento**: al vencer `expiresAt`, la publicación completa pasa a `EXPIRED` (deja de verse en el catálogo público) hasta que el vendedor la renueve. `SOLD` se marca manualmente por el vendedor desde "Mis publicaciones".
+  - **`RESERVADA` vs `PAUSADA`**: ambos se activan desde el botón "Pausar" (con motivo). `RESERVADA` se sigue mostrando en el catálogo (`getCatalogResults`/`getListingBySlug` incluyen `ACTIVE` y `RESERVADA`); `PAUSADA` se oculta como `EXPIRED`/`SOLD`. Reactivar (desde cualquiera de los tres) no es una acción directa: el usuario confirma "¿conservar tus datos? Sí, editar" y `updateOwnedListing()` reactiva automáticamente (vuelve a `ACTIVE`, refresca `expiresAt`) al guardar la edición — ver `server/data/listings.ts`.
 - **Image**: fotos reales subidas por el vendedor a Supabase Storage (bucket público `listing-images`, creado automáticamente en el primer upload). El campo `order` determina cuál es la "foto destacada" (portada): la de `order = 0`, elegida por el vendedor al cargar el anuncio (ver `ListingForm`).
 - **Plan / PaymentMethod / Payment**: estructura lista para Mercado Pago; `PaymentMethod` nunca guarda datos de tarjeta, solo un alias visible. Ver sección 7.
+- **VerificationRequest**: solicitud de verificación de identidad (datos personales + foto de DNI frente/dorso). Las fotos se guardan en el bucket **privado** `verifications` (a diferencia de `listing-images`/`avatars`, nunca se genera una URL pública, solo se guarda la ruta interna). Queda en `PENDING` — todavía no hay panel de administración para aprobar/rechazar (ver `ERRORES.md`). `User.isVerified` es lo que se muestra como "Perfil verificado" una vez aprobada manualmente en la base.
+- **`User.activationCount`**: contador incrementado cada vez que una publicación del usuario pasa a `ACTIVE` (alta o reactivación). Todavía informativo, pensado para un futuro límite de publicaciones gratuitas.
 
 ## 5. Filtros en cascada del catálogo
 
@@ -98,9 +101,9 @@ Año, Condición, Precio y Kilometraje son atributos de `Listing`, filtrados din
 - **Inyección SQL**: Prisma parametriza todas las queries. Prohibido `$queryRawUnsafe`/`$queryRaw` con concatenación de strings (no se usa en ningún punto del código).
 - **XSS**: React escapa JSX por defecto; no se usa `dangerouslySetInnerHTML` en ningún componente.
 - **CSRF**: Server Actions de Next.js verifican `Origin` vs `Host` automáticamente; Auth.js protege sus propios endpoints (`/api/auth/*`).
-- **Autorización en profundidad**: cada Server Action de mutación sobre una publicación (`updateOwnedListing`, `markListingAsSold`, `reactivateListing`, destacar vía pago) revalida que el recurso pertenece al usuario autenticado — no se confía solo en `proxy.ts` (defensa contra IDOR vía URL directa).
+- **Autorización en profundidad**: cada Server Action de mutación sobre una publicación (`updateOwnedListing`, `markListingAsSold`, `setListingPauseStatus`, `deleteOwnedListing`, destacar vía pago) revalida que el recurso pertenece al usuario autenticado — no se confía solo en `proxy.ts` (defensa contra IDOR vía URL directa).
 - **Rate limiting**: limitador in-memory por email en login/registro (`lib/rate-limit.ts`). **Limitación conocida**: no es preciso con múltiples instancias serverless; para producción reemplazar por `@upstash/ratelimit` + Redis (ver `ERRORES.md`).
-- **Carga de archivos**: whitelist explícita de tipos MIME (`jpeg/png/webp/gif/avif`, nunca `image/svg+xml`), tamaño máximo 5MB, máximo 6 fotos por publicación, todo validado en el servidor (nunca solo en el cliente). La extensión del archivo en el path de Storage se deriva del content-type validado, no del nombre de archivo que manda el cliente.
+- **Carga de archivos**: whitelist explícita de tipos MIME (`jpeg/png/webp/gif/avif`, nunca `image/svg+xml`), tamaño máximo 5MB, máximo 6 fotos por publicación, todo validado en el servidor (nunca solo en el cliente). La extensión del archivo en el path de Storage se deriva del content-type validado, no del nombre de archivo que manda el cliente. Las fotos de DNI (verificación de perfil) van a un bucket **privado** (`verifications`), distinto de los buckets públicos `listing-images`/`avatars` — nunca quedan accesibles por URL directa.
 - **Headers HTTP**: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` configurados en `next.config.ts`. **Pendiente**: una Content-Security-Policy estricta (no se agregó todavía para no arriesgar romper el dev/build del prototipo; ver `ERRORES.md`).
 - **Secrets**: `.env` nunca se commitea (ver `.gitignore`, con excepción explícita de `.env.example`); la service role key de Supabase solo se usa en `lib/supabase-storage.ts` (server-only).
 - **Datos de pago**: no se solicita número de tarjeta ni CVV, ni siquiera simulado — solo un alias de método de pago.
@@ -111,7 +114,7 @@ La sección "Método de pago" (`/dashboard/pago`) funciona end-to-end pero con *
 
 - `server/data/payments.ts` → `purchaseFeaturePlan()`: crea un `Payment` con `status: "APPROVED"` y, en la misma transacción, marca la publicación elegida como `featured: true` con `featuredUntil` según la duración del plan.
 - `purchaseSubscription()`: crea un `Payment` de suscripción (solo visible para cuentas de negocio — Agencia o Concesionaria — vía `isBusinessAccountType()`).
-- Los `Plan` disponibles (`FEATURE_15D`, `FEATURE_30D`, `AGENCY_MONTHLY`) vienen del seed.
+- Los `Plan` disponibles (`FEATURE_15D`, `FEATURE_30D`, `FEATURE_LISTING`, `AGENCY_MONTHLY`) vienen del seed. `FEATURE_LISTING` ($9.999 provisorio) es el que usa la pantalla dedicada "Destacar anuncio" por publicación (`/dashboard/publicaciones/[id]/destacar`), vía `payListingFeatureAction` — misma lógica que `purchaseFeaturePlanAction`, pero redirige de vuelta a "Mis publicaciones" (pestaña Destacadas) al pagar.
 
 Para integrar Mercado Pago real: reemplazar `purchaseFeaturePlan`/`purchaseSubscription` por la creación de una preferencia de pago (Checkout Pro) y agregar un Route Handler `app/api/mercadopago/webhook/route.ts` que reciba la confirmación y recién ahí aplique el efecto (destacar/suscribir), en vez de aprobar instantáneamente. Variables ya reservadas en `.env.example`: `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`.
 

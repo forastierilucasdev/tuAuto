@@ -41,6 +41,8 @@ export async function getFullProfile(id: string) {
       phone: true,
       avatarUrl: true,
       createdAt: true,
+      activationCount: true,
+      isVerified: true,
       agencyProfile: {
         select: { businessName: true, city: true, province: true, description: true, cuit: true },
       },
@@ -171,4 +173,22 @@ export async function convertToParticularAccount(
 
 export async function updatePassword(id: string, passwordHash: string) {
   await prisma.user.update({ where: { id }, data: { passwordHash } });
+}
+
+export async function createVerificationRequest(input: {
+  userId: string;
+  fullName: string;
+  dni: string;
+  phone: string;
+  dniFrontPath: string;
+  dniBackPath: string;
+}) {
+  return prisma.verificationRequest.create({ data: input });
+}
+
+export async function getLatestVerificationRequest(userId: string) {
+  return prisma.verificationRequest.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
 }

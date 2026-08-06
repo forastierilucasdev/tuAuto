@@ -5,8 +5,11 @@ import { getOwnedListingForEdit } from "@/server/data/listings";
 import { getFullProfile } from "@/server/data/users";
 import { isBusinessAccountType, vehicleTypeLabel } from "@/lib/constants";
 import { ListingForm } from "@/components/forms/ListingForm";
+import { BackButton } from "@/components/ui/BackButton";
 
 export const metadata: Metadata = { title: "Editar publicación" };
+
+const REACTIVATABLE = new Set(["RESERVADA", "PAUSADA", "EXPIRED"]);
 
 export default async function EditarPublicacionPage(props: PageProps<"/dashboard/publicaciones/[id]/editar">) {
   const { id } = await props.params;
@@ -19,8 +22,18 @@ export default async function EditarPublicacionPage(props: PageProps<"/dashboard
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy">Editar publicación</h1>
-      <p className="mt-1 mb-6 text-muted-foreground">Actualizá los datos de tu publicación.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">Editar publicación</h1>
+          <p className="mt-1 mb-6 text-muted-foreground">Actualizá los datos de tu publicación.</p>
+        </div>
+        <BackButton />
+      </div>
+      {REACTIVATABLE.has(listing.status) && (
+        <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
+          Al guardar los cambios, tu publicación vuelve a estar <strong>activa</strong>.
+        </div>
+      )}
       <ListingForm
         mode="edit"
         listingId={listing.id}

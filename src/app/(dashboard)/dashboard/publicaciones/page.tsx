@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { getOwnerListingGroups } from "@/server/data/listings";
+import { getFullProfile } from "@/server/data/users";
 import { OwnerListingCard } from "@/components/dashboard/OwnerListingCard";
+import { PublishedListingModal } from "@/components/dashboard/PublishedListingModal";
 import { buttonVariants } from "@/components/ui/Button";
 import { BackButton } from "@/components/ui/BackButton";
 import { cn } from "@/lib/utils";
@@ -24,22 +26,33 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
   const sp = await props.searchParams;
   const requestedTab = param(sp, "tab");
   const activeTab = TABS.find((t) => t.key === requestedTab)?.key ?? "activas";
+  const publishedSlug = param(sp, "published");
 
   const session = await auth();
-  const groups = await getOwnerListingGroups(session!.user.id);
+  const [groups, profile] = await Promise.all([
+    getOwnerListingGroups(session!.user.id),
+    getFullProfile(session!.user.id),
+  ]);
   const listings = groups[activeTab];
 
   return (
     <div>
+      <PublishedListingModal slug={publishedSlug} />
+
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-navy">Mis publicaciones</h1>
         <BackButton />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <Link href="/dashboard/publicaciones/nueva" className={buttonVariants({ variant: "primary" })}>
           Publicar vehículo
         </Link>
+        {profile && (
+          <p className="text-xs text-muted-foreground">
+            Publicaciones activadas hasta ahora: <span className="font-semibold text-foreground">{profile.activationCount}</span>
+          </p>
+        )}
       </div>
 
       <div className="mt-6 flex gap-1 border-b border-border">

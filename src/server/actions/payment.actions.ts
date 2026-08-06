@@ -43,6 +43,27 @@ export async function purchaseFeaturePlanAction(formData: FormData) {
   revalidatePath("/catalogo");
 }
 
+/**
+ * Igual que `purchaseFeaturePlanAction`, pero usada desde la pantalla
+ * dedicada "Destacar anuncio" (por publicación) — al pagar, vuelve a "Mis
+ * publicaciones" en la pestaña Destacadas para mostrar el resultado.
+ */
+export async function payListingFeatureAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  const planCode = String(formData.get("planCode") ?? "");
+  const listingId = String(formData.get("listingId") ?? "");
+  if (!planCode || !listingId) return;
+
+  await purchaseFeaturePlan(session.user.id, planCode, listingId);
+
+  revalidatePath("/dashboard/pago");
+  revalidatePath("/dashboard/publicaciones");
+  revalidatePath("/catalogo");
+  redirect("/dashboard/publicaciones?tab=destacadas");
+}
+
 export async function purchaseSubscriptionAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/login");

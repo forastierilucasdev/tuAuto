@@ -204,8 +204,22 @@ export function ListingForm(props: ListingFormProps) {
     });
   }
 
+  function handleFormKeyDown(event: React.KeyboardEvent<HTMLFormElement>) {
+    if (event.key !== "Enter" || event.target instanceof HTMLTextAreaElement) return;
+    // Evita el "submit implícito" del navegador: en un paso con un solo campo
+    // de texto (ej. "Contacto"), tocar Enter/Listo en el teclado alcanza
+    // para disparar el submit del <form> aunque el botón "Publicar" ni
+    // siquiera esté en pantalla. Enter avanza de paso en vez de publicar.
+    event.preventDefault();
+    if (!isLastStep) goNext();
+  }
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    // Defensa adicional: nunca publicar/guardar salvo que el usuario haya
+    // llegado al último paso y tocado el botón, sin importar qué disparó el
+    // evento submit.
+    if (!isLastStep) return;
     const formData = new FormData();
 
     if (isEdit) {
@@ -238,7 +252,7 @@ export function ListingForm(props: ListingFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl">
+    <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} className="max-w-2xl">
       {/* Indicador de pasos: círculos numerados unidos por una línea que se
           va pintando a medida que se avanza. Tocar un número salta directo
           a ese paso; el subtítulo centrado debajo siempre refleja el paso

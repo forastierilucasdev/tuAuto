@@ -5,6 +5,10 @@ export async function getActivePlans() {
   return prisma.plan.findMany({ where: { isActive: true }, orderBy: { price: "asc" } });
 }
 
+export async function getPlanByCode(code: string) {
+  return prisma.plan.findUnique({ where: { code } });
+}
+
 export async function getPaymentMethods(userId: string) {
   return prisma.paymentMethod.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
 }

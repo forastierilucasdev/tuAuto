@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const LISTING_IMAGES_BUCKET = "listing-images";
 const AVATARS_BUCKET = "avatars";
+const VERIFICATIONS_BUCKET = "verifications";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,16 +16,18 @@ function getAdminClient() {
 
 const bucketsReady = new Map<string, Promise<void>>();
 
-// Crea el bucket público la primera vez que hace falta, para no requerir un
-// paso manual extra de setup en Supabase Storage.
-function ensureBucket(bucket: string, fileSizeLimit: string) {
+// Crea el bucket la primera vez que hace falta, para no requerir un paso
+// manual extra de setup en Supabase Storage. `public` controla si los
+// archivos son accesibles por URL directa (fotos de publicaciones/avatares)
+// o requieren pasar siempre por el cliente admin (documentación de DNI).
+function ensureBucket(bucket: string, fileSizeLimit: string, isPublic: boolean) {
   let ready = bucketsReady.get(bucket);
   if (!ready) {
     ready = (async () => {
       const client = getAdminClient();
       const { data } = await client.storage.getBucket(bucket);
       if (!data) {
-        await client.storage.createBucket(bucket, { public: true, fileSizeLimit });
+        await client.storage.createBucket(bucket, { public: isPublic, fileSizeLimit });
       }
     })();
     bucketsReady.set(bucket, ready);
@@ -49,7 +52,7 @@ async function uploadImage(bucket: string, fileSizeLimit: string, file: File, pa
     throw new Error(`Formato de imagen no soportado: ${file.type}`);
   }
 
-  await ensureBucket(bucket, fileSizeLimit);
+  await ensureBucket(bucket, fileSizeLimit, true);
   const client = getAdminClient();
 
   const fullPath = `${path}.${extension}`;
@@ -69,4 +72,33 @@ export function uploadListingImage(file: File, listingId: string, index: number)
 
 export function uploadAvatarImage(file: File, userId: string) {
   return uploadImage(AVATARS_BUCKET, "2MB", file, `${userId}/${Date.now()}`);
+}
+
+/**
+ * A diferencia de `uploadImage`, este bucket es privado: no genera una URL
+ * pública, devuelve la ruta interna del archivo. Son fotos de DNI, PII
+ * sensible — nunca deben quedar accesibles por URL directa como las fotos
+ * de publicaciones o el avatar.
+ */
+async function uploadPrivateImage(bucket: string, fileSizeLimit: string, file: File, path: string) {
+  const extension = EXTENSION_BY_MIME[file.type];
+  if (!extension) {
+    throw new Error(`Formato de imagen no soportado: ${file.type}`);
+  }
+
+  await ensureBucket(bucket, fileSizeLimit, false);
+  const client = getAdminClient();
+
+  const fullPath = `${path}.${extension}`;
+  const { error } = await client.storage.from(bucket).upload(fullPath, file, {
+    contentType: file.type,
+    upsert: true,
+  });
+  if (error) throw new Error(`No se pudo subir la imagen: ${error.message}`);
+
+  return fullPath;
+}
+
+export function uploadVerificationDocument(file: File, userId: string, side: "frente" | "dorso") {
+  return uploadPrivateImage(VERIFICATIONS_BUCKET, "5MB", file, `${userId}/${side}-${Date.now()}`);
 }
