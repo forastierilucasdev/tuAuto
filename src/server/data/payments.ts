@@ -25,14 +25,6 @@ export async function getPaymentHistory(userId: string) {
   });
 }
 
-export async function getFeaturableListings(userId: string) {
-  return prisma.listing.findMany({
-    where: { userId, status: "ACTIVE", featured: false },
-    select: { id: true, title: true },
-    orderBy: { createdAt: "desc" },
-  });
-}
-
 const DEFAULT_FEATURE_DAYS = 15;
 
 /**
@@ -81,4 +73,37 @@ export async function purchaseSubscription(userId: string, planCode: string) {
       description: plan.name,
     },
   });
+}
+
+export async function getPublicationPackPlans() {
+  return prisma.plan.findMany({
+    where: { isActive: true, code: { startsWith: "PUBLICATIONS_PACK_" } },
+    orderBy: { price: "asc" },
+  });
+}
+
+/**
+ * Mock: aprueba el pago instantáneamente y suma las publicaciones del pack
+ * al cupo disponible del usuario (`purchasedPublications`). No hay
+ * integración real con Mercado Pago todavía — ver ARCHITECTURE.md.
+ */
+export async function purchasePublicationPack(userId: string, planCode: string) {
+  const plan = await prisma.plan.findUnique({ where: { code: planCode } });
+  if (!plan || !plan.quantity) throw new Error("Pack inválido.");
+
+  await prisma.$transaction([
+    prisma.payment.create({
+      data: {
+        userId,
+        planCode: plan.code,
+        amount: plan.price,
+        status: "APPROVED",
+        description: plan.name,
+      },
+    }),
+    prisma.user.update({
+      where: { id: userId },
+      data: { purchasedPublications: { increment: plan.quantity } },
+    }),
+  ]);
 }

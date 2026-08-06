@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import {
   addPaymentMethod,
   purchaseFeaturePlan,
+  purchasePublicationPack,
   purchaseSubscription,
 } from "@/server/data/payments";
 
@@ -28,25 +29,10 @@ export async function addPaymentMethodAction(
   return { success: true };
 }
 
-export async function purchaseFeaturePlanAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-
-  const planCode = String(formData.get("planCode") ?? "");
-  const listingId = String(formData.get("listingId") ?? "");
-  if (!planCode || !listingId) return;
-
-  await purchaseFeaturePlan(session.user.id, planCode, listingId);
-
-  revalidatePath("/dashboard/pago");
-  revalidatePath("/dashboard/publicaciones");
-  revalidatePath("/catalogo");
-}
-
 /**
- * Igual que `purchaseFeaturePlanAction`, pero usada desde la pantalla
- * dedicada "Destacar anuncio" (por publicación) — al pagar, vuelve a "Mis
- * publicaciones" en la pestaña Destacadas para mostrar el resultado.
+ * Usada desde la pantalla dedicada "Destacar anuncio" (por publicación) —
+ * al pagar, vuelve a "Mis publicaciones" en la pestaña Destacadas para
+ * mostrar el resultado.
  */
 export async function payListingFeatureAction(formData: FormData) {
   const session = await auth();
@@ -73,4 +59,16 @@ export async function purchaseSubscriptionAction(formData: FormData) {
 
   await purchaseSubscription(session.user.id, planCode);
   revalidatePath("/dashboard/pago");
+}
+
+export async function purchasePublicationPackAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  const planCode = String(formData.get("planCode") ?? "");
+  if (!planCode) return;
+
+  await purchasePublicationPack(session.user.id, planCode);
+  revalidatePath("/dashboard/pago");
+  revalidatePath("/dashboard/publicaciones");
 }

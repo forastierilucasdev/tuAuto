@@ -34,10 +34,16 @@ const REACTIVATABLE: OwnerListingData["status"][] = ["RESERVADA", "PAUSADA", "EX
 // Solo lo que sigue visible en el catálogo tiene sentido de abrir desde acá.
 const PUBLICLY_VISIBLE: OwnerListingData["status"][] = ["ACTIVE", "RESERVADA"];
 
+const dateFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
 export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   const [pauseOpen, setPauseOpen] = React.useState(false);
   const [reactivateOpen, setReactivateOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+  // Lazy initializer: evita llamar a Date.now() directamente en el render
+  // (impuro). Se calcula una sola vez, al montar — de sobra para un
+  // contador de días.
+  const [now] = React.useState(() => Date.now());
 
   const clickable = PUBLICLY_VISIBLE.includes(listing.status);
   const isSold = listing.status === "SOLD";
@@ -45,6 +51,72 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   const showDestacar = listing.status === "ACTIVE" && !listing.featured;
   const showPausar = listing.status === "ACTIVE";
   const showReactivar = REACTIVATABLE.includes(listing.status);
+  // Vendida solo se puede ver; borrador todavía no pasó por "vendible".
+  const showMarkSold = !isSold && !isDraft;
+  const showEditDelete = !isSold;
+
+  const daysRemaining = listing.expiresAt
+    ? Math.max(0, Math.ceil((new Date(listing.expiresAt).getTime() - now) / 86400000))
+    : null;
+
+  const actions: React.ReactNode[] = [];
+  if (showEditDelete) {
+    actions.push(
+      <Link
+        key="editar"
+        href={`/dashboard/publicaciones/${listing.id}/editar`}
+        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full")}
+      >
+        Editar
+      </Link>
+    );
+  }
+  if (showMarkSold) {
+    actions.push(
+      <form key="vendido" action={markListingSoldAction}>
+        <input type="hidden" name="listingId" value={listing.id} />
+        <Button type="submit" variant="ghost" size="sm" className="w-full">
+          Marcar vendido
+        </Button>
+      </form>
+    );
+  }
+  if (showPausar) {
+    actions.push(
+      <Button key="pausar" type="button" variant="ghost" size="sm" className="w-full" onClick={() => setPauseOpen(true)}>
+        Pausar
+      </Button>
+    );
+  }
+  if (showReactivar) {
+    actions.push(
+      <Button
+        key="reactivar"
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        onClick={() => setReactivateOpen(true)}
+      >
+        {isDraft ? "Publicar" : "Reactivar"}
+      </Button>
+    );
+  }
+  if (showEditDelete) {
+    actions.push(
+      <Button
+        key="eliminar"
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="w-full text-danger hover:bg-danger/10"
+        onClick={() => setDeleteOpen(true)}
+      >
+        <Trash2 className="h-4 w-4" />
+        Eliminar
+      </Button>
+    );
+  }
 
   const media = (
     <div className="relative aspect-4/3 w-full bg-surface-muted">
@@ -72,50 +144,16 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
           {formatKm(listing.mileageKm)} · {listing.year}
         </p>
 
-        <div className="mt-auto flex flex-wrap gap-2 pt-2">
-          {!isSold && (
-            <Link
-              href={`/dashboard/publicaciones/${listing.id}/editar`}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              Editar
-            </Link>
-          )}
+        {listing.publishedAt && (
+          <p className="text-xs text-muted-foreground">
+            Publicado el {dateFormatter.format(new Date(listing.publishedAt))}
+            {daysRemaining !== null && <> · Vence en {daysRemaining} día{daysRemaining === 1 ? "" : "s"}</>}
+          </p>
+        )}
 
-          {listing.status === "ACTIVE" && (
-            <form action={markListingSoldAction}>
-              <input type="hidden" name="listingId" value={listing.id} />
-              <Button type="submit" variant="ghost" size="sm">
-                Marcar vendido
-              </Button>
-            </form>
-          )}
-
-          {showPausar && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => setPauseOpen(true)}>
-              Pausar
-            </Button>
-          )}
-
-          {showReactivar && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => setReactivateOpen(true)}>
-              {isDraft ? "Publicar" : "Reactivar"}
-            </Button>
-          )}
-
-          {!isSold && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-danger hover:bg-danger/10"
-              onClick={() => setDeleteOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
-            </Button>
-          )}
-        </div>
+        {actions.length > 0 && (
+          <div className="mt-auto grid grid-cols-2 gap-2 pt-2">{actions}</div>
+        )}
 
         {showDestacar && (
           <Link

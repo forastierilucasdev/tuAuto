@@ -72,10 +72,12 @@ model User {
   lastLoginAt  DateTime?
 
   // Se incrementa cada vez que una publicación del usuario pasa a estado
-  // ACTIVE (alta o reactivación) — sirve para controlar en el futuro un
-  // cupo de publicaciones gratuitas. Todavía no se usa para bloquear nada.
-  activationCount Int     @default(0)
-  isVerified      Boolean @default(false)
+  // ACTIVE (alta o reactivación). Junto con `purchasedPublications` define el
+  // cupo disponible: FREE_PUBLICATION_QUOTA + purchasedPublications -
+  // activationCount (ver `server/data/listings.ts`).
+  activationCount        Int     @default(0)
+  purchasedPublications  Int     @default(0)
+  isVerified             Boolean @default(false)
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -230,6 +232,9 @@ model Plan {
   description  String?
   price        Decimal  @db.Decimal(12, 2)
   durationDays Int?
+  /// Solo para packs de publicaciones (código PUBLICATIONS_PACK_*): cuántas
+  /// publicaciones suma al comprarlo. Null para el resto de los planes.
+  quantity     Int?
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
 }

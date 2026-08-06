@@ -153,6 +153,24 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado: creación de un borrador a nivel de datos (no incrementa el contador, cae en el grupo correcto), páginas de Mis publicaciones/Editar responden 200 con los textos esperados
 - [ ] Prueba manual en navegador: publicar con varias fotos reales (el bug de 1MB solo se manifestaba con archivos de tamaño real, no se puede reproducir con mocks livianos), diálogo de confirmación al publicar, botón "Cancelar edición"
 
+## Fase 14 — Rediseño del ciclo de vida de publicaciones: 5 pestañas, vencimiento, cupo y packs (solicitado por el usuario)
+- [x] 5 pestañas en Mis publicaciones: Activas, Destacadas, Reservadas, Inactivas (Borrador/Pausada/Vencida), Vendidas
+- [x] Vendida es de solo lectura (sin Editar/Reactivar/Eliminar)
+- [x] Vencimiento a los 30 días calculado al leer (sin cron), aplicado a catálogo público, badges y elegibilidad de reactivación
+- [x] Cupo real de 10 publicaciones gratuitas + `purchasedPublications`, bloqueando publicar/reactivar en 0 disponibles
+- [x] 4 packs de publicaciones (1/5/10/20, recomendado 20 para negocio) en nueva sección "Comprar publicaciones"
+- [x] Sección "Anuncios destacados" (lista de destacadas del usuario) reemplaza la vieja tarjeta de destacar en Método de pago
+- [x] Wizard: paso "Datos principales" también en edición, con tipo/marca/modelo/año bloqueados pero versión/transmisión/condición/km editables (antes inaccesibles al editar)
+- [x] Diálogo unificado "¿Desea publicar? Sí, revisar / No, publicar" para crear, reactivar y publicar un borrador; "Guardar como borrador" como botón aparte sin diálogo
+- [x] Mensaje "Tu anuncio fue publicado con éxito" con botón "Ver publicación", en creación y en reactivación
+- [x] Indicador de pasos: círculo activo relleno con el color de marca
+- [x] Botones de cada tarjeta (Editar/Marcar vendido/Pausar/Reactivar/Eliminar) alineados en grilla simétrica de 2 columnas
+- [x] Contador de días para vencer + fecha de publicación en cada tarjeta (privado, solo el dueño)
+- [x] Botón "Volver" en el detalle del catálogo; el dueño puede abrir su publicación en cualquier estado desde Mis publicaciones
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con login real contra Supabase: 5 pestañas, cupo/packs visibles, paso "Datos" bloqueado en edición, detalle de catálogo con Volver, pantalla de destacar
+- [ ] Prueba manual en navegador (imprescindible): probar el flujo completo pausar→reactivar, publicar hasta agotar el cupo y comprar un pack, guardar un borrador y publicarlo después, y confirmar que el diálogo "Sí, revisar/No, publicar" se ve bien
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
@@ -160,4 +178,3 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [ ] Content-Security-Policy estricta
 - [ ] Rate limiting distribuido (Redis / Upstash) para despliegue multi-instancia
 - [ ] Permitir borrar/reordenar fotos ya subidas al editar una publicación (hoy solo se pueden agregar más)
-- [ ] **Pack de publicaciones**: cuando `activationCount` llegue a un límite (a definir), reemplazar "Publicaciones realizadas: N" por "Publicaciones disponibles: N" y, si llega a 0, mostrar un botón "Comprar pack de publicaciones" (pedido explícitamente por el usuario para más adelante, no todavía).

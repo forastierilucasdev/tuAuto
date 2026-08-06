@@ -1,37 +1,46 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { Star } from "lucide-react";
 import { auth } from "@/lib/auth";
 import {
-  getActivePlans,
-  getFeaturableListings,
   getPaymentHistory,
   getPaymentMethods,
+  getPublicationPackPlans,
+  getActivePlans,
 } from "@/server/data/payments";
-import { purchaseFeaturePlanAction, purchaseSubscriptionAction } from "@/server/actions/payment.actions";
+import { getAvailablePublications, getOwnerListingGroups } from "@/server/data/listings";
+import { purchasePublicationPackAction, purchaseSubscriptionAction } from "@/server/actions/payment.actions";
 import { AddPaymentMethodForm } from "@/components/forms/AddPaymentMethodForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatKm } from "@/lib/utils";
 import { isBusinessAccountType } from "@/lib/constants";
 import { BackButton } from "@/components/ui/BackButton";
 
 export const metadata: Metadata = { title: "Método de pago" };
+
+// A partir de este cupo recomendamos los packs más grandes para cuentas de
+// negocio (Agencia/Concesionaria), que suelen publicar muchos más vehículos.
+const RECOMMENDED_FOR_BUSINESS = new Set(["PUBLICATIONS_PACK_20"]);
 
 export default async function PagoPage() {
   const session = await auth();
   const userId = session!.user.id;
   const isAgency = isBusinessAccountType(session!.user.accountType);
 
-  const [methods, plans, listings, history] = await Promise.all([
+  const [methods, plans, packPlans, available, groups, history] = await Promise.all([
     getPaymentMethods(userId),
     getActivePlans(),
-    getFeaturableListings(userId),
+    getPublicationPackPlans(),
+    getAvailablePublications(userId),
+    getOwnerListingGroups(userId),
     getPaymentHistory(userId),
   ]);
 
-  const featurePlans = plans.filter((p) => p.code.startsWith("FEATURE_"));
   const subscriptionPlans = plans.filter((p) => p.code.startsWith("AGENCY_"));
+  const featuredListings = groups.destacadas;
 
   return (
     <div className="space-y-10">
@@ -39,9 +48,8 @@ export default async function PagoPage() {
         <div>
           <h1 className="text-2xl font-bold text-navy">Método de pago</h1>
           <p className="mt-1 text-muted-foreground">
-            Pagá para destacar tus publicaciones o suscribirte. Esta sección funciona con datos
-            simulados — la integración real con Mercado Pago todavía está pendiente (ver
-            ARCHITECTURE.md).
+            Esta sección funciona con datos simulados — la integración real con Mercado Pago todavía está
+            pendiente (ver ARCHITECTURE.md).
           </p>
         </div>
         <BackButton />
@@ -64,41 +72,64 @@ export default async function PagoPage() {
         </div>
       </section>
 
-      <section>
-        <h2 className="mb-4 text-lg font-bold text-navy">Destacar una publicación</h2>
-        {listings.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No tenés publicaciones activas disponibles para destacar en este momento.
-          </p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {featurePlans.map((plan) => (
-              <Card key={plan.id}>
+      <section id="comprar-publicaciones">
+        <h2 className="mb-1 text-lg font-bold text-navy">Comprar publicaciones</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Publicaciones disponibles ahora: <span className="font-semibold text-foreground">{available}</span>.
+          Comprá un pack para seguir publicando cuando se agoten.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {packPlans.map((plan) => {
+            const recommended = isAgency && RECOMMENDED_FOR_BUSINESS.has(plan.code);
+            return (
+              <Card key={plan.id} className={recommended ? "border-primary" : undefined}>
                 <CardHeader>
-                  <CardTitle>{plan.name}</CardTitle>
-                  <p className="mt-1 text-2xl font-extrabold text-primary">
-                    {formatCurrency(Number(plan.price))}
-                  </p>
+                  {recommended && <Badge variant="primary">Recomendado para vos</Badge>}
+                  <CardTitle className="mt-1">{plan.name}</CardTitle>
+                  <p className="mt-1 text-2xl font-extrabold text-primary">{formatCurrency(Number(plan.price))}</p>
                 </CardHeader>
                 <CardContent>
-                  <form action={purchaseFeaturePlanAction} className="space-y-3">
+                  <form action={purchasePublicationPackAction}>
                     <input type="hidden" name="planCode" value={plan.code} />
-                    <Select name="listingId" required defaultValue="">
-                      <option value="" disabled>
-                        Elegí una publicación
-                      </option>
-                      {listings.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.title}
-                        </option>
-                      ))}
-                    </Select>
                     <Button type="submit" className="w-full">
-                      Pagar y destacar
+                      Comprar
                     </Button>
                   </form>
                 </CardContent>
               </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-1 text-lg font-bold text-navy">Anuncios destacados</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Tus publicaciones destacadas actualmente. Para destacar una nueva, entrá a ella desde &quot;Mis
+          publicaciones&quot;.
+        </p>
+        {featuredListings.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Todavía no tenés publicaciones destacadas.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredListings.map((listing) => (
+              <Link
+                key={listing.id}
+                href={`/catalogo/${listing.slug}`}
+                className="flex gap-3 rounded-xl border border-border bg-surface p-3 shadow-card transition-shadow hover:shadow-card-hover"
+              >
+                <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+                  <Image src={listing.imageUrl} alt={listing.title} fill sizes="96px" className="object-cover" />
+                </div>
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1 truncate text-sm font-semibold text-navy">
+                    <Star className="h-3.5 w-3.5 shrink-0 fill-current text-warning" />
+                    {listing.title}
+                  </p>
+                  <p className="text-sm font-bold text-primary">{formatCurrency(listing.price, listing.currency)}</p>
+                  <p className="text-xs text-muted-foreground">{formatKm(listing.mileageKm)}</p>
+                </div>
+              </Link>
             ))}
           </div>
         )}

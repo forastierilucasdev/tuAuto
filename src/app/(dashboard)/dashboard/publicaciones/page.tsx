@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { getOwnerListingGroups } from "@/server/data/listings";
+import { getAvailablePublications, getOwnerListingGroups } from "@/server/data/listings";
 import { getFullProfile } from "@/server/data/users";
 import { OwnerListingCard } from "@/components/dashboard/OwnerListingCard";
 import { PublishedListingModal } from "@/components/dashboard/PublishedListingModal";
@@ -14,7 +14,9 @@ export const metadata: Metadata = { title: "Mis publicaciones" };
 const TABS = [
   { key: "activas", label: "Activas" },
   { key: "destacadas", label: "Destacadas" },
+  { key: "reservadas", label: "Reservadas" },
   { key: "inactivas", label: "Inactivas" },
+  { key: "vendidas", label: "Vendidas" },
 ] as const;
 
 function param(sp: Record<string, string | string[] | undefined>, key: string) {
@@ -29,9 +31,10 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
   const publishedSlug = param(sp, "published");
 
   const session = await auth();
-  const [groups, profile] = await Promise.all([
+  const [groups, profile, available] = await Promise.all([
     getOwnerListingGroups(session!.user.id),
     getFullProfile(session!.user.id),
+    getAvailablePublications(session!.user.id),
   ]);
   const listings = groups[activeTab];
 
@@ -51,17 +54,25 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
         {profile && (
           <p className="text-xs text-muted-foreground">
             Publicaciones realizadas: <span className="font-semibold text-foreground">{profile.activationCount}</span>
+            {" · "}
+            Publicaciones disponibles: <span className="font-semibold text-foreground">{available}</span>
           </p>
         )}
+        <Link
+          href="/dashboard/pago#comprar-publicaciones"
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+        >
+          Comprar publicaciones
+        </Link>
       </div>
 
-      <div className="mt-6 flex gap-1 border-b border-border">
+      <div className="mt-6 flex gap-1 overflow-x-auto border-b border-border">
         {TABS.map((tab) => (
           <Link
             key={tab.key}
             href={`/dashboard/publicaciones?tab=${tab.key}`}
             className={cn(
-              "border-b-2 px-4 py-2 text-sm font-medium transition-colors",
+              "shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors",
               activeTab === tab.key
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"

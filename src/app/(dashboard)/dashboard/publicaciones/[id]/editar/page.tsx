@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getOwnedListingForEdit } from "@/server/data/listings";
 import { getFullProfile } from "@/server/data/users";
-import { isBusinessAccountType, vehicleTypeLabel } from "@/lib/constants";
+import { isBusinessAccountType } from "@/lib/constants";
 import { ListingForm } from "@/components/forms/ListingForm";
 import { BackButton } from "@/components/ui/BackButton";
 
@@ -41,8 +41,11 @@ export default async function EditarPublicacionPage(props: PageProps<"/dashboard
       <ListingForm
         mode="edit"
         listingId={listing.id}
-        vehicleTypeLabel={vehicleTypeLabel(listing.vehicleType)}
+        isReactivation={REACTIVATABLE.has(listing.status)}
+        vehicleType={listing.vehicleType}
+        brandSlug={listing.brand.slug}
         brandName={listing.brand.name}
+        modelSlug={listing.model.slug}
         modelName={listing.model.name}
         year={listing.year}
         seller={{
@@ -53,6 +56,9 @@ export default async function EditarPublicacionPage(props: PageProps<"/dashboard
             : undefined,
         }}
         defaultValues={{
+          version: listing.version,
+          condition: listing.condition,
+          transmission: listing.transmission,
           description: listing.description,
           price: Number(listing.price),
           currency: listing.currency,

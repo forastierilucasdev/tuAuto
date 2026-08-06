@@ -48,8 +48,32 @@ export function toVehicleCardData(listing: ListingWithCardData): VehicleCardData
 // único que se oculta manualmente además de vencido/vendido.
 const PUBLICLY_VISIBLE_STATUSES = ["ACTIVE", "RESERVADA"] as const;
 
+// Estados a los que les corre el plazo de publicación (30 días desde que se
+// publicó por última vez): al vencer, se tratan como "Vencida" aunque en la
+// base sigan con este status — no hay ningún proceso en segundo plano que
+// los reescriba, se calcula al leer (ver `getEffectiveStatus`).
+const EXPIRABLE_STATUSES: ListingStatus[] = ["ACTIVE", "RESERVADA", "PAUSADA"];
+
+function getEffectiveStatus(status: ListingStatus, expiresAt: Date | null): ListingStatus {
+  if (EXPIRABLE_STATUSES.includes(status) && expiresAt && expiresAt.getTime() < Date.now()) {
+    return "EXPIRED";
+  }
+  return status;
+}
+
+// No vencido = sin fecha límite todavía, o la fecha límite no pasó.
+function notExpiredWhere(): Prisma.ListingWhereInput {
+  return { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] };
+}
+
+function visibleStatusWhere(): Prisma.ListingWhereInput {
+  return {
+    OR: PUBLICLY_VISIBLE_STATUSES.map((status) => ({ status, ...notExpiredWhere() })),
+  };
+}
+
 function buildWhere(filters: CatalogFilters): Prisma.ListingWhereInput {
-  const where: Prisma.ListingWhereInput = { status: { in: [...PUBLICLY_VISIBLE_STATUSES] } };
+  const where: Prisma.ListingWhereInput = visibleStatusWhere();
 
   if (filters.vehicleType) where.vehicleType = filters.vehicleType;
   if (filters.brandSlug) where.brand = { slug: filters.brandSlug };
@@ -104,7 +128,7 @@ export async function getCatalogResults(filters: CatalogFilters) {
 
 export async function getFeaturedListings(limit = 3) {
   const listings = await prisma.listing.findMany({
-    where: { status: { in: [...PUBLICLY_VISIBLE_STATUSES] }, featured: true },
+    where: { ...visibleStatusWhere(), featured: true },
     orderBy: { createdAt: "desc" },
     take: limit,
     include: CARD_INCLUDE,
@@ -112,9 +136,14 @@ export async function getFeaturedListings(limit = 3) {
   return listings.map(toVehicleCardData);
 }
 
-export async function getListingBySlug(slug: string) {
-  return prisma.listing.findUnique({
-    where: { slug, status: { in: [...PUBLICLY_VISIBLE_STATUSES] } },
+/**
+ * El dueño puede abrir su propia publicación en cualquier estado (borrador,
+ * pausada, vencida, vendida) desde "Mis publicaciones" — para cualquier
+ * otro visitante se aplica el filtro de visibilidad pública normal.
+ */
+export async function getListingBySlug(slug: string, viewerUserId?: string) {
+  const listing = await prisma.listing.findUnique({
+    where: { slug },
     include: {
       images: { orderBy: { order: "asc" } },
       brand: true,
@@ -129,21 +158,44 @@ export async function getListingBySlug(slug: string) {
       },
     },
   });
+  if (!listing) return null;
+
+  const isOwner = viewerUserId && listing.userId === viewerUserId;
+  if (isOwner) return listing;
+
+  const effectiveStatus = getEffectiveStatus(listing.status, listing.expiresAt);
+  const isVisible = PUBLICLY_VISIBLE_STATUSES.includes(
+    effectiveStatus as (typeof PUBLICLY_VISIBLE_STATUSES)[number]
+  );
+  return isVisible ? listing : null;
 }
 
 export async function getActiveListingsByUser(userId: string) {
   const listings = await prisma.listing.findMany({
-    where: { userId, status: { in: [...PUBLICLY_VISIBLE_STATUSES] } },
+    where: { userId, ...visibleStatusWhere() },
     orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     include: CARD_INCLUDE,
   });
   return listings.map(toVehicleCardData);
 }
 
-export type OwnerListingData = VehicleCardData & { id: string; status: ListingStatus };
+export type OwnerListingData = VehicleCardData & {
+  id: string;
+  status: ListingStatus;
+  createdAt: Date;
+  publishedAt: Date | null;
+  expiresAt: Date | null;
+};
 
 function toOwnerListingData(listing: ListingWithCardData): OwnerListingData {
-  return { ...toVehicleCardData(listing), id: listing.id, status: listing.status };
+  return {
+    ...toVehicleCardData(listing),
+    id: listing.id,
+    status: getEffectiveStatus(listing.status, listing.expiresAt),
+    createdAt: listing.createdAt,
+    publishedAt: listing.publishedAt,
+    expiresAt: listing.expiresAt,
+  };
 }
 
 export async function getOwnerListingGroups(userId: string) {
@@ -153,20 +205,55 @@ export async function getOwnerListingGroups(userId: string) {
     include: CARD_INCLUDE,
   });
 
+  const withEffectiveStatus = listings.map((l) => ({
+    listing: l,
+    status: getEffectiveStatus(l.status, l.expiresAt),
+  }));
+
   return {
-    destacadas: listings.filter((l) => l.status === "ACTIVE" && l.featured).map(toOwnerListingData),
-    activas: listings.filter((l) => l.status === "ACTIVE" && !l.featured).map(toOwnerListingData),
-    // Borradores, reservadas y pausadas van junto con vencidas/vendidas: en
-    // todas se dejó de operar el anuncio con normalidad. El badge de cada
-    // card indica el estado real y las acciones disponibles varían según
-    // corresponda (ver OwnerListingCard).
-    inactivas: listings
-      .filter((l) => l.status !== "ACTIVE")
-      .map(toOwnerListingData),
+    destacadas: withEffectiveStatus
+      .filter((l) => l.status === "ACTIVE" && l.listing.featured)
+      .map((l) => toOwnerListingData(l.listing)),
+    activas: withEffectiveStatus
+      .filter((l) => l.status === "ACTIVE" && !l.listing.featured)
+      .map((l) => toOwnerListingData(l.listing)),
+    reservadas: withEffectiveStatus.filter((l) => l.status === "RESERVADA").map((l) => toOwnerListingData(l.listing)),
+    // Borrador, pausada y vencida: en las tres se dejó de operar el anuncio
+    // con normalidad. El badge de cada card indica el estado real y las
+    // acciones disponibles varían según corresponda (ver OwnerListingCard).
+    inactivas: withEffectiveStatus
+      .filter((l) => l.status === "DRAFT" || l.status === "PAUSADA" || l.status === "EXPIRED")
+      .map((l) => toOwnerListingData(l.listing)),
+    vendidas: withEffectiveStatus.filter((l) => l.status === "SOLD").map((l) => toOwnerListingData(l.listing)),
   };
 }
 
-const LISTING_DURATION_DAYS = 60;
+const LISTING_DURATION_DAYS = 30;
+
+// Cupo gratuito de publicaciones por cuenta. El disponible es
+// FREE_PUBLICATION_QUOTA + purchasedPublications - activationCount (ver
+// modelo User en schema.prisma). Comprar un pack suma a `purchasedPublications`.
+export const FREE_PUBLICATION_QUOTA = 10;
+
+export class QuotaExceededError extends Error {
+  constructor() {
+    super("No te quedan publicaciones disponibles. Comprá un pack para seguir publicando.");
+    this.name = "QuotaExceededError";
+  }
+}
+
+export async function getAvailablePublications(userId: string) {
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { activationCount: true, purchasedPublications: true },
+  });
+  return Math.max(0, FREE_PUBLICATION_QUOTA + user.purchasedPublications - user.activationCount);
+}
+
+async function assertHasAvailablePublications(userId: string) {
+  const available = await getAvailablePublications(userId);
+  if (available <= 0) throw new QuotaExceededError();
+}
 
 export async function createListing(input: {
   userId: string;
@@ -190,6 +277,9 @@ export async function createListing(input: {
   /** "No, guardar como borrador" en el paso final del wizard. */
   asDraft?: boolean;
 }) {
+  // Guardar como borrador nunca consume cupo; publicar de una sí.
+  if (!input.asDraft) await assertHasAvailablePublications(input.userId);
+
   const brand = await prisma.brand.findUniqueOrThrow({ where: { slug: input.brandSlug } });
   const model = await prisma.model.findFirstOrThrow({
     where: { slug: input.modelSlug, brandId: brand.id, vehicleType: input.vehicleType },
@@ -264,6 +354,9 @@ export async function updateOwnedListing(
   listingId: string,
   userId: string,
   data: {
+    version?: string;
+    condition?: VehicleCondition;
+    transmission?: "MECANICA" | "ASISTIDA";
     description?: string;
     price: number;
     currency: Currency;
@@ -289,6 +382,8 @@ export async function updateOwnedListing(
   const reactivating = REACTIVATABLE_STATUSES.includes(current.status);
   const wasDraft = current.status === "DRAFT";
 
+  if (reactivating) await assertHasAvailablePublications(userId);
+
   const [listing] = await prisma.$transaction([
     prisma.listing.update({
       where: { id: listingId },
@@ -308,7 +403,7 @@ export async function updateOwnedListing(
       ? [prisma.user.update({ where: { id: userId }, data: { activationCount: { increment: 1 } } })]
       : []),
   ]);
-  return listing;
+  return { listing, reactivated: reactivating };
 }
 
 export async function markListingAsSold(listingId: string, userId: string) {

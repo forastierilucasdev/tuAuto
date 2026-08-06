@@ -20,16 +20,17 @@ export function PublishedListingModal({ slug }: { slug: string | undefined }) {
   if (!slug) return null;
 
   return (
-    <Modal open={open} onClose={close} title="Anuncio publicado">
+    <Modal open={open} onClose={close} title="¡Listo!">
       <div className="flex flex-col items-center gap-3 py-2 text-center">
         <CheckCircle2 className="h-12 w-12 text-success" />
-        <p className="text-sm text-muted-foreground">Tu publicación ya está visible en el catálogo.</p>
+        <p className="text-base font-bold text-navy">Tu anuncio fue publicado con éxito</p>
+        <p className="text-sm text-muted-foreground">Ya está visible en el catálogo.</p>
         <div className="mt-2 flex w-full gap-2">
           <Button type="button" variant="ghost" className="flex-1" onClick={close}>
             Cerrar
           </Button>
           <Link href={`/catalogo/${slug}`} className={cn(buttonVariants(), "flex-1")}>
-            Ver
+            Ver publicación
           </Link>
         </div>
       </div>

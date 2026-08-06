@@ -13,7 +13,9 @@ import {
 import { VehicleGallery } from "@/components/vehicles/VehicleGallery";
 import { VerticalTabs, type VerticalTabItem } from "@/components/ui/VerticalTabs";
 import { buttonVariants } from "@/components/ui/Button";
+import { BackButton } from "@/components/ui/BackButton";
 import { getListingBySlug } from "@/server/data/listings";
+import { auth } from "@/lib/auth";
 import { buildWhatsAppLink, cn, formatCurrency, formatKm } from "@/lib/utils";
 import { accountTypeLabel, conditionLabel, isBusinessAccountType, transmissionLabel } from "@/lib/constants";
 
@@ -34,7 +36,8 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 
 export default async function ListingDetailPage(props: PageProps<"/catalogo/[slug]">) {
   const { slug } = await props.params;
-  const listing = await getListingBySlug(slug);
+  const session = await auth();
+  const listing = await getListingBySlug(slug, session?.user?.id);
   if (!listing) notFound();
 
   const isBusiness = isBusinessAccountType(listing.user.accountType);
@@ -153,9 +156,10 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
   return (
     <div className="mx-auto flex max-w-5xl flex-col px-4 py-8 sm:px-6 lg:px-8">
       {/* Mobile: fotos primero. Desktop (sm+): título primero, luego fotos. */}
-      <h1 className="order-2 mt-6 text-2xl font-bold text-navy sm:order-1 sm:mt-0 sm:mb-6 sm:text-3xl">
-        {listing.title}
-      </h1>
+      <div className="order-2 mt-6 flex items-start justify-between gap-4 sm:order-1 sm:mt-0 sm:mb-6">
+        <h1 className="text-2xl font-bold text-navy sm:text-3xl">{listing.title}</h1>
+        <BackButton />
+      </div>
 
       <div className="order-1 sm:order-2">
         <VehicleGallery images={listing.images} title={listing.title} />

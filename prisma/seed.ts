@@ -341,6 +341,27 @@ async function main() {
     // desde "Mis publicaciones"). Precio provisorio, se va a ajustar luego.
     create: { code: "FEATURE_LISTING", name: "Destacar anuncio", price: 9999, durationDays: 30 },
   });
+  // Packs de publicaciones (precios provisorios, se van a ajustar luego).
+  await prisma.plan.upsert({
+    where: { code: "PUBLICATIONS_PACK_1" },
+    update: {},
+    create: { code: "PUBLICATIONS_PACK_1", name: "1 publicación", price: 2000, quantity: 1 },
+  });
+  await prisma.plan.upsert({
+    where: { code: "PUBLICATIONS_PACK_5" },
+    update: {},
+    create: { code: "PUBLICATIONS_PACK_5", name: "5 publicaciones", price: 8000, quantity: 5 },
+  });
+  await prisma.plan.upsert({
+    where: { code: "PUBLICATIONS_PACK_10" },
+    update: {},
+    create: { code: "PUBLICATIONS_PACK_10", name: "10 publicaciones", price: 15000, quantity: 10 },
+  });
+  await prisma.plan.upsert({
+    where: { code: "PUBLICATIONS_PACK_20" },
+    update: {},
+    create: { code: "PUBLICATIONS_PACK_20", name: "20 publicaciones", price: 25000, quantity: 20 },
+  });
   await prisma.plan.upsert({
     where: { code: "AGENCY_MONTHLY" },
     update: {},

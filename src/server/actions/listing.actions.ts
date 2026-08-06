@@ -11,6 +11,7 @@ import {
   createListing,
   deleteOwnedListing,
   markListingAsSold,
+  QuotaExceededError,
   setListingPauseStatus,
   updateOwnedListing,
 } from "@/server/data/listings";
@@ -74,7 +75,13 @@ export async function createListingAction(
   if (imageError) return { error: imageError };
 
   const asDraft = raw.status === "DRAFT";
-  const listing = await createListing({ userId: session.user.id, asDraft, ...parsed.data });
+  let listing;
+  try {
+    listing = await createListing({ userId: session.user.id, asDraft, ...parsed.data });
+  } catch (error) {
+    if (error instanceof QuotaExceededError) return { error: error.message };
+    throw error;
+  }
 
   const urls = await Promise.all(files.map((file, index) => uploadListingImage(file, listing.id, index)));
   await attachListingImages(listing.id, urls);
@@ -98,6 +105,9 @@ export async function updateListingAction(
 
   const raw = Object.fromEntries(formData);
   const parsed = updateListingSchema.safeParse({
+    version: raw.version || undefined,
+    condition: raw.condition,
+    transmission: raw.transmission || undefined,
     description: raw.description || undefined,
     price: raw.price,
     currency: raw.currency,
@@ -120,21 +130,24 @@ export async function updateListingAction(
   }
 
   let updatedSlug: string;
+  let reactivated: boolean;
   try {
     const updated = await updateOwnedListing(listingId, session.user.id, parsed.data);
-    updatedSlug = updated.slug;
+    updatedSlug = updated.listing.slug;
+    reactivated = updated.reactivated;
 
     if (files.length > 0) {
       const urls = await Promise.all(files.map((file, index) => uploadListingImage(file, listingId, index)));
       await attachListingImages(listingId, urls);
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof QuotaExceededError) return { error: error.message };
     return { error: "No pudimos actualizar la publicación." };
   }
 
   revalidatePath("/dashboard/publicaciones");
   revalidatePath(`/catalogo/${updatedSlug}`);
-  redirect("/dashboard/publicaciones");
+  redirect(reactivated ? `/dashboard/publicaciones?published=${updatedSlug}` : "/dashboard/publicaciones");
 }
 
 export async function markListingSoldAction(formData: FormData) {

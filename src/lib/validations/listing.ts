@@ -63,6 +63,9 @@ export const createListingSchema = z.object({
 });
 
 export const updateListingSchema = z.object({
+  version: versionSchema,
+  condition: conditionSchema,
+  transmission: transmissionSchema,
   description: descriptionSchema,
   price: priceSchema,
   currency: currencySchema,

@@ -27,7 +27,7 @@ import {
   updateListingAction,
   type ListingActionState,
 } from "@/server/actions/listing.actions";
-import type { VehicleType } from "@/generated/prisma/client";
+import type { VehicleCondition, VehicleType } from "@/generated/prisma/client";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 40 }, (_, i) => CURRENT_YEAR + 1 - i);
@@ -43,11 +43,18 @@ type ListingFormProps = {
   | {
       mode: "edit";
       listingId: string;
-      vehicleTypeLabel: string;
+      /** Si la publicación va a volver a estar activa al guardar (borrador/reservada/pausada/vencida). */
+      isReactivation: boolean;
+      vehicleType: VehicleType;
+      brandSlug: string;
       brandName: string;
+      modelSlug: string;
       modelName: string;
       year: number;
       defaultValues: {
+        version: string | null;
+        condition: VehicleCondition;
+        transmission: "MECANICA" | "ASISTIDA" | null;
         description: string | null;
         price: number;
         currency: "ARS" | "USD";
@@ -69,20 +76,25 @@ type StepId = "datos" | "precio" | "ubicacion" | "contacto" | "fotos" | "observa
 
 export function ListingForm(props: ListingFormProps) {
   const isEdit = props.mode === "edit";
+  const isReactivation = isEdit ? props.isReactivation : false;
   const action = isEdit ? updateListingAction : createListingAction;
   const [state, formAction, pending] = useActionState(action, initialState);
 
-  // --- Datos principales (solo se cargan en modo "create") ---
-  const [vehicleType, setVehicleType] = React.useState<VehicleType | "">("");
-  const [brandSlug, setBrandSlug] = React.useState("");
-  const [modelSlug, setModelSlug] = React.useState("");
-  const [year, setYear] = React.useState("");
-  const [version, setVersion] = React.useState("");
-  const [transmission, setTransmission] = React.useState("");
-  const [condition, setCondition] = React.useState("USADO");
+  // --- Datos principales (bloqueados en modo "edit": vienen de la publicación existente) ---
+  const [vehicleType, setVehicleType] = React.useState<VehicleType | "">(isEdit ? props.vehicleType : "");
+  const [brandSlug, setBrandSlug] = React.useState(isEdit ? props.brandSlug : "");
+  const [modelSlug, setModelSlug] = React.useState(isEdit ? props.modelSlug : "");
+  const [year, setYear] = React.useState(isEdit ? String(props.year) : "");
+  const [version, setVersion] = React.useState(isEdit ? (props.defaultValues.version ?? "") : "");
+  const [transmission, setTransmission] = React.useState(
+    isEdit ? (props.defaultValues.transmission ?? "") : ""
+  );
+  const [condition, setCondition] = React.useState(isEdit ? props.defaultValues.condition : "USADO");
   const { brands, models } = useVehicleTaxonomy(vehicleType, brandSlug, modelSlug);
-  const selectedBrandName = brands.find((b) => b.slug === brandSlug)?.name ?? "";
-  const selectedModelName = models.find((m) => m.slug === modelSlug)?.name ?? "";
+  const selectedBrandName =
+    brands.find((b) => b.slug === brandSlug)?.name ?? (isEdit ? props.brandName : "");
+  const selectedModelName =
+    models.find((m) => m.slug === modelSlug)?.name ?? (isEdit ? props.modelName : "");
 
   // --- Precio ---
   const [price, setPrice] = React.useState(isEdit ? String(props.defaultValues.price) : "");
@@ -120,7 +132,7 @@ export function ListingForm(props: ListingFormProps) {
   );
 
   const STEPS: { id: StepId; label: string }[] = [
-    ...(isEdit ? [] : [{ id: "datos" as const, label: "Datos principales" }]),
+    { id: "datos", label: "Datos principales" },
     { id: "precio", label: "Precio" },
     { id: "ubicacion", label: "Ubicación" },
     { id: "contacto", label: "Contacto" },
@@ -228,12 +240,12 @@ export function ListingForm(props: ListingFormProps) {
       formData.set("brandSlug", brandSlug);
       formData.set("modelSlug", modelSlug);
       formData.set("year", year);
-      formData.set("version", version);
-      formData.set("transmission", transmission);
-      formData.set("condition", condition);
       if (status) formData.set("status", status);
     }
 
+    formData.set("version", version);
+    formData.set("transmission", transmission);
+    formData.set("condition", condition);
     formData.set("price", price);
     formData.set("currency", currency);
     if (priceNegotiable) formData.set("priceNegotiable", "on");
@@ -252,18 +264,12 @@ export function ListingForm(props: ListingFormProps) {
   }
 
   function handleSubmit(event: React.FormEvent) {
+    // Ya no hay ningún botón type="submit" en este form: todos los envíos
+    // pasan por botones explícitos (ver más abajo) para no saltear el
+    // diálogo de confirmación al publicar. Esto solo se dispara por un
+    // submit implícito del navegador (Enter en el único campo de texto de
+    // un paso) — lo bloqueamos sin hacer nada.
     event.preventDefault();
-    // Defensa adicional: nunca publicar/guardar salvo que el usuario haya
-    // llegado al último paso y tocado el botón, sin importar qué disparó el
-    // evento submit.
-    if (!isLastStep) return;
-    if (!isEdit) {
-      // En modo creación, el submit del último paso abre la confirmación
-      // "¿Desea publicar?" en vez de publicar directamente.
-      setConfirmPublishOpen(true);
-      return;
-    }
-    submitListing();
   }
 
   return (
@@ -285,7 +291,7 @@ export function ListingForm(props: ListingFormProps) {
                 index < stepIndex
                   ? "border-primary bg-primary text-primary-foreground"
                   : index === stepIndex
-                    ? "border-primary bg-surface text-primary"
+                    ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-surface"
                     : "border-border bg-surface text-muted-foreground"
               )}
             >
@@ -302,6 +308,12 @@ export function ListingForm(props: ListingFormProps) {
       <div className="space-y-6 rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
         {currentStep === "datos" && (
           <div className="space-y-5">
+            {isEdit && (
+              <p className="rounded-lg bg-surface-muted p-3 text-xs text-muted-foreground">
+                El tipo, marca, modelo y año no se pueden editar — así evitamos que este anuncio termine
+                usándose para publicar un vehículo distinto.
+              </p>
+            )}
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <Label htmlFor="vehicleType">Tipo de vehículo</Label>
@@ -309,6 +321,7 @@ export function ListingForm(props: ListingFormProps) {
                   id="vehicleType"
                   value={vehicleType}
                   aria-invalid={showInvalid(!vehicleType)}
+                  disabled={isEdit}
                   onChange={(e) => {
                     setVehicleType(e.target.value as VehicleType | "");
                     setBrandSlug("");
@@ -327,7 +340,13 @@ export function ListingForm(props: ListingFormProps) {
 
               <div>
                 <Label htmlFor="year">Año</Label>
-                <Select id="year" value={year} aria-invalid={showInvalid(!year)} onChange={(e) => setYear(e.target.value)}>
+                <Select
+                  id="year"
+                  value={year}
+                  aria-invalid={showInvalid(!year)}
+                  disabled={isEdit}
+                  onChange={(e) => setYear(e.target.value)}
+                >
                   <option value="">Elegí un año</option>
                   {YEARS.map((y) => (
                     <option key={y} value={y}>
@@ -348,7 +367,7 @@ export function ListingForm(props: ListingFormProps) {
                     setBrandSlug(e.target.value);
                     setModelSlug("");
                   }}
-                  disabled={!vehicleType}
+                  disabled={isEdit || !vehicleType}
                 >
                   <option value="">Elegí una marca</option>
                   {brands.map((b) => (
@@ -356,6 +375,9 @@ export function ListingForm(props: ListingFormProps) {
                       {b.name}
                     </option>
                   ))}
+                  {isEdit && !brands.some((b) => b.slug === brandSlug) && (
+                    <option value={brandSlug}>{props.mode === "edit" ? props.brandName : ""}</option>
+                  )}
                 </Select>
                 <FieldError messages={state?.fieldErrors?.brandSlug} />
               </div>
@@ -367,7 +389,7 @@ export function ListingForm(props: ListingFormProps) {
                   value={modelSlug}
                   aria-invalid={showInvalid(!modelSlug)}
                   onChange={(e) => setModelSlug(e.target.value)}
-                  disabled={!brandSlug}
+                  disabled={isEdit || !brandSlug}
                 >
                   <option value="">Elegí un modelo</option>
                   {models.map((m) => (
@@ -375,6 +397,9 @@ export function ListingForm(props: ListingFormProps) {
                       {m.name}
                     </option>
                   ))}
+                  {isEdit && !models.some((m) => m.slug === modelSlug) && (
+                    <option value={modelSlug}>{props.mode === "edit" ? props.modelName : ""}</option>
+                  )}
                 </Select>
                 <FieldError messages={state?.fieldErrors?.modelSlug} />
               </div>
@@ -435,13 +460,6 @@ export function ListingForm(props: ListingFormProps) {
               </div>
             </div>
           </div>
-        )}
-
-        {isEdit && currentStep !== "datos" && (
-          <p className="rounded-lg bg-surface-muted p-3 text-xs text-muted-foreground">
-            {props.vehicleTypeLabel} · {props.brandName} {props.modelName} · {props.year} — el tipo,
-            marca, modelo y año no se pueden editar.
-          </p>
         )}
 
         {currentStep === "precio" && (
@@ -660,16 +678,14 @@ export function ListingForm(props: ListingFormProps) {
                 </ul>
               </div>
             )}
-            {!isEdit && (
-              <p>
-                <span className="text-muted-foreground">Vehículo:</span>{" "}
-                <span className="font-medium text-foreground">
-                  {vehicleTypeLabel(vehicleType)} {selectedBrandName} {selectedModelName} {year}
-                  {version ? ` (${version})` : ""} · {conditionLabel(condition)}
-                  {transmission ? ` · ${transmissionLabel(transmission)}` : ""}
-                </span>
-              </p>
-            )}
+            <p>
+              <span className="text-muted-foreground">Vehículo:</span>{" "}
+              <span className="font-medium text-foreground">
+                {vehicleTypeLabel(vehicleType)} {selectedBrandName} {selectedModelName} {year}
+                {version ? ` (${version})` : ""} · {conditionLabel(condition)}
+                {transmission ? ` · ${transmissionLabel(transmission)}` : ""}
+              </span>
+            </p>
             <p>
               <span className="text-muted-foreground">Precio:</span>{" "}
               <span className="font-medium text-foreground">
@@ -710,10 +726,27 @@ export function ListingForm(props: ListingFormProps) {
         </div>
 
         {isLastStep ? (
-          <Button type="submit" disabled={pending || missingFields.length > 0} size="lg">
-            {pending ? "Guardando..." : isEdit ? "Guardar cambios" : "Publicar anuncio"}
-            {!pending && <Check className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            {!isEdit && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending || missingFields.length > 0}
+                onClick={() => submitListing("DRAFT")}
+              >
+                Guardar como borrador
+              </Button>
+            )}
+            <Button
+              type="button"
+              disabled={pending || missingFields.length > 0}
+              size="lg"
+              onClick={() => (isEdit && !isReactivation ? submitListing() : setConfirmPublishOpen(true))}
+            >
+              {pending ? "Guardando..." : isEdit ? "Guardar cambios" : "Publicar anuncio"}
+              {!pending && <Check className="h-4 w-4" />}
+            </Button>
+          </div>
         ) : (
           <Button type="button" onClick={goNext} disabled={!canProceed()}>
             Siguiente
@@ -721,41 +754,29 @@ export function ListingForm(props: ListingFormProps) {
         )}
       </div>
 
-      {!isEdit && (
-        <Modal
-          open={confirmPublishOpen}
-          onClose={() => setConfirmPublishOpen(false)}
-          title="¿Desea publicar tu anuncio?"
-        >
-          <div className="space-y-3 text-sm">
-            <p className="text-muted-foreground">
-              Podés publicarlo ahora para que se muestre en el catálogo, o guardarlo como borrador y
-              publicarlo más adelante desde &quot;Mis publicaciones&quot;.
-            </p>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setConfirmPublishOpen(false);
-                  submitListing("DRAFT");
-                }}
-              >
-                No, guardar como borrador
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  setConfirmPublishOpen(false);
-                  submitListing("ACTIVE");
-                }}
-              >
-                Sí, publicar
-              </Button>
-            </div>
+      <Modal
+        open={confirmPublishOpen}
+        onClose={() => setConfirmPublishOpen(false)}
+        title="¿Desea publicar tu anuncio?"
+      >
+        <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground">¿Querés revisar los datos antes de publicar?</p>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => setConfirmPublishOpen(false)}>
+              Sí, revisar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setConfirmPublishOpen(false);
+                submitListing("ACTIVE");
+              }}
+            >
+              No, publicar
+            </Button>
           </div>
-        </Modal>
-      )}
+        </div>
+      </Modal>
     </form>
   );
 }
