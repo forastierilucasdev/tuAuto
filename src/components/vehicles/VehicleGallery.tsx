@@ -88,7 +88,7 @@ export function VehicleGallery({ images, title }: { images: GalleryImage[]; titl
             type="button"
             onClick={() => setLightboxOpen(false)}
             aria-label="Cerrar"
-            className="absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            className="absolute right-4 top-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
           >
             <X className="h-6 w-6" />
           </button>

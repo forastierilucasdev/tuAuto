@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
 import { SITE_NAME } from "@/lib/constants";
-
-const NAV = [
-  { href: "/dashboard", label: "Resumen" },
-  { href: "/dashboard/perfil", label: "Mi perfil" },
-  { href: "/dashboard/publicaciones", label: "Mis publicaciones" },
-  { href: "/dashboard/pago", label: "Método de pago" },
-];
+import { DashboardMobileNav, DashboardSidebarNav } from "@/components/dashboard/DashboardNav";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -37,20 +31,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       </header>
 
+      <DashboardMobileNav />
+
       <div className="mx-auto flex w-full max-w-7xl flex-1 gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        <aside className="hidden w-56 shrink-0 md:block">
-          <nav className="space-y-1">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-surface hover:text-foreground"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
+        <DashboardSidebarNav />
 
         <main className="min-w-0 flex-1">{children}</main>
       </div>

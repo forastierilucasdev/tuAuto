@@ -84,6 +84,11 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado: build de producción limpio, `/`, `/catalogo`, `/login`, `/registro`, `/recuperar-password` responden 200 contra Supabase real
 - [ ] Prueba manual en navegador: drawer de filtros en mobile, hero mobile, subir avatar y verificar que se vea centrado, mostrar/ocultar contraseña
 
+## Fase 8 — Bugs reportados por el usuario tras probar en el celular
+- [x] Dashboard sin navegación visible en mobile (no se podía llegar a "Mi perfil" logueado) → `DashboardMobileNav`
+- [x] Botón X del visor de fotos ampliado no cerraba en algunos casos (faltaba `z-index`)
+- [x] Verificado con login real (script contra `/api/auth/callback/credentials`) contra Supabase: `/dashboard/perfil` devuelve el nav mobile, el formulario y la carga de avatar
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

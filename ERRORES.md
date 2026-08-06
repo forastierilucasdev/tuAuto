@@ -34,3 +34,5 @@ _(Se completa a medida que se detectan y corrigen errores post-lanzamiento del p
 | Fecha | Descripción | Estado |
 |---|---|---|
 | 2026-08-05 | La página de detalle de publicación devolvía error 500 (`Functions cannot be passed directly to Client Components`) al pasar íconos como referencia de componente a `VerticalTabs` desde un Server Component. | Resuelto — se pasa el ícono ya renderizado como JSX. |
+| 2026-08-06 | Logueado desde el celular, no aparecía ninguna opción para ir a "Mi perfil" (el menú del dashboard estaba oculto en mobile sin reemplazo). | Resuelto — nueva barra de navegación horizontal en mobile. |
+| 2026-08-06 | El botón X para cerrar el visor de fotos ampliado no respondía al toque en algunos casos. | Resuelto — faltaba `z-index` en ese botón. |
