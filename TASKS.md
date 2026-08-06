@@ -104,6 +104,19 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con login real (particular y agencia) contra Supabase: toggle de tipo de cuenta, campo CUIT condicional, botones Volver
 - [ ] Prueba manual en navegador: animación del panel, tocar cada opción del menú, cambiar tipo de cuenta y confirmar que el formulario se adapta
 
+## Fase 10 — Ajustes de headers, botones "Volver" y wizard de publicación (solicitado por el usuario)
+- [x] Sidebar desktop del dashboard: avatar más grande (`md`) y centrado arriba de la lista de secciones
+- [x] "Resumen" renombrado a "Mi perfil" en el nav del dashboard, apuntando a `/dashboard/perfil`
+- [x] Header del dashboard mobile reordenado: avatar / logo centrado / Cerrar sesión
+- [x] `AccountMenu`: se agregaron "Publicar anuncio" y "Cerrar sesión" al panel deslizable
+- [x] Header público logueado reordenado: avatar / logo centrado / hamburguesa; "Publicar anuncio" pasó a un botón propio debajo del header (mobile)
+- [x] "Mis publicaciones": botón "Volver" separado de "Publicar vehículo" (Volver arriba a la derecha, Publicar vehículo en su propia fila)
+- [x] "Publicar vehículo": se agregó el botón "Volver" que faltaba
+- [x] Wizard de publicar (`ListingForm`): barra de progreso con círculos numerados + línea de relleno, subtítulo centrado con el paso activo, cartel "Datos pendientes de carga" con campos en rojo y links directos al paso correspondiente en el último paso
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con login real contra Supabase: `/`, `/dashboard`, `/dashboard/publicaciones`, `/dashboard/publicaciones/nueva`, `/dashboard/perfil` responden 200 con el contenido esperado
+- [ ] Prueba manual en navegador: animación y orden de los headers, barra de progreso del wizard, cartel de campos faltantes en rojo
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

@@ -10,20 +10,26 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex min-h-full flex-col bg-surface-muted">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Mobile: [avatar] [logo centrado] [cerrar sesión]. Desktop: el
+            avatar ya está en DashboardSidebarNav, así que acá solo va el
+            logo a la izquierda y la sesión a la derecha. */}
+        <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-lg font-extrabold tracking-tight text-navy">
+            <Link href="/" className="hidden text-lg font-extrabold tracking-tight text-navy md:block">
               {SITE_NAME}
             </Link>
-            {/* En mobile es el único acceso a Mi perfil / Mis publicaciones /
-                Método de pago (la barra horizontal se sacó por ser redundante
-                con este menú). En desktop convive con DashboardSidebarNav,
-                que también tiene el suyo — no molesta tenerlo dos veces. */}
             <div className="md:hidden">
               <AccountMenu />
             </div>
           </div>
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center justify-center">
+            <Link href="/" className="text-lg font-extrabold tracking-tight text-navy md:hidden">
+              {SITE_NAME}
+            </Link>
+          </div>
+
+          <div className="flex items-center justify-end gap-4">
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {session?.user?.name}
             </span>

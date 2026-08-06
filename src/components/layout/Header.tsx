@@ -20,18 +20,22 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
-      {/* 3 columnas (logo / centro / derecha) para poder centrar "Publicar
-          anuncio" en mobile de forma robusta, sin importar el ancho de los
-          elementos a los costados. */}
+      {/* 3 columnas para poder centrar el logo en mobile de forma robusta,
+          sin importar el ancho de los elementos a los costados: en mobile
+          es [avatar] [logo] [hamburguesa]; en desktop, [logo+avatar] [nav]
+          [Publicar anuncio]. */}
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex shrink-0 items-center gap-3">
-          <Link href="/" className="text-lg font-extrabold tracking-tight text-navy sm:text-xl">
+          <Link href="/" className="hidden text-lg font-extrabold tracking-tight text-navy sm:text-xl md:block">
             {SITE_NAME}
           </Link>
           <AccountMenu />
         </div>
 
         <div className="flex items-center justify-center">
+          <Link href="/" className="text-lg font-extrabold tracking-tight text-navy md:hidden">
+            {SITE_NAME}
+          </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {NAV_LINKS.map((link) => {
               const active = pathname === link.href;
@@ -49,15 +53,6 @@ export function Header() {
               );
             })}
           </nav>
-
-          {isAuthed && (
-            <Link
-              href={PUBLISH_HREF}
-              className={cn(buttonVariants({ variant: "primary", size: "sm" }), "md:hidden")}
-            >
-              Publicar anuncio
-            </Link>
-          )}
         </div>
 
         <div className="flex items-center justify-end gap-2">
@@ -84,6 +79,19 @@ export function Header() {
           </button>
         </div>
       </div>
+
+      {/* Mobile, logueado: "Publicar anuncio" pasa a ser un botón propio
+          debajo del header en vez de competir por espacio en la fila. */}
+      {isAuthed && (
+        <div className="border-t border-border px-4 py-3 md:hidden">
+          <Link
+            href={PUBLISH_HREF}
+            className={cn(buttonVariants({ variant: "primary", size: "md" }), "mx-auto flex w-fit")}
+          >
+            Publicar anuncio
+          </Link>
+        </div>
+      )}
 
       {open && (
         <div className="border-t border-border bg-surface px-4 py-3 md:hidden">

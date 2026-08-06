@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { AccountMenu } from "@/components/layout/AccountMenu";
 
 const NAV = [
-  { href: "/dashboard", label: "Resumen" },
+  { href: "/dashboard/perfil", label: "Mi perfil" },
   { href: "/dashboard/publicaciones", label: "Mis publicaciones" },
   { href: "/dashboard/pago", label: "Método de pago" },
 ];
@@ -21,8 +21,8 @@ export function DashboardSidebarNav() {
 
   return (
     <aside className="hidden w-56 shrink-0 md:block">
-      <div className="mb-4 border-b border-border pb-4">
-        <AccountMenu />
+      <div className="mb-4 flex justify-center border-b border-border pb-4">
+        <AccountMenu avatarSize="md" />
       </div>
       <nav className="space-y-1">
         {NAV.map((item) => {

@@ -131,6 +131,35 @@ export function ListingForm(props: ListingFormProps) {
   const currentStep = STEPS[stepIndex].id;
   const isLastStep = stepIndex === STEPS.length - 1;
 
+  // Una vez que se llega a la pantalla de revisión (por "Siguiente" o
+  // saltando directo con un click en el círculo), se activan los avisos de
+  // campos obligatorios faltantes en todos los pasos, no solo en el actual.
+  const [hasReachedReview, setHasReachedReview] = React.useState(false);
+
+  function goToStep(index: number) {
+    setStepIndex(index);
+    if (STEPS[index].id === "revisar") setHasReachedReview(true);
+  }
+
+  type MissingField = { stepIndex: number; stepLabel: string; fieldLabel: string };
+  const missingFields: MissingField[] = [];
+  const datosStepIndex = STEPS.findIndex((s) => s.id === "datos");
+  const precioStepIndex = STEPS.findIndex((s) => s.id === "precio");
+  const fotosStepIndex = STEPS.findIndex((s) => s.id === "fotos");
+
+  if (!isEdit) {
+    if (!vehicleType) missingFields.push({ stepIndex: datosStepIndex, stepLabel: "Datos principales", fieldLabel: "Tipo de vehículo" });
+    if (!brandSlug) missingFields.push({ stepIndex: datosStepIndex, stepLabel: "Datos principales", fieldLabel: "Marca" });
+    if (!modelSlug) missingFields.push({ stepIndex: datosStepIndex, stepLabel: "Datos principales", fieldLabel: "Modelo" });
+    if (!year) missingFields.push({ stepIndex: datosStepIndex, stepLabel: "Datos principales", fieldLabel: "Año" });
+  }
+  if (!price) missingFields.push({ stepIndex: precioStepIndex, stepLabel: "Precio", fieldLabel: "Precio" });
+  if (!isEdit && photos.length === 0) {
+    missingFields.push({ stepIndex: fotosStepIndex, stepLabel: "Fotos", fieldLabel: "Al menos una foto" });
+  }
+
+  const showInvalid = (missing: boolean) => hasReachedReview && missing;
+
   function canProceed(): boolean {
     switch (currentStep) {
       case "datos":
@@ -146,7 +175,7 @@ export function ListingForm(props: ListingFormProps) {
 
   function goNext() {
     if (!canProceed()) return;
-    setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
+    goToStep(Math.min(stepIndex + 1, STEPS.length - 1));
   }
 
   function goBack() {
@@ -210,26 +239,36 @@ export function ListingForm(props: ListingFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl">
-      {/* Indicador de pasos */}
-      <div className="mb-6 flex flex-wrap gap-2">
+      {/* Indicador de pasos: círculos numerados unidos por una línea que se
+          va pintando a medida que se avanza. Tocar un número salta directo
+          a ese paso; el subtítulo centrado debajo siempre refleja el paso
+          activo. */}
+      <div className="mb-2 flex items-center">
         {STEPS.map((step, index) => (
-          <button
-            key={step.id}
-            type="button"
-            onClick={() => setStepIndex(index)}
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-              index === stepIndex
-                ? "bg-primary text-primary-foreground"
-                : index < stepIndex
-                  ? "bg-primary/10 text-primary"
-                  : "bg-surface-muted text-muted-foreground"
+          <React.Fragment key={step.id}>
+            <button
+              type="button"
+              onClick={() => goToStep(index)}
+              aria-label={`Ir a ${step.label}`}
+              aria-current={index === stepIndex ? "step" : undefined}
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors",
+                index < stepIndex
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : index === stepIndex
+                    ? "border-primary bg-surface text-primary"
+                    : "border-border bg-surface text-muted-foreground"
+              )}
+            >
+              {index < stepIndex ? <Check className="h-4 w-4" /> : index + 1}
+            </button>
+            {index < STEPS.length - 1 && (
+              <div className={cn("h-0.5 flex-1 transition-colors", index < stepIndex ? "bg-primary" : "bg-border")} />
             )}
-          >
-            {index + 1}. {step.label}
-          </button>
+          </React.Fragment>
         ))}
       </div>
+      <p className="mb-6 text-center text-sm font-semibold text-navy">{STEPS[stepIndex].label}</p>
 
       <div className="space-y-6 rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
         {currentStep === "datos" && (
@@ -240,6 +279,7 @@ export function ListingForm(props: ListingFormProps) {
                 <Select
                   id="vehicleType"
                   value={vehicleType}
+                  aria-invalid={showInvalid(!vehicleType)}
                   onChange={(e) => {
                     setVehicleType(e.target.value as VehicleType | "");
                     setBrandSlug("");
@@ -258,7 +298,7 @@ export function ListingForm(props: ListingFormProps) {
 
               <div>
                 <Label htmlFor="year">Año</Label>
-                <Select id="year" value={year} onChange={(e) => setYear(e.target.value)}>
+                <Select id="year" value={year} aria-invalid={showInvalid(!year)} onChange={(e) => setYear(e.target.value)}>
                   <option value="">Elegí un año</option>
                   {YEARS.map((y) => (
                     <option key={y} value={y}>
@@ -274,6 +314,7 @@ export function ListingForm(props: ListingFormProps) {
                 <Select
                   id="brandSlug"
                   value={brandSlug}
+                  aria-invalid={showInvalid(!brandSlug)}
                   onChange={(e) => {
                     setBrandSlug(e.target.value);
                     setModelSlug("");
@@ -295,6 +336,7 @@ export function ListingForm(props: ListingFormProps) {
                 <Select
                   id="modelSlug"
                   value={modelSlug}
+                  aria-invalid={showInvalid(!modelSlug)}
                   onChange={(e) => setModelSlug(e.target.value)}
                   disabled={!brandSlug}
                 >
@@ -382,6 +424,7 @@ export function ListingForm(props: ListingFormProps) {
                   id="price"
                   inputMode="numeric"
                   value={price}
+                  aria-invalid={showInvalid(!price)}
                   onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
                 />
                 <FieldError messages={state?.fieldErrors?.price} />
@@ -485,7 +528,12 @@ export function ListingForm(props: ListingFormProps) {
               <>
                 <label
                   htmlFor="images"
-                  className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  className={cn(
+                    "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center text-sm transition-colors hover:border-primary hover:text-primary",
+                    showInvalid(!isEdit && photos.length === 0)
+                      ? "border-danger text-danger"
+                      : "border-border text-muted-foreground"
+                  )}
                 >
                   <ImagePlus className="h-6 w-6" />
                   Hacé click para elegir imágenes (JPG/PNG, máx. 5MB c/u)
@@ -562,6 +610,24 @@ export function ListingForm(props: ListingFormProps) {
 
         {currentStep === "revisar" && (
           <div className="space-y-4 text-sm">
+            {missingFields.length > 0 && (
+              <div className="rounded-lg border border-danger/40 bg-danger/5 p-3 text-danger">
+                <p className="font-semibold">Datos pendientes de carga</p>
+                <ul className="mt-1 list-inside list-disc">
+                  {missingFields.map((field) => (
+                    <li key={`${field.stepIndex}-${field.fieldLabel}`}>
+                      <button
+                        type="button"
+                        onClick={() => setStepIndex(field.stepIndex)}
+                        className="underline underline-offset-2"
+                      >
+                        {field.fieldLabel} ({field.stepLabel})
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {!isEdit && (
               <p>
                 <span className="text-muted-foreground">Vehículo:</span>{" "}
@@ -605,7 +671,7 @@ export function ListingForm(props: ListingFormProps) {
         </Button>
 
         {isLastStep ? (
-          <Button type="submit" disabled={pending} size="lg">
+          <Button type="submit" disabled={pending || missingFields.length > 0} size="lg">
             {pending ? "Guardando..." : isEdit ? "Guardar cambios" : "Publicar anuncio"}
             {!pending && <Check className="h-4 w-4" />}
           </Button>

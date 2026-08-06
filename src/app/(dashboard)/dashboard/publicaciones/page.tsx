@@ -31,14 +31,15 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-navy">Mis publicaciones</h1>
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/publicaciones/nueva" className={buttonVariants({ variant: "primary" })}>
-            Publicar vehículo
-          </Link>
-          <BackButton />
-        </div>
+        <BackButton />
+      </div>
+
+      <div className="mt-4">
+        <Link href="/dashboard/publicaciones/nueva" className={buttonVariants({ variant: "primary" })}>
+          Publicar vehículo
+        </Link>
       </div>
 
       <div className="mt-6 flex gap-1 border-b border-border">

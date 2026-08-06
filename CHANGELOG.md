@@ -5,6 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-06, madrugada) — Reordenamiento de headers, botones "Volver" y wizard de publicación
+- **Sidebar desktop del dashboard**: el avatar del `AccountMenu` ahora usa tamaño `md` y quedó centrado horizontalmente arriba de la lista de secciones (antes quedaba chico y pegado a la izquierda).
+- **"Resumen" → "Mi perfil"**: el ítem de navegación del dashboard que antes apuntaba a `/dashboard` con la etiqueta "Resumen" ahora apunta a `/dashboard/perfil` con la etiqueta "Mi perfil", coherente con el resto de los accesos a esa pantalla.
+- **Header del dashboard (mobile)**: reordenado a `[avatar] [logo centrado] [Cerrar sesión]` con un grid de 3 columnas, igual que el header público — antes el orden no era consistente entre ambos headers.
+- **`AccountMenu`**: el panel deslizable ahora suma "Publicar anuncio" (va a `/dashboard/publicaciones/nueva`) y, después de un separador, "Cerrar sesión" (`signOut` de `next-auth/react`, en rojo) — antes había que cerrar el panel y buscar el botón de salir en otro lado.
+- **Header público (logueado)**: reordenado a `[avatar] [logo centrado] [hamburguesa]`. El botón "Publicar anuncio" se sacó de la fila del header y ahora es un botón azul redondeado, centrado, en una fila propia justo debajo del header (solo mobile; en desktop se mantiene a la derecha del header).
+- **Mis publicaciones**: el botón "Volver" se separó de "Publicar vehículo" — ahora "Volver" queda arriba a la derecha, al lado del título, y "Publicar vehículo" pasó a su propia fila debajo.
+- **Publicar vehículo**: le faltaba un botón para volver atrás; se agregó `BackButton` a la derecha del título.
+- **Wizard de publicación (`ListingForm`)**: el indicador de pasos se rediseñó como una barra de progreso — círculos numerados que se pintan (con tilde) a medida que se completan los pasos anteriores, unidos por una línea que se va rellenando, y un subtítulo centrado debajo con el nombre del paso activo. En el paso final ("Revisar"), si falta completar algún campo obligatorio (tipo, marca, modelo, año, precio o al menos una foto), aparece un cartel "Datos pendientes de carga" con la lista de campos faltantes (cada uno es un link que salta directo a su paso) y los campos correspondientes se marcan con borde rojo; el botón de publicar queda deshabilitado hasta completarlos.
+
 ### Changed (2026-08-06, noche)
 - Se sacó la barra horizontal de navegación del dashboard en mobile (Resumen / Mis publicaciones / Método de pago) — quedaba redundante con el menú del `AccountMenu`. Ese menú ahora vive directo en el header del dashboard (al lado del logo) en mobile, para no perder el único punto de acceso a esas pantallas.
 
