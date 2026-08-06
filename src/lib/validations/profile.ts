@@ -1,18 +1,35 @@
 import { z } from "zod";
-import { businessNameSchema, dniSchema, fullNameSchema, passwordSchema, phoneSchema } from "@/lib/validations/shared";
+import { passwordSchema } from "@/lib/validations/shared";
+import { registerAgenciaSchema, registerConcesionariaSchema, registerParticularSchema } from "@/lib/validations/auth";
 
-export const updateParticularProfileSchema = z.object({
-  fullName: fullNameSchema,
-  dni: dniSchema,
-  phone: phoneSchema,
+// Reutiliza los schemas de registro (mismas reglas para nombre/dni/teléfono/
+// cuit/razón social) sin email ni password, que en el perfil no se editan
+// acá — el email es de solo lectura y la contraseña tiene su propio flujo
+// (ver changePasswordSchema).
+export const updateParticularProfileSchema = registerParticularSchema.omit({
+  email: true,
+  password: true,
 });
 
-export const updateAgencyProfileSchema = updateParticularProfileSchema.extend({
-  businessName: businessNameSchema,
+const agencyOnlyFields = {
   city: z.string().trim().max(80).optional(),
   province: z.string().trim().max(80).optional(),
   description: z.string().trim().max(1000).optional(),
-});
+};
+
+export const updateAgenciaProfileSchema = registerAgenciaSchema
+  .omit({ email: true, password: true })
+  .extend(agencyOnlyFields);
+
+export const updateConcesionariaProfileSchema = registerConcesionariaSchema
+  .omit({ email: true, password: true })
+  .extend(agencyOnlyFields);
+
+export const updateProfileSchema = z.discriminatedUnion("accountType", [
+  updateParticularProfileSchema,
+  updateAgenciaProfileSchema,
+  updateConcesionariaProfileSchema,
+]);
 
 export const changePasswordSchema = z
   .object({

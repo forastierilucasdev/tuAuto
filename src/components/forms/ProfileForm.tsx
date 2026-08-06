@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
-import { isBusinessAccountType, type AccountTypeValue } from "@/lib/constants";
-import { getInitials } from "@/lib/utils";
+import { ACCOUNT_TYPE_OPTIONS, isBusinessAccountType, type AccountTypeValue } from "@/lib/constants";
+import { cn, getInitials } from "@/lib/utils";
 
 const initialState: ProfileActionState = undefined;
 
@@ -34,7 +34,7 @@ type ProfileFormProps = {
 };
 
 export function ProfileForm({
-  accountType,
+  accountType: initialAccountType,
   email,
   dni,
   fullName,
@@ -44,6 +44,7 @@ export function ProfileForm({
   onSaved,
 }: ProfileFormProps) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
+  const [accountType, setAccountType] = React.useState<AccountTypeValue>(initialAccountType);
   const isBusiness = isBusinessAccountType(accountType);
 
   const [preview, setPreview] = React.useState<string | null>(avatarUrl);
@@ -62,6 +63,8 @@ export function ProfileForm({
 
   return (
     <form action={formAction} className="max-w-xl space-y-5">
+      <input type="hidden" name="accountType" value={accountType} />
+
       <div>
         <Label>Foto de perfil</Label>
         <div className="flex items-center gap-4">
@@ -109,14 +112,48 @@ export function ProfileForm({
         </p>
       </div>
 
-      {isBusiness && (
-        <div>
-          <Label htmlFor="businessName">
-            Nombre de la {accountType === "CONCESIONARIA" ? "concesionaria" : "agencia"}
-          </Label>
-          <Input id="businessName" name="businessName" defaultValue={agency?.businessName} required />
-          <FieldError messages={state?.fieldErrors?.businessName} />
+      <div>
+        <Label>Tipo de cuenta</Label>
+        <div className="grid grid-cols-3 gap-1 rounded-lg bg-surface-muted p-1 text-sm font-medium">
+          {ACCOUNT_TYPE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setAccountType(option.value)}
+              className={cn(
+                "rounded-md px-2 py-2 text-center transition-colors",
+                accountType === option.value
+                  ? "bg-surface text-primary shadow-card"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
+        {isBusinessAccountType(initialAccountType) && accountType === "PARTICULAR" && (
+          <p className="mt-2 text-xs text-warning">
+            Al pasar a Particular se elimina el perfil de{" "}
+            {initialAccountType === "AGENCIA" ? "agencia" : "concesionaria"} (razón social, CUIT, ubicación).
+          </p>
+        )}
+      </div>
+
+      {isBusiness && (
+        <>
+          <div>
+            <Label htmlFor="businessName">
+              Nombre de la {accountType === "CONCESIONARIA" ? "concesionaria" : "agencia"}
+            </Label>
+            <Input id="businessName" name="businessName" defaultValue={agency?.businessName} required />
+            <FieldError messages={state?.fieldErrors?.businessName} />
+          </div>
+          <div>
+            <Label htmlFor="cuit">CUIT</Label>
+            <Input id="cuit" name="cuit" placeholder="30-71234567-1" defaultValue={agency?.cuit} required />
+            <FieldError messages={state?.fieldErrors?.cuit} />
+          </div>
+        </>
       )}
 
       <div>

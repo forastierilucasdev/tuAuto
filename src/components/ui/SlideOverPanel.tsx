@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -16,12 +17,30 @@ type SlideOverPanelProps = {
 /**
  * Panel deslizable genérico (fondo oscuro + hoja lateral con cruz para
  * cerrar), reutilizado por el drawer de filtros del catálogo y por el menú
- * de cuenta del header. `side` controla desde qué borde entra.
+ * de cuenta. `side` controla desde qué borde entra.
+ *
+ * Se monta vía Portal directo a `document.body`: si se renderizara como hijo
+ * normal de un header con `backdrop-blur` (que crea su propio "containing
+ * block" para elementos `fixed`), el panel quedaba encerrado dentro de la
+ * altura del header en vez de ocupar toda la pantalla.
  */
+const emptySubscribe = () => () => {};
+
 export function SlideOverPanel({ open, onClose, side = "right", title, children }: SlideOverPanelProps) {
   useBodyScrollLock(open);
 
-  return (
+  // Portales solo existen en el cliente. `useSyncExternalStore` (en vez de
+  // un useState+useEffect) evita el mismatch de hidratación sin disparar un
+  // setState dentro de un efecto.
+  const isClient = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+
+  if (!isClient) return null;
+
+  return createPortal(
     <>
       <div
         className={cn(
@@ -55,6 +74,7 @@ export function SlideOverPanel({ open, onClose, side = "right", title, children 
         </div>
         {children}
       </div>
-    </>
+    </>,
+    document.body
   );
 }

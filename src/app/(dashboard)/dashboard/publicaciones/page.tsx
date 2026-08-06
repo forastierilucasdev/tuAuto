@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { getOwnerListingGroups } from "@/server/data/listings";
 import { OwnerListingCard } from "@/components/dashboard/OwnerListingCard";
 import { buttonVariants } from "@/components/ui/Button";
+import { BackButton } from "@/components/ui/BackButton";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Mis publicaciones" };
@@ -32,9 +33,12 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-navy">Mis publicaciones</h1>
-        <Link href="/dashboard/publicaciones/nueva" className={buttonVariants({ variant: "primary" })}>
-          Publicar vehículo
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/publicaciones/nueva" className={buttonVariants({ variant: "primary" })}>
+            Publicar vehículo
+          </Link>
+          <BackButton />
+        </div>
       </div>
 
       <div className="mt-6 flex gap-1 border-b border-border">

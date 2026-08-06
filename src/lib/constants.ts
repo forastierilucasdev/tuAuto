@@ -67,6 +67,11 @@ export const ACCOUNT_TYPE_LABELS = {
 
 export type AccountTypeValue = keyof typeof ACCOUNT_TYPE_LABELS;
 
+/** Opciones para el selector de 3 vías (registro y edición de perfil). */
+export const ACCOUNT_TYPE_OPTIONS = (
+  Object.entries(ACCOUNT_TYPE_LABELS) as [AccountTypeValue, string][]
+).map(([value, label]) => ({ value, label }));
+
 export function accountTypeLabel(value: string) {
   return ACCOUNT_TYPE_LABELS[value as AccountTypeValue] ?? value;
 }

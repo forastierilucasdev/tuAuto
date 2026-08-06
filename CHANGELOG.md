@@ -5,6 +5,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-06, tarde-noche) — Panel de cuenta encerrado en el header
+- **Bug crítico**: `SlideOverPanel` se renderizaba como hijo del `Header`, que tiene `backdrop-blur` — esa propiedad CSS crea su propio "containing block" para elementos `fixed`, así que el panel quedaba atrapado dentro de los 64px de alto del header en vez de ocupar toda la pantalla. Ahora se monta con un Portal de React directo a `document.body`, evitando cualquier ancestro con `transform`/`filter`/`backdrop-filter` que pueda repetir el problema en el futuro.
+
+### Changed (2026-08-06, tarde-noche) — Rediseño del menú de cuenta
+- El panel del avatar ya no muestra el formulario de perfil embebido: ahora es un **menú de navegación** vertical (Mi perfil / Mis publicaciones / Método de pago) que desliza desde la **izquierda** (mismo mecanismo que el drawer de filtros), y cada opción lleva a su pantalla completa.
+- El ícono de cuenta (foto o iniciales) se movió a la **izquierda** del header, tanto en el header público como en la barra del dashboard (mobile y desktop) — antes estaba a la derecha.
+- Cada pantalla de cuenta (Mi perfil, Mis publicaciones, Método de pago) tiene un botón **"Volver"** a la derecha (`BackButton`, reutilizable, usa el historial del navegador).
+- **Tipo de cuenta editable**: dentro de "Mi perfil" ahora se puede cambiar entre Particular / Agencia / Concesionaria. Pasar a un tipo de negocio pide razón social y CUIT (con chequeo de unicidad); pasar a Particular elimina el perfil de agencia/concesionaria asociado. Los schemas de perfil (`updateProfileSchema`) ahora reutilizan los mismos schemas del registro (`auth.ts`) vía `.omit()`, en vez de duplicar las reglas de validación.
+
 ### Fixed (2026-08-06, más tarde)
 - El menú del dashboard (`DashboardNav`) todavía tenía "Mi perfil" como un link normal a la página completa `/dashboard/perfil`, en vez de usar el mismo trigger de avatar + panel deslizable (`AccountMenu`) que ya se había armado para el header público. Quedaban dos formas distintas de llegar al perfil según por dónde entrabas. Ahora `AccountMenu` se reutiliza también en la barra mobile y en la barra lateral desktop del dashboard — "Mi perfil" ya no es un ítem de navegación, es el mismo trigger en todos lados.
 

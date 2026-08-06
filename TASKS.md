@@ -97,7 +97,12 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Pantalla real de "Cambiar contraseña" (`/dashboard/perfil/password`) para usuarios logueados, distinta del mock de "recuperar contraseña"
 - [x] Primitivas de validación centralizadas en `lib/validations/shared.ts`
 - [x] Verificado con login real contra Supabase: DNI editable, link a cambiar contraseña, ambas pantallas nuevas responden 200
-- [ ] Prueba manual en navegador: tocar el avatar y ver el panel deslizarse de derecha a izquierda, subir avatar y confirmar que el header se actualiza sin recargar, centrado del botón "Publicar anuncio" en mobile
+- [x] Corregido tras feedback del usuario: el panel quedaba encerrado en el header (bug de `backdrop-blur` + `fixed`) → Portal a `document.body`
+- [x] Corregido tras feedback: el panel ahora es un menú de navegación (Mi perfil / Mis publicaciones / Método de pago), no el formulario embebido — desliza de izquierda a derecha, ícono a la izquierda
+- [x] Botón "Volver" a la derecha en las 3 pantallas de cuenta
+- [x] Tipo de cuenta editable desde "Mi perfil" (Particular ⇄ Agencia/Concesionaria), con creación/baja del perfil de negocio según corresponda
+- [x] Verificado con login real (particular y agencia) contra Supabase: toggle de tipo de cuenta, campo CUIT condicional, botones Volver
+- [ ] Prueba manual en navegador: animación del panel, tocar cada opción del menú, cambiar tipo de cuenta y confirmar que el formulario se adapta
 
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido

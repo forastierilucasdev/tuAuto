@@ -3,13 +3,17 @@
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { changePasswordSchema, updateProfileSchema } from "@/lib/validations/profile";
 import {
-  changePasswordSchema,
-  updateAgencyProfileSchema,
-  updateParticularProfileSchema,
-} from "@/lib/validations/profile";
-import { dniExists, findUserForAuth, getFullProfile, updatePassword, updateProfile } from "@/server/data/users";
-import { isBusinessAccountType } from "@/lib/constants";
+  convertToBusinessAccount,
+  convertToParticularAccount,
+  cuitExists,
+  dniExists,
+  findUserForAuth,
+  getFullProfile,
+  updatePassword,
+  updateProfile,
+} from "@/server/data/users";
 import { uploadAvatarImage } from "@/lib/supabase-storage";
 import { validateImageFile } from "@/lib/image-validation";
 import { rateLimit } from "@/lib/rate-limit";
@@ -35,7 +39,18 @@ export async function updateProfileAction(
     return { error: "Tenés que iniciar sesión para editar tu perfil." };
   }
 
+  // La sesión (JWT) puede tener un accountType desactualizado si se cambió
+  // en un pedido anterior de la misma sesión — se busca el estado real acá.
+  const currentProfile = await getFullProfile(session.user.id);
+  if (!currentProfile) {
+    return { error: "No pudimos encontrar tu cuenta." };
+  }
+
   const raw = Object.fromEntries(formData);
+  const parsed = updateProfileSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
+  }
 
   const avatarFile = formData.get("avatar");
   const hasNewAvatar = avatarFile instanceof File && avatarFile.size > 0;
@@ -43,34 +58,58 @@ export async function updateProfileAction(
     const error = validateImageFile(avatarFile, MAX_AVATAR_SIZE_BYTES);
     if (error) return { error };
   }
-
   const avatarUrl = hasNewAvatar ? await uploadAvatarImage(avatarFile, session.user.id) : undefined;
 
-  if (isBusinessAccountType(session.user.accountType)) {
-    const parsed = updateAgencyProfileSchema.safeParse(raw);
-    if (!parsed.success) {
-      return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
+  if (await dniExists(parsed.data.dni, session.user.id)) {
+    return { fieldErrors: { dni: ["Ya existe una cuenta registrada con ese DNI."] } };
+  }
+
+  const wasBusiness = currentProfile.accountType !== "PARTICULAR";
+
+  if (parsed.data.accountType === "PARTICULAR") {
+    if (wasBusiness) {
+      await convertToParticularAccount(session.user.id, {
+        fullName: parsed.data.fullName,
+        dni: parsed.data.dni,
+        phone: parsed.data.phone,
+        avatarUrl,
+      });
+    } else {
+      await updateProfile(session.user.id, { ...parsed.data, avatarUrl });
     }
-    if (await dniExists(parsed.data.dni, session.user.id)) {
-      return { fieldErrors: { dni: ["Ya existe una cuenta registrada con ese DNI."] } };
-    }
-    const { fullName, dni, phone, businessName, city, province, description } = parsed.data;
-    await updateProfile(session.user.id, {
-      fullName,
-      dni,
-      phone,
-      avatarUrl,
-      agencyProfile: { businessName, city, province, description },
-    });
   } else {
-    const parsed = updateParticularProfileSchema.safeParse(raw);
-    if (!parsed.success) {
-      return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
+    if (await cuitExists(parsed.data.cuit, session.user.id)) {
+      return { fieldErrors: { cuit: ["Ya existe una cuenta registrada con ese CUIT."] } };
     }
-    if (await dniExists(parsed.data.dni, session.user.id)) {
-      return { fieldErrors: { dni: ["Ya existe una cuenta registrada con ese DNI."] } };
+
+    if (!wasBusiness) {
+      await convertToBusinessAccount(session.user.id, parsed.data.accountType, {
+        fullName: parsed.data.fullName,
+        dni: parsed.data.dni,
+        phone: parsed.data.phone,
+        avatarUrl,
+        businessName: parsed.data.businessName,
+        cuit: parsed.data.cuit,
+        city: parsed.data.city,
+        province: parsed.data.province,
+        description: parsed.data.description,
+      });
+    } else {
+      await updateProfile(session.user.id, {
+        fullName: parsed.data.fullName,
+        dni: parsed.data.dni,
+        phone: parsed.data.phone,
+        avatarUrl,
+        accountType: parsed.data.accountType,
+        agencyProfile: {
+          businessName: parsed.data.businessName,
+          cuit: parsed.data.cuit,
+          city: parsed.data.city,
+          province: parsed.data.province,
+          description: parsed.data.description,
+        },
+      });
     }
-    await updateProfile(session.user.id, { ...parsed.data, avatarUrl });
   }
 
   revalidatePath("/dashboard/perfil");

@@ -24,9 +24,12 @@ export function Header() {
           anuncio" en mobile de forma robusta, sin importar el ancho de los
           elementos a los costados. */}
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="shrink-0 text-lg font-extrabold tracking-tight text-navy sm:text-xl">
-          {SITE_NAME}
-        </Link>
+        <div className="flex shrink-0 items-center gap-3">
+          <Link href="/" className="text-lg font-extrabold tracking-tight text-navy sm:text-xl">
+            {SITE_NAME}
+          </Link>
+          <AccountMenu />
+        </div>
 
         <div className="flex items-center justify-center">
           <nav className="hidden items-center gap-1 md:flex">
@@ -59,15 +62,12 @@ export function Header() {
 
         <div className="flex items-center justify-end gap-2">
           {isAuthed ? (
-            <>
-              <Link
-                href={PUBLISH_HREF}
-                className={cn(buttonVariants({ variant: "primary", size: "md" }), "hidden md:inline-flex")}
-              >
-                Publicar anuncio
-              </Link>
-              <AccountMenu />
-            </>
+            <Link
+              href={PUBLISH_HREF}
+              className={cn(buttonVariants({ variant: "primary", size: "md" }), "hidden md:inline-flex")}
+            >
+              Publicar anuncio
+            </Link>
           ) : (
             <Link href="/login" className={buttonVariants({ variant: "primary", size: "sm" })}>
               Vende tu Auto

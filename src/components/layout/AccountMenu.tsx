@@ -1,32 +1,34 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { CreditCard, FileText, User as UserIcon } from "lucide-react";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
-import { ProfileForm } from "@/components/forms/ProfileForm";
 import { getMyProfileAction } from "@/server/actions/profile.actions";
 
 type Profile = Awaited<ReturnType<typeof getMyProfileAction>>;
 
+const MENU_ITEMS = [
+  { href: "/dashboard/perfil", label: "Mi perfil", icon: UserIcon },
+  { href: "/dashboard/publicaciones", label: "Mis publicaciones", icon: FileText },
+  { href: "/dashboard/pago", label: "Método de pago", icon: CreditCard },
+];
+
 /**
- * Botón de cuenta (foto o iniciales + "Mi perfil") que abre un panel
- * deslizable desde la derecha con el mismo `ProfileForm` que usa la página
- * completa /dashboard/perfil — una sola fuente de verdad para el formulario,
- * reutilizada acá como atajo rápido sin salir de la página actual.
+ * Ícono de cuenta (foto o iniciales) que abre, desde la izquierda, un menú
+ * de navegación vertical hacia las pantallas de la cuenta — mismo mecanismo
+ * que el drawer de filtros del catálogo (`SlideOverPanel`, `side="left"`).
  */
 export function AccountMenu() {
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile>(null);
 
-  const refetch = React.useCallback(() => {
-    getMyProfileAction().then(setProfile);
-  }, []);
-
   React.useEffect(() => {
-    if (session?.user) refetch();
-  }, [session?.user, refetch]);
+    if (session?.user) getMyProfileAction().then(setProfile);
+  }, [session?.user]);
 
   if (!session?.user) return null;
 
@@ -37,29 +39,26 @@ export function AccountMenu() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-lg px-1 py-1 text-foreground hover:bg-surface-muted md:px-2"
+        aria-label="Mi cuenta"
+        className="inline-flex items-center justify-center rounded-full hover:opacity-80"
       >
-        <span className="flex flex-col items-center gap-0.5 md:flex-row md:gap-2">
-          <UserAvatar avatarUrl={profile?.avatarUrl} fullName={displayName} size="sm" />
-          <span className="text-[11px] font-medium leading-none md:text-sm">Mi perfil</span>
-        </span>
+        <UserAvatar avatarUrl={profile?.avatarUrl} fullName={displayName} size="sm" />
       </button>
 
-      <SlideOverPanel open={open} onClose={() => setOpen(false)} side="right" title="Mi perfil">
-        {profile ? (
-          <ProfileForm
-            accountType={profile.accountType}
-            email={profile.email}
-            dni={profile.dni}
-            fullName={profile.fullName}
-            phone={profile.phone}
-            avatarUrl={profile.avatarUrl}
-            agency={profile.agencyProfile}
-            onSaved={refetch}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground">Cargando...</p>
-        )}
+      <SlideOverPanel open={open} onClose={() => setOpen(false)} side="left" title="Mi cuenta">
+        <nav className="space-y-1">
+          {MENU_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+            >
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </SlideOverPanel>
     </>
   );

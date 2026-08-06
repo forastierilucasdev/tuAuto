@@ -26,6 +26,7 @@ Al reportar un problema a soporte, incluir siempre:
 - **Fotos genéricas en los datos de prueba**: las publicaciones del seed usan imágenes de stock (Picsum), no fotos reales.
 - **Recuperar contraseña simulado**: el formulario de "Recuperar contraseña" (para cuando NO estás logueado, en `/login`) no envía ningún email real todavía; siempre muestra el mismo mensaje genérico. Es distinto de "Cambiar contraseña" (dentro de "Mi perfil", estando logueado), que sí funciona de verdad porque no depende de enviar un email.
 - **Foto de perfil sin editor de recorte**: la imagen se centra y recorta automáticamente dentro del círculo (`object-cover`), pero no hay una herramienta para que el usuario reposicione manualmente el recorte.
+- **Cambiar tipo de cuenta no refresca la sesión al instante**: la sesión usa JWT, así que si cambiás de Particular a Agencia (o viceversa) desde "Mi perfil", algunas partes de la app que leen el tipo de cuenta desde la sesión (no desde la base) pueden mostrar el valor viejo hasta volver a iniciar sesión. Los datos en la base sí se actualizan correctamente.
 
 ## Historial de errores resueltos
 
@@ -36,3 +37,4 @@ _(Se completa a medida que se detectan y corrigen errores post-lanzamiento del p
 | 2026-08-05 | La página de detalle de publicación devolvía error 500 (`Functions cannot be passed directly to Client Components`) al pasar íconos como referencia de componente a `VerticalTabs` desde un Server Component. | Resuelto — se pasa el ícono ya renderizado como JSX. |
 | 2026-08-06 | Logueado desde el celular, no aparecía ninguna opción para ir a "Mi perfil" (el menú del dashboard estaba oculto en mobile sin reemplazo). | Resuelto — nueva barra de navegación horizontal en mobile. |
 | 2026-08-06 | El botón X para cerrar el visor de fotos ampliado no respondía al toque en algunos casos. | Resuelto — faltaba `z-index` en ese botón. |
+| 2026-08-06 | El panel de "Mi perfil" se abría encerrado dentro de la altura del header en vez de ocupar toda la pantalla. | Resuelto — el panel ahora se monta con un Portal a `document.body` (el `backdrop-blur` del header creaba un containing block para elementos `fixed`). |

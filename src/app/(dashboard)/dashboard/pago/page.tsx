@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/utils";
 import { isBusinessAccountType } from "@/lib/constants";
+import { BackButton } from "@/components/ui/BackButton";
 
 export const metadata: Metadata = { title: "Método de pago" };
 
@@ -34,13 +35,16 @@ export default async function PagoPage() {
 
   return (
     <div className="space-y-10">
-      <div>
-        <h1 className="text-2xl font-bold text-navy">Método de pago</h1>
-        <p className="mt-1 text-muted-foreground">
-          Pagá para destacar tus publicaciones o suscribirte. Esta sección funciona con datos
-          simulados — la integración real con Mercado Pago todavía está pendiente (ver
-          ARCHITECTURE.md).
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">Método de pago</h1>
+          <p className="mt-1 text-muted-foreground">
+            Pagá para destacar tus publicaciones o suscribirte. Esta sección funciona con datos
+            simulados — la integración real con Mercado Pago todavía está pendiente (ver
+            ARCHITECTURE.md).
+          </p>
+        </div>
+        <BackButton />
       </div>
 
       <section>

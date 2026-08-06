@@ -68,9 +68,10 @@ export async function dniExists(dni: string, excludeUserId?: string) {
   return user.id !== excludeUserId;
 }
 
-export async function cuitExists(cuit: string) {
-  const profile = await prisma.agencyProfile.findUnique({ where: { cuit }, select: { id: true } });
-  return Boolean(profile);
+export async function cuitExists(cuit: string, excludeUserId?: string) {
+  const profile = await prisma.agencyProfile.findUnique({ where: { cuit }, select: { userId: true } });
+  if (!profile) return false;
+  return profile.userId !== excludeUserId;
 }
 
 export async function createParticularUser(data: {
@@ -109,8 +110,8 @@ export async function createBusinessUser(data: {
 
 export async function updateProfile(
   id: string,
-  data: Partial<Pick<User, "fullName" | "dni" | "phone" | "avatarUrl">> & {
-    agencyProfile?: { businessName?: string; city?: string; province?: string; description?: string };
+  data: Partial<Pick<User, "fullName" | "dni" | "phone" | "avatarUrl" | "accountType">> & {
+    agencyProfile?: { businessName?: string; cuit?: string; city?: string; province?: string; description?: string };
   }
 ) {
   const { agencyProfile, ...userData } = data;
@@ -119,6 +120,50 @@ export async function updateProfile(
     data: {
       ...userData,
       ...(agencyProfile ? { agencyProfile: { update: agencyProfile } } : {}),
+    },
+  });
+  return toSafeUser(user);
+}
+
+/** Cambia una cuenta Particular a Agencia/Concesionaria: crea el AgencyProfile que antes no existía. */
+export async function convertToBusinessAccount(
+  id: string,
+  accountType: "AGENCIA" | "CONCESIONARIA",
+  data: {
+    fullName: string;
+    dni: string;
+    phone: string;
+    avatarUrl?: string;
+    businessName: string;
+    cuit: string;
+    city?: string;
+    province?: string;
+    description?: string;
+  }
+) {
+  const { businessName, cuit, city, province, description, ...userData } = data;
+  const user = await prisma.user.update({
+    where: { id },
+    data: {
+      ...userData,
+      accountType,
+      agencyProfile: { create: { businessName, cuit, city, province, description } },
+    },
+  });
+  return toSafeUser(user);
+}
+
+/** Cambia una cuenta Agencia/Concesionaria a Particular: borra el AgencyProfile asociado. */
+export async function convertToParticularAccount(
+  id: string,
+  data: { fullName: string; dni: string; phone: string; avatarUrl?: string }
+) {
+  const user = await prisma.user.update({
+    where: { id },
+    data: {
+      ...data,
+      accountType: "PARTICULAR",
+      agencyProfile: { delete: true },
     },
   });
   return toSafeUser(user);
