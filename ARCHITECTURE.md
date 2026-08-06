@@ -41,14 +41,17 @@ src/
     api/auth/[...nextauth]/  Route Handler de Auth.js
   components/
     Providers.tsx        SessionProvider de Auth.js (client) que envuelve toda la app en el layout raíz
-    ui/                  Button, Input, PasswordInput, Select, Textarea, Label, Card, Badge, FieldError, VerticalTabs
-    layout/              Header (reactivo a la sesión vía useSession), Footer
+    ui/                  Button, Input, PasswordInput, Select, Textarea, Label, Card, Badge, FieldError,
+                         VerticalTabs, SlideOverPanel (panel deslizable genérico izq/der), UserAvatar (foto o iniciales)
+    layout/              Header (reactivo a la sesión vía useSession, con CTA "Publicar anuncio"), AccountMenu, Footer
     home/                HeroSearch
-    vehicles/            VehicleCard, CatalogFilters, CatalogFiltersDrawer (panel mobile), VehicleGallery (con lightbox), CategoryGrid
-    forms/               LoginForm, RegisterForm, ProfileForm (con avatar), ListingForm (wizard), ForgotPasswordForm, AddPaymentMethodForm
-    dashboard/           OwnerListingCard
+    vehicles/            VehicleCard, CatalogFilters, CatalogFiltersDrawer (usa SlideOverPanel), VehicleGallery (con lightbox), CategoryGrid
+    forms/               LoginForm, RegisterForm, ProfileForm (avatar + DNI editable, reutilizado en la página completa y en el AccountMenu),
+                         ChangePasswordForm, ForgotPasswordForm, ListingForm (wizard), AddPaymentMethodForm
+    dashboard/           OwnerListingCard, DashboardNav (barra mobile + sidebar desktop)
   hooks/
     useVehicleTaxonomy.ts  Cascada Tipo→Marca→Modelo→Año reutilizada por HeroSearch, CatalogFilters y ListingForm
+    useBodyScrollLock.ts   Bloquea el scroll del body mientras un panel/modal está abierto
   lib/
     auth.ts              Config de Auth.js (incluye trustHost: true para producción)
     prisma.ts            Singleton de PrismaClient (con adapter-pg, usa DATABASE_URL)
@@ -56,8 +59,9 @@ src/
     image-validation.ts  Whitelist de tipos MIME y validación de tamaño, compartida entre publicaciones y avatar
     rate-limit.ts        Limitador in-memory (ver limitaciones en ERRORES.md)
     constants.ts         VEHICLE_TYPES, CONDITION_OPTIONS, TRANSMISSION_OPTIONS, ACCOUNT_TYPE_LABELS, NAV_LINKS, SITE_NAME
-    validations/         auth.ts, profile.ts, listing.ts (schemas Zod)
-    utils.ts             cn, formatCurrency, formatKm, slugify, buildWhatsAppLink
+    validations/         shared.ts (primitivas: email, password, dni, cuit, teléfono, nombre — única fuente de verdad),
+                         auth.ts, profile.ts (incluye changePasswordSchema), listing.ts
+    utils.ts             cn, formatCurrency, formatKm, slugify, buildWhatsAppLink, getInitials
   server/
     data/                Único punto de acceso a Prisma: users, listings, taxonomy, agencies, payments
     actions/             Server Actions ("use server"): validan con Zod y delegan a /data

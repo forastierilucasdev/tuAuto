@@ -7,7 +7,10 @@ import { useSession } from "next-auth/react";
 import { Menu, X } from "lucide-react";
 import { NAV_LINKS, SITE_NAME } from "@/lib/constants";
 import { buttonVariants } from "@/components/ui/Button";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import { cn } from "@/lib/utils";
+
+const PUBLISH_HREF = "/dashboard/publicaciones/nueva";
 
 export function Header() {
   const pathname = usePathname();
@@ -15,48 +18,66 @@ export function Header() {
   const isAuthed = status === "authenticated";
   const [open, setOpen] = React.useState(false);
 
-  const ctaHref = isAuthed ? "/dashboard" : "/login";
-  const ctaLabel = isAuthed ? "Mi cuenta" : "Vende tu Auto";
-
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+      {/* 3 columnas (logo / centro / derecha) para poder centrar "Publicar
+          anuncio" en mobile de forma robusta, sin importar el ancho de los
+          elementos a los costados. */}
+      <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="shrink-0 text-lg font-extrabold tracking-tight text-navy sm:text-xl">
           {SITE_NAME}
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link) => {
-            const active = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "rounded-md px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-surface-muted hover:text-foreground",
-                  active && "text-primary"
-                )}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex items-center justify-center">
+          <nav className="hidden items-center gap-1 md:flex">
+            {NAV_LINKS.map((link) => {
+              const active = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-surface-muted hover:text-foreground",
+                    active && "text-primary"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <Link href={ctaHref} className={buttonVariants({ variant: "primary", size: "md" })}>
-            {ctaLabel}
-          </Link>
+          {isAuthed && (
+            <Link
+              href={PUBLISH_HREF}
+              className={cn(buttonVariants({ variant: "primary", size: "sm" }), "md:hidden")}
+            >
+              Publicar anuncio
+            </Link>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <Link href={ctaHref} className={buttonVariants({ variant: "primary", size: "sm" })}>
-            {ctaLabel}
-          </Link>
+        <div className="flex items-center justify-end gap-2">
+          {isAuthed ? (
+            <>
+              <Link
+                href={PUBLISH_HREF}
+                className={cn(buttonVariants({ variant: "primary", size: "md" }), "hidden md:inline-flex")}
+              >
+                Publicar anuncio
+              </Link>
+              <AccountMenu />
+            </>
+          ) : (
+            <Link href="/login" className={buttonVariants({ variant: "primary", size: "sm" })}>
+              Vende tu Auto
+            </Link>
+          )}
+
           <button
             type="button"
             aria-label={open ? "Cerrar menú" : "Abrir menú"}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground md:hidden"
             onClick={() => setOpen((v) => !v)}
           >
             {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}

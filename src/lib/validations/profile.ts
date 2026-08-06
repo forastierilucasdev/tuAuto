@@ -1,24 +1,26 @@
 import { z } from "zod";
-
-const fullNameSchema = z.string().trim().min(3, { error: "Ingresá apellido y nombre." }).max(120);
-
-const phoneSchema = z
-  .string()
-  .trim()
-  .regex(/^\+?\d{8,15}$/, { error: "Ingresá un teléfono válido (solo números, opcionalmente con +)." });
+import { businessNameSchema, dniSchema, fullNameSchema, passwordSchema, phoneSchema } from "@/lib/validations/shared";
 
 export const updateParticularProfileSchema = z.object({
   fullName: fullNameSchema,
+  dni: dniSchema,
   phone: phoneSchema,
 });
 
 export const updateAgencyProfileSchema = updateParticularProfileSchema.extend({
-  businessName: z
-    .string()
-    .trim()
-    .min(2, { error: "Ingresá el nombre de la concesionaria o agencia." })
-    .max(120),
+  businessName: businessNameSchema,
   city: z.string().trim().max(80).optional(),
   province: z.string().trim().max(80).optional(),
   description: z.string().trim().max(1000).optional(),
 });
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, { error: "Ingresá tu contraseña actual." }),
+    newPassword: passwordSchema,
+    confirmPassword: z.string().min(1, { error: "Confirmá tu nueva contraseña." }),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    error: "Las contraseñas no coinciden.",
+    path: ["confirmPassword"],
+  });

@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-06, noche) — Sesión logueada: publicar, cuenta y contraseña
+- **Header logueado**: cuando hay sesión, el CTA cambia de "Vende tu Auto" a **"Publicar anuncio"** (va directo a `/dashboard/publicaciones/nueva`) — centrado en mobile, a la derecha en desktop (grid de 3 columnas para centrar de forma robusta sin importar el ancho de los elementos vecinos).
+- **AccountMenu**: junto al CTA aparece la foto de perfil (o las iniciales si no cargó una) con el texto "Mi perfil" debajo (mobile) o al lado (desktop). Al tocar, abre un panel deslizable desde la derecha con el `ProfileForm` — el mismo componente que usa la página completa `/dashboard/perfil`, reutilizado tal cual.
+- **`SlideOverPanel`**: se extrajo el panel deslizable genérico (izquierda o derecha, fondo oscuro, cruz para cerrar) desde `CatalogFiltersDrawer`, que ahora lo reutiliza en vez de tener su propia implementación duplicada.
+- **DNI editable**: el perfil ahora permite cambiar el DNI (antes era de solo lectura), con la misma validación y chequeo de unicidad que en el registro.
+- **Cambiar contraseña (real)**: nueva pantalla `/dashboard/perfil/password` para usuarios logueados — a diferencia de "Recuperar contraseña" (mock, sin email), esta sí actualiza la contraseña de verdad: pide la contraseña actual, la valida contra el hash guardado, y solo ahí guarda la nueva.
+- Primitivas de validación (`email`, `password`, `dni`, `cuit`, `teléfono`, `nombre`) centralizadas en `lib/validations/shared.ts`, reutilizadas por `auth.ts` y `profile.ts` en vez de estar duplicadas.
+
 ### Fixed (2026-08-06, tarde)
 - El dashboard no tenía ninguna navegación visible en mobile: la barra lateral (`Mi perfil`, `Mis publicaciones`, `Método de pago`) tenía `hidden md:block` sin reemplazo, así que logueado desde el celular no había forma de llegar a esas secciones. Se agregó `DashboardMobileNav`, una fila horizontal scrolleable debajo del header del dashboard, solo en mobile.
 - El botón de cerrar (X) del lightbox de fotos a veces no respondía al toque: le faltaba `z-10` (las flechas de anterior/siguiente sí lo tenían), así que el contenedor de la imagen lo tapaba en el orden de pintado y absorbía el click.

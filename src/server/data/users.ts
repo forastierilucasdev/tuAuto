@@ -62,9 +62,10 @@ export async function emailExists(email: string) {
   return Boolean(user);
 }
 
-export async function dniExists(dni: string) {
+export async function dniExists(dni: string, excludeUserId?: string) {
   const user = await prisma.user.findUnique({ where: { dni }, select: { id: true } });
-  return Boolean(user);
+  if (!user) return false;
+  return user.id !== excludeUserId;
 }
 
 export async function cuitExists(cuit: string) {
@@ -108,7 +109,7 @@ export async function createBusinessUser(data: {
 
 export async function updateProfile(
   id: string,
-  data: Partial<Pick<User, "fullName" | "phone" | "avatarUrl">> & {
+  data: Partial<Pick<User, "fullName" | "dni" | "phone" | "avatarUrl">> & {
     agencyProfile?: { businessName?: string; city?: string; province?: string; description?: string };
   }
 ) {
@@ -121,4 +122,8 @@ export async function updateProfile(
     },
   });
   return toSafeUser(user);
+}
+
+export async function updatePassword(id: string, passwordHash: string) {
+  await prisma.user.update({ where: { id }, data: { passwordHash } });
 }

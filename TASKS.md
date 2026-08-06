@@ -89,6 +89,16 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Botón X del visor de fotos ampliado no cerraba en algunos casos (faltaba `z-index`)
 - [x] Verificado con login real (script contra `/api/auth/callback/credentials`) contra Supabase: `/dashboard/perfil` devuelve el nav mobile, el formulario y la carga de avatar
 
+## Fase 9 — Diseño de la sesión logueada (solicitado por el usuario)
+- [x] `SlideOverPanel` genérico (izq/der) extraído y reutilizado por `CatalogFiltersDrawer` y el nuevo `AccountMenu`
+- [x] Header logueado: botón "Publicar anuncio" (centrado en mobile vía grid de 3 columnas, a la derecha en desktop) en vez de "Vende tu Auto"
+- [x] `AccountMenu`: foto de perfil o iniciales + "Mi perfil", abre panel desde la derecha con el `ProfileForm` reutilizado (mismo componente que la página completa)
+- [x] DNI editable en el perfil (antes solo lectura), con validación y chequeo de unicidad
+- [x] Pantalla real de "Cambiar contraseña" (`/dashboard/perfil/password`) para usuarios logueados, distinta del mock de "recuperar contraseña"
+- [x] Primitivas de validación centralizadas en `lib/validations/shared.ts`
+- [x] Verificado con login real contra Supabase: DNI editable, link a cambiar contraseña, ambas pantallas nuevas responden 200
+- [ ] Prueba manual en navegador: tocar el avatar y ver el panel deslizarse de derecha a izquierda, subir avatar y confirmar que el header se actualiza sin recargar, centrado del botón "Publicar anuncio" en mobile
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
