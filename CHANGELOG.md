@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-06, noche)
+- Se sacó la barra horizontal de navegación del dashboard en mobile (Resumen / Mis publicaciones / Método de pago) — quedaba redundante con el menú del `AccountMenu`. Ese menú ahora vive directo en el header del dashboard (al lado del logo) en mobile, para no perder el único punto de acceso a esas pantallas.
+
 ### Fixed (2026-08-06, tarde-noche) — Panel de cuenta encerrado en el header
 - **Bug crítico**: `SlideOverPanel` se renderizaba como hijo del `Header`, que tiene `backdrop-blur` — esa propiedad CSS crea su propio "containing block" para elementos `fixed`, así que el panel quedaba atrapado dentro de los 64px de alto del header en vez de ocupar toda la pantalla. Ahora se monta con un Portal de React directo a `document.body`, evitando cualquier ancestro con `transform`/`filter`/`backdrop-filter` que pueda repetir el problema en el futuro.
 

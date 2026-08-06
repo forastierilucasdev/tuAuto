@@ -12,39 +12,10 @@ const NAV = [
 ];
 
 /**
- * En mobile la barra lateral quedaba oculta sin ningún reemplazo, dejando el
- * dashboard sin forma de navegar a "Mi perfil" etc. desde el celular. Esta
- * fila horizontal scrolleable, debajo del header, cubre ese caso. En
- * desktop (`md:` en adelante) no se renderiza — ahí se usa DashboardSidebarNav.
+ * Barra lateral vertical, solo en desktop (`md:` en adelante). En mobile el
+ * único acceso a estas secciones es el `AccountMenu` del header del
+ * dashboard — tener además esta lista horizontal ahí era redundante.
  */
-export function DashboardMobileNav() {
-  const pathname = usePathname();
-
-  return (
-    <nav className="border-b border-border bg-surface md:hidden">
-      <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 py-2 sm:px-6">
-        <AccountMenu />
-        {NAV.map((item) => {
-          const active = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-                active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-surface-muted"
-              )}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
-  );
-}
-
-/** Barra lateral vertical clásica, solo en desktop (`md:` en adelante). */
 export function DashboardSidebarNav() {
   const pathname = usePathname();
 
