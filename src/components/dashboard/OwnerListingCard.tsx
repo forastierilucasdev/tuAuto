@@ -30,7 +30,7 @@ const STATUS_BADGE_VARIANT: Record<OwnerListingData["status"], "success" | "info
   SOLD: "default",
 };
 
-const REACTIVATABLE: OwnerListingData["status"][] = ["RESERVADA", "PAUSADA", "EXPIRED"];
+const REACTIVATABLE: OwnerListingData["status"][] = ["RESERVADA", "PAUSADA", "EXPIRED", "DRAFT"];
 // Solo lo que sigue visible en el catálogo tiene sentido de abrir desde acá.
 const PUBLICLY_VISIBLE: OwnerListingData["status"][] = ["ACTIVE", "RESERVADA"];
 
@@ -40,6 +40,8 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   const [deleteOpen, setDeleteOpen] = React.useState(false);
 
   const clickable = PUBLICLY_VISIBLE.includes(listing.status);
+  const isSold = listing.status === "SOLD";
+  const isDraft = listing.status === "DRAFT";
   const showDestacar = listing.status === "ACTIVE" && !listing.featured;
   const showPausar = listing.status === "ACTIVE";
   const showReactivar = REACTIVATABLE.includes(listing.status);
@@ -71,12 +73,14 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
         </p>
 
         <div className="mt-auto flex flex-wrap gap-2 pt-2">
-          <Link
-            href={`/dashboard/publicaciones/${listing.id}/editar`}
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            Editar
-          </Link>
+          {!isSold && (
+            <Link
+              href={`/dashboard/publicaciones/${listing.id}/editar`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Editar
+            </Link>
+          )}
 
           {listing.status === "ACTIVE" && (
             <form action={markListingSoldAction}>
@@ -95,20 +99,22 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
 
           {showReactivar && (
             <Button type="button" variant="ghost" size="sm" onClick={() => setReactivateOpen(true)}>
-              Reactivar
+              {isDraft ? "Publicar" : "Reactivar"}
             </Button>
           )}
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-danger hover:bg-danger/10"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 className="h-4 w-4" />
-            Eliminar
-          </Button>
+          {!isSold && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-danger hover:bg-danger/10"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              Eliminar
+            </Button>
+          )}
         </div>
 
         {showDestacar && (
@@ -156,11 +162,16 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
         </div>
       </Modal>
 
-      <Modal open={reactivateOpen} onClose={() => setReactivateOpen(false)} title="Reactivar publicación">
+      <Modal
+        open={reactivateOpen}
+        onClose={() => setReactivateOpen(false)}
+        title={isDraft ? "Publicar borrador" : "Reactivar publicación"}
+      >
         <div className="space-y-3 text-sm">
           <p className="text-muted-foreground">
-            ¿Querés conservar los datos de tu publicación? Vas a poder revisarlos y actualizarlos; al guardar
-            los cambios, tu anuncio vuelve a estar activo.
+            {isDraft
+              ? "¿Querés publicar este borrador? Vas a poder revisar y completar los datos antes de que se publique."
+              : "¿Querés conservar los datos de tu publicación? Vas a poder revisarlos y actualizarlos; al guardar los cambios, tu anuncio vuelve a estar activo."}
           </p>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setReactivateOpen(false)}>

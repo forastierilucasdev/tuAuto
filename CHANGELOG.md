@@ -5,6 +5,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-06, madrugada) — Error de servidor al publicar con fotos (Vercel)
+- **Bug crítico en producción**: Next.js limita el body de un Server Action a **1MB por defecto**. El wizard de publicar permite subir hasta 6 fotos de 5MB c/u (30MB en total), así que cualquier publicación con fotos reales de verdad superaba el límite — la request se cortaba antes de llegar al código de la app, y el navegador mostraba un error de servidor genérico ("This page couldn't load"). Se subió el límite a 32MB (`experimental.serverActions.bodySizeLimit` en `next.config.ts`).
+
+### Added (2026-08-06, madrugada) — Confirmación de publicar/borrador, borradores, y varios ajustes de "Mis publicaciones"
+- **Confirmación al publicar**: el último paso del wizard de "Publicar vehículo" ahora abre un diálogo "¿Desea publicar tu anuncio?" con dos opciones: **"Sí, publicar"** (como antes) o **"No, guardar como borrador"**. El estado `DRAFT` (ya existía en el schema pero no se usaba) ahora es un flujo real: un borrador no cuenta para "Publicaciones realizadas" hasta que se publica de verdad, aparece en la pestaña "Inactivas" de Mis publicaciones, y se publica editándolo y guardando (mismo mecanismo que reactivar).
+- **"Bienvenido, {nombre}"**: al lado del avatar en el header público (desktop), muestra el nombre del usuario o, si es Agencia/Concesionaria, el nombre comercial.
+- **"Cancelar edición"**: nuevo botón en el wizard cuando se edita una publicación existente, para volver a "Mis publicaciones" sin guardar cambios.
+- **Editar/Eliminar solo si no está vendida**: publicaciones con estado "Vendida" ya no muestran los botones "Editar" ni "Eliminar" en Mis publicaciones.
+- **Contador renombrado**: "Publicaciones activadas hasta ahora" ahora dice **"Publicaciones realizadas"**. (Queda pendiente para más adelante: un contador "Publicaciones disponibles" con un botón "Comprar pack de publicaciones" cuando llegue a 0 — ver `TASKS.md`.)
+- **Checklist de precio**: se agregó la aclaración "Solo serán visibles en la publicación las opciones marcadas" debajo de los checks de negociable/permuta/financiamiento.
+
 ### Fixed (2026-08-06, noche) — Sesión no se actualizaba al loguearse, "Resumen" en desuso todavía accesible
 - **Bug crítico**: el login (y el registro) llamaban a `signIn()` de Auth.js **desde el servidor** (dentro de una Server Action, con `redirectTo`). Eso deja la cookie de sesión bien seteada, pero el `SessionProvider` del cliente (de donde lee `useSession()` en el Header/AccountMenu) nunca se entera del cambio — solo se sincroniza cuando el sign-in se dispara desde el cliente. Resultado: después de loguearse, el header podía mostrar "sin sesión" hasta hacer un refresh manual, por ejemplo al tocar el logo y navegar a Inicio. Se cambió `LoginForm` y `RegisterForm` para que la validación (formato, rate limiting, alta de usuario) siga pasando por la Server Action, pero el `signIn()` real ahora se dispara desde el cliente (`next-auth/react`), que sí sincroniza `SessionProvider` correctamente.
 - **Redirección post-login**: ahora es a la pantalla inicial ("/") por defecto. Si `proxy.ts` te redirigió a `/login` por intentar entrar a una pantalla protegida sin sesión, después de loguearte volvés a esa pantalla (`callbackUrl`, saneado contra open-redirect).

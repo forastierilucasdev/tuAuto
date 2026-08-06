@@ -31,7 +31,7 @@ export function Header() {
             <Link href="/" className="hidden text-lg font-extrabold tracking-tight text-navy sm:text-xl md:block">
               {SITE_NAME}
             </Link>
-            <AccountMenu />
+            <AccountMenu showGreeting />
           </div>
 
           <div className="flex items-center justify-center">

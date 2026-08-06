@@ -156,11 +156,12 @@ export async function getOwnerListingGroups(userId: string) {
   return {
     destacadas: listings.filter((l) => l.status === "ACTIVE" && l.featured).map(toOwnerListingData),
     activas: listings.filter((l) => l.status === "ACTIVE" && !l.featured).map(toOwnerListingData),
-    // Reservadas y pausadas van junto con vencidas/vendidas: en las tres se
-    // dejó de operar el anuncio con normalidad y todas ofrecen "Reactivar"
-    // (salvo vendida). El badge de cada card indica el estado real.
+    // Borradores, reservadas y pausadas van junto con vencidas/vendidas: en
+    // todas se dejó de operar el anuncio con normalidad. El badge de cada
+    // card indica el estado real y las acciones disponibles varían según
+    // corresponda (ver OwnerListingCard).
     inactivas: listings
-      .filter((l) => l.status === "RESERVADA" || l.status === "PAUSADA" || l.status === "EXPIRED" || l.status === "SOLD")
+      .filter((l) => l.status !== "ACTIVE")
       .map(toOwnerListingData),
   };
 }
@@ -186,6 +187,8 @@ export async function createListing(input: {
   city?: string;
   province?: string;
   contactAddress?: string;
+  /** "No, guardar como borrador" en el paso final del wizard. */
+  asDraft?: boolean;
 }) {
   const brand = await prisma.brand.findUniqueOrThrow({ where: { slug: input.brandSlug } });
   const model = await prisma.model.findFirstOrThrow({
@@ -201,36 +204,43 @@ export async function createListing(input: {
     slug = `${baseSlug}-${attempt++}`;
   }
 
+  const listingData = {
+    slug,
+    userId: input.userId,
+    vehicleType: input.vehicleType,
+    brandId: brand.id,
+    modelId: model.id,
+    year: input.year,
+    title,
+    version: input.version,
+    condition: input.condition,
+    transmission: input.transmission,
+    description: input.description,
+    price: input.price,
+    currency: input.currency,
+    priceNegotiable: input.priceNegotiable,
+    acceptsTrade: input.acceptsTrade,
+    acceptsFinancing: input.acceptsFinancing,
+    mileageKm: input.mileageKm,
+    city: input.city,
+    province: input.province,
+    contactAddress: input.contactAddress,
+    ...(input.asDraft
+      ? { status: "DRAFT" as const }
+      : {
+          status: "ACTIVE" as const,
+          publishedAt: new Date(),
+          expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
+        }),
+  };
+
+  // Un borrador no "pasó por activa" todavía, así que no suma al contador
+  // de activaciones hasta que se publique de verdad.
   const [listing] = await prisma.$transaction([
-    prisma.listing.create({
-      data: {
-        slug,
-        userId: input.userId,
-        vehicleType: input.vehicleType,
-        brandId: brand.id,
-        modelId: model.id,
-        year: input.year,
-        title,
-        version: input.version,
-        condition: input.condition,
-        transmission: input.transmission,
-        description: input.description,
-        price: input.price,
-        currency: input.currency,
-        priceNegotiable: input.priceNegotiable,
-        acceptsTrade: input.acceptsTrade,
-        acceptsFinancing: input.acceptsFinancing,
-        mileageKm: input.mileageKm,
-        city: input.city,
-        province: input.province,
-        contactAddress: input.contactAddress,
-        status: "ACTIVE",
-        publishedAt: new Date(),
-        expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
-      },
-    }),
-    // Contador de "veces que pasó a activa" — publicar cuenta como la primera.
-    prisma.user.update({ where: { id: input.userId }, data: { activationCount: { increment: 1 } } }),
+    prisma.listing.create({ data: listingData }),
+    ...(input.asDraft
+      ? []
+      : [prisma.user.update({ where: { id: input.userId }, data: { activationCount: { increment: 1 } } })]),
   ]);
   return listing;
 }
@@ -248,7 +258,7 @@ async function assertOwnership(listingId: string, userId: string) {
   }
 }
 
-const REACTIVATABLE_STATUSES: ListingStatus[] = ["RESERVADA", "PAUSADA", "EXPIRED"];
+const REACTIVATABLE_STATUSES: ListingStatus[] = ["RESERVADA", "PAUSADA", "EXPIRED", "DRAFT"];
 
 export async function updateOwnedListing(
   listingId: string,
@@ -272,10 +282,12 @@ export async function updateOwnedListing(
     select: { status: true },
   });
 
-  // Guardar cambios en una publicación reservada/pausada/vencida la vuelve a
-  // activar automáticamente ("¿conservar tus datos? Sí, editar" en la UI).
-  // Una vendida nunca se reactiva sola por edición.
+  // Guardar cambios en una publicación borrador/reservada/pausada/vencida la
+  // vuelve a activar automáticamente ("¿conservar tus datos? Sí, editar" en
+  // la UI, o "publicar" para un borrador). Una vendida nunca se reactiva
+  // sola por edición.
   const reactivating = REACTIVATABLE_STATUSES.includes(current.status);
+  const wasDraft = current.status === "DRAFT";
 
   const [listing] = await prisma.$transaction([
     prisma.listing.update({
@@ -287,6 +299,7 @@ export async function updateOwnedListing(
               status: "ACTIVE" as const,
               soldAt: null,
               expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
+              ...(wasDraft ? { publishedAt: new Date() } : {}),
             }
           : {}),
       },

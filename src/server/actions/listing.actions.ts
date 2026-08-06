@@ -73,14 +73,17 @@ export async function createListingAction(
   const imageError = validateImages(files);
   if (imageError) return { error: imageError };
 
-  const listing = await createListing({ userId: session.user.id, ...parsed.data });
+  const asDraft = raw.status === "DRAFT";
+  const listing = await createListing({ userId: session.user.id, asDraft, ...parsed.data });
 
   const urls = await Promise.all(files.map((file, index) => uploadListingImage(file, listing.id, index)));
   await attachListingImages(listing.id, urls);
 
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
-  redirect(`/dashboard/publicaciones?published=${listing.slug}`);
+  redirect(
+    asDraft ? "/dashboard/publicaciones?tab=inactivas" : `/dashboard/publicaciones?published=${listing.slug}`
+  );
 }
 
 export async function updateListingAction(

@@ -140,6 +140,19 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales: `/dashboard` sin sesión rebota a `/login?callbackUrl=...`, `/dashboard` con sesión rebota a `/dashboard/perfil`, `/` muestra "Ingresar" deslogueado
 - [ ] Prueba manual en navegador (imprescindible acá): loguearse y confirmar que el header queda actualizado sin refrescar, tocar el logo después de loguearse, y el comportamiento del botón flotante al scrollear/quedarse quieto — todo esto depende de JS de cliente y no se puede verificar con curl
 
+## Fase 13 — Confirmación de publicar/borrador, error de producción y ajustes de Mis publicaciones (solicitado por el usuario)
+- [x] Corregido bug crítico de producción: `serverActions.bodySizeLimit` (default 1MB) cortaba la request al publicar con fotos reales — subido a 32MB
+- [x] Confirmación "¿Desea publicar tu anuncio?" (Sí, publicar / No, guardar como borrador) en el último paso del wizard de creación
+- [x] Estado `DRAFT` implementado de punta a punta: no incrementa el contador, aparece en "Inactivas", se publica editando y guardando
+- [x] "Bienvenido, {nombre}" al lado del avatar en el header público (desktop) — nombre comercial para Agencia/Concesionaria
+- [x] Botón "Cancelar edición" en el wizard al editar una publicación existente
+- [x] Editar/Eliminar ocultos para publicaciones vendidas
+- [x] Contador renombrado a "Publicaciones realizadas"
+- [x] Aclaración "Solo serán visibles las opciones marcadas" en el checklist de precio
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado: creación de un borrador a nivel de datos (no incrementa el contador, cae en el grupo correcto), páginas de Mis publicaciones/Editar responden 200 con los textos esperados
+- [ ] Prueba manual en navegador: publicar con varias fotos reales (el bug de 1MB solo se manifestaba con archivos de tamaño real, no se puede reproducir con mocks livianos), diálogo de confirmación al publicar, botón "Cancelar edición"
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
@@ -147,3 +160,4 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [ ] Content-Security-Policy estricta
 - [ ] Rate limiting distribuido (Redis / Upstash) para despliegue multi-instancia
 - [ ] Permitir borrar/reordenar fotos ya subidas al editar una publicación (hoy solo se pueden agregar más)
+- [ ] **Pack de publicaciones**: cuando `activationCount` llegue a un límite (a definir), reemplazar "Publicaciones realizadas: N" por "Publicaciones disponibles: N" y, si llega a 0, mostrar un botón "Comprar pack de publicaciones" (pedido explícitamente por el usuario para más adelante, no todavía).

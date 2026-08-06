@@ -50,7 +50,7 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
         </Link>
         {profile && (
           <p className="text-xs text-muted-foreground">
-            Publicaciones activadas hasta ahora: <span className="font-semibold text-foreground">{profile.activationCount}</span>
+            Publicaciones realizadas: <span className="font-semibold text-foreground">{profile.activationCount}</span>
           </p>
         )}
       </div>

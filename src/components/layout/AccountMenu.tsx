@@ -24,6 +24,8 @@ const itemClasses =
 type AccountMenuProps = {
   /** "md" para verlo más grande — se usa en la barra lateral de desktop. */
   avatarSize?: "sm" | "md";
+  /** "Bienvenido, {nombre}" al lado del avatar — header público en desktop. */
+  showGreeting?: boolean;
 };
 
 /**
@@ -31,7 +33,7 @@ type AccountMenuProps = {
  * de navegación vertical hacia las pantallas de la cuenta — mismo mecanismo
  * que el drawer de filtros del catálogo (`SlideOverPanel`, `side="left"`).
  */
-export function AccountMenu({ avatarSize = "sm" }: AccountMenuProps) {
+export function AccountMenu({ avatarSize = "sm", showGreeting = false }: AccountMenuProps) {
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile>(null);
@@ -42,18 +44,27 @@ export function AccountMenu({ avatarSize = "sm" }: AccountMenuProps) {
 
   if (!session?.user) return null;
 
-  const displayName = profile?.fullName ?? session.user.name ?? "";
+  // Para cuentas de negocio se saluda con el nombre comercial, no el nombre
+  // personal del titular de la cuenta.
+  const displayName = profile?.agencyProfile?.businessName ?? profile?.fullName ?? session.user.name ?? "";
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Mi cuenta"
-        className="inline-flex items-center justify-center rounded-full hover:opacity-80"
-      >
-        <UserAvatar avatarUrl={profile?.avatarUrl} fullName={displayName} size={avatarSize} />
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Mi cuenta"
+          className="inline-flex items-center justify-center rounded-full hover:opacity-80"
+        >
+          <UserAvatar avatarUrl={profile?.avatarUrl} fullName={displayName} size={avatarSize} />
+        </button>
+        {showGreeting && displayName && (
+          <span className="hidden text-sm font-medium text-foreground md:inline">
+            Bienvenido, {displayName}
+          </span>
+        )}
+      </div>
 
       <SlideOverPanel open={open} onClose={() => setOpen(false)} side="left" title="Mi cuenta">
         <nav className="space-y-1">

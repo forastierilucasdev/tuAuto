@@ -3,13 +3,15 @@
 import * as React from "react";
 import { useActionState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Check, ImagePlus, Star, X } from "lucide-react";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonVariants } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
+import { Modal } from "@/components/ui/Modal";
 import {
   VEHICLE_TYPES,
   CONDITION_OPTIONS,
@@ -214,12 +216,9 @@ export function ListingForm(props: ListingFormProps) {
     if (!isLastStep) goNext();
   }
 
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    // Defensa adicional: nunca publicar/guardar salvo que el usuario haya
-    // llegado al último paso y tocado el botón, sin importar qué disparó el
-    // evento submit.
-    if (!isLastStep) return;
+  const [confirmPublishOpen, setConfirmPublishOpen] = React.useState(false);
+
+  function submitListing(status?: "ACTIVE" | "DRAFT") {
     const formData = new FormData();
 
     if (isEdit) {
@@ -232,6 +231,7 @@ export function ListingForm(props: ListingFormProps) {
       formData.set("version", version);
       formData.set("transmission", transmission);
       formData.set("condition", condition);
+      if (status) formData.set("status", status);
     }
 
     formData.set("price", price);
@@ -249,6 +249,21 @@ export function ListingForm(props: ListingFormProps) {
     React.startTransition(() => {
       formAction(formData);
     });
+  }
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    // Defensa adicional: nunca publicar/guardar salvo que el usuario haya
+    // llegado al último paso y tocado el botón, sin importar qué disparó el
+    // evento submit.
+    if (!isLastStep) return;
+    if (!isEdit) {
+      // En modo creación, el submit del último paso abre la confirmación
+      // "¿Desea publicar?" en vez de publicar directamente.
+      setConfirmPublishOpen(true);
+      return;
+    }
+    submitListing();
   }
 
   return (
@@ -480,6 +495,9 @@ export function ListingForm(props: ListingFormProps) {
                 />
                 Acepta financiamiento
               </label>
+              <p className="text-xs text-muted-foreground">
+                Solo serán visibles en la publicación las opciones marcadas.
+              </p>
             </div>
           </div>
         )}
@@ -680,9 +698,16 @@ export function ListingForm(props: ListingFormProps) {
       </div>
 
       <div className="mt-5 flex items-center justify-between gap-3">
-        <Button type="button" variant="outline" onClick={goBack} disabled={stepIndex === 0}>
-          Atrás
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button type="button" variant="outline" onClick={goBack} disabled={stepIndex === 0}>
+            Atrás
+          </Button>
+          {isEdit && (
+            <Link href="/dashboard/publicaciones" className={buttonVariants({ variant: "ghost" })}>
+              Cancelar edición
+            </Link>
+          )}
+        </div>
 
         {isLastStep ? (
           <Button type="submit" disabled={pending || missingFields.length > 0} size="lg">
@@ -695,6 +720,42 @@ export function ListingForm(props: ListingFormProps) {
           </Button>
         )}
       </div>
+
+      {!isEdit && (
+        <Modal
+          open={confirmPublishOpen}
+          onClose={() => setConfirmPublishOpen(false)}
+          title="¿Desea publicar tu anuncio?"
+        >
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              Podés publicarlo ahora para que se muestre en el catálogo, o guardarlo como borrador y
+              publicarlo más adelante desde &quot;Mis publicaciones&quot;.
+            </p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setConfirmPublishOpen(false);
+                  submitListing("DRAFT");
+                }}
+              >
+                No, guardar como borrador
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setConfirmPublishOpen(false);
+                  submitListing("ACTIVE");
+                }}
+              >
+                Sí, publicar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </form>
   );
 }
