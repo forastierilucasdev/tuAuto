@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 
+// "Mi perfil" no es un link de navegación acá: lo cubre el trigger de
+// AccountMenu (avatar + panel deslizable), reutilizado tal cual en el
+// header público para no tener dos formas distintas de llegar al perfil.
 const NAV = [
   { href: "/dashboard", label: "Resumen" },
-  { href: "/dashboard/perfil", label: "Mi perfil" },
   { href: "/dashboard/publicaciones", label: "Mis publicaciones" },
   { href: "/dashboard/pago", label: "Método de pago" },
 ];
@@ -22,7 +25,7 @@ export function DashboardMobileNav() {
 
   return (
     <nav className="border-b border-border bg-surface md:hidden">
-      <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-2 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 py-2 sm:px-6">
         {NAV.map((item) => {
           const active = pathname === item.href;
           return (
@@ -38,6 +41,9 @@ export function DashboardMobileNav() {
             </Link>
           );
         })}
+        <div className="ml-auto shrink-0">
+          <AccountMenu />
+        </div>
       </div>
     </nav>
   );
@@ -49,6 +55,9 @@ export function DashboardSidebarNav() {
 
   return (
     <aside className="hidden w-56 shrink-0 md:block">
+      <div className="mb-4 border-b border-border pb-4">
+        <AccountMenu />
+      </div>
       <nav className="space-y-1">
         {NAV.map((item) => {
           const active = pathname === item.href;
