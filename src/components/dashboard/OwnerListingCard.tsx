@@ -31,8 +31,6 @@ const STATUS_BADGE_VARIANT: Record<OwnerListingData["status"], "success" | "info
 };
 
 const REACTIVATABLE: OwnerListingData["status"][] = ["RESERVADA", "PAUSADA", "EXPIRED", "DRAFT"];
-// Solo lo que sigue visible en el catálogo tiene sentido de abrir desde acá.
-const PUBLICLY_VISIBLE: OwnerListingData["status"][] = ["ACTIVE", "RESERVADA"];
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
@@ -45,7 +43,9 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   // contador de días.
   const [now] = React.useState(() => Date.now());
 
-  const clickable = PUBLICLY_VISIBLE.includes(listing.status);
+  // El dueño puede abrir su propia publicación en cualquier estado (ver
+  // `getListingBySlug`, que la muestra sin el filtro de visibilidad pública
+  // cuando el visitante es el dueño) — todas las tarjetas son clickeables.
   const isSold = listing.status === "SOLD";
   const isDraft = listing.status === "DRAFT";
   const showDestacar = listing.status === "ACTIVE" && !listing.featured;
@@ -130,15 +130,11 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
 
   return (
     <Card className="flex h-full flex-col overflow-hidden p-0">
-      {clickable ? <Link href={`/catalogo/${listing.slug}`}>{media}</Link> : media}
+      <Link href={`/catalogo/${listing.slug}`}>{media}</Link>
       <CardContent className="flex flex-1 flex-col gap-2 pt-4">
-        {clickable ? (
-          <Link href={`/catalogo/${listing.slug}`} className="truncate font-semibold text-navy hover:underline">
-            {listing.title}
-          </Link>
-        ) : (
-          <p className="truncate font-semibold text-navy">{listing.title}</p>
-        )}
+        <Link href={`/catalogo/${listing.slug}`} className="truncate font-semibold text-navy hover:underline">
+          {listing.title}
+        </Link>
         <p className="font-bold text-primary">{formatCurrency(listing.price, listing.currency)}</p>
         <p className="text-xs text-muted-foreground">
           {formatKm(listing.mileageKm)} · {listing.year}

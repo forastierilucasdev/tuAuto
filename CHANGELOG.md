@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-06) — Las publicaciones vendidas no se podían abrir
+- `OwnerListingCard` solo hacía clickeable la foto/título cuando el estado era Activa o Reservada (los únicos visibles en el catálogo público). Se quedó desactualizado tras agregar que el dueño puede ver su propia publicación en cualquier estado (`getListingBySlug` ya lo permitía desde una ronda anterior) — ahora todas las tarjetas de "Mis publicaciones" son clickeables, sin importar el estado. Sigue sin ser accesible para otros visitantes (404) si no está Activa/Reservada.
+
 ### Added (2026-08-06) — Rediseño completo del ciclo de vida de publicaciones
 - **Nuevos estados y pestañas**: "Mis publicaciones" pasa de 3 a 5 pestañas: **Activas**, **Destacadas**, **Reservadas** (antes agrupada en "Inactivas"), **Inactivas** (Borrador + Pausada + Vencida) y **Vendidas**. Vendida es de solo lectura: sin Editar, Reactivar ni Eliminar.
 - **Vencimiento automático (30 días)**: se acorta el plazo de publicación de 60 a 30 días. El vencimiento se calcula **al leer**, sin ningún proceso en segundo plano — si `expiresAt` ya pasó, la publicación se trata como "Vencida" (catálogo público, badges, elegibilidad para reactivar) aunque en la base todavía diga `ACTIVE`/`RESERVADA`/`PAUSADA`. Reactivarla vuelve a correr el plazo desde cero.
