@@ -7,7 +7,7 @@ import { signOut, useSession } from "next-auth/react";
 import { Menu, X } from "lucide-react";
 import { NAV_LINKS, SITE_NAME } from "@/lib/constants";
 import { buttonVariants } from "@/components/ui/Button";
-import { AccountMenu } from "@/components/layout/AccountMenu";
+import { AccountMenu, type AccountMenuHandle } from "@/components/layout/AccountMenu";
 import { FloatingPublishButton } from "@/components/layout/FloatingPublishButton";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ export function Header() {
   const { status } = useSession();
   const isAuthed = status === "authenticated";
   const [open, setOpen] = React.useState(false);
+  const accountMenuRef = React.useRef<AccountMenuHandle>(null);
 
   return (
     <>
@@ -33,7 +34,7 @@ export function Header() {
               {SITE_NAME}
             </Link>
             <div className="md:hidden">
-              <AccountMenu />
+              <AccountMenu ref={accountMenuRef} />
             </div>
           </div>
 
@@ -122,17 +123,23 @@ export function Header() {
               {isAuthed && (
                 <>
                   <hr className="my-2 border-border" />
-                  <Link
-                    href="/dashboard/perfil"
-                    onClick={() => setOpen(false)}
-                    className="rounded-md px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-surface-muted"
+                  {/* Negrita más marcada que el resto del menú (font-bold +
+                      texto sin atenuar) para que se destaquen como accesos
+                      a la cuenta, no como otro link de navegación más. */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      accountMenuRef.current?.open();
+                    }}
+                    className="rounded-md px-3 py-2 text-left text-sm font-bold text-foreground hover:bg-surface-muted"
                   >
-                    Mi perfil
-                  </Link>
+                    Mi cuenta
+                  </button>
                   <button
                     type="button"
                     onClick={() => signOut({ callbackUrl: "/" })}
-                    className="rounded-md px-3 py-2 text-left text-sm font-medium text-danger hover:bg-danger/10"
+                    className="rounded-md px-3 py-2 text-left text-sm font-bold text-danger hover:bg-danger/10"
                   >
                     Cerrar sesión
                   </button>

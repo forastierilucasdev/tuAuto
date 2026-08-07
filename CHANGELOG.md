@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-07, noche) — Ajustes de Concesionarias/Agencias, menú mobile y Mis publicaciones
+- **Concesionarias/Agencias — mismo ancho que el catálogo**: el contenedor pasa de `max-w-6xl` a `max-w-7xl` y la grilla de tarjetas de `lg:grid-cols-4` a `sm:grid-cols-2 xl:grid-cols-3`, igual que los resultados de vehículos.
+- **Destacadas siguen al filtro de tipo, no a los de texto**: antes cualquier filtro (incluidos provincia/localidad) ocultaba las dos secciones de destacadas. Ahora "Concesionarias destacadas" se sigue mostrando si el filtro "Tipo" es Concesionaria (o está vacío), y "Agencias destacadas" si es Agencia (o vacío) — independiente de si hay provincia/localidad cargadas.
+- **Menú hamburguesa mobile (logueado)**: "Mi perfil" pasa a llamarse "Mi cuenta" y ahora abre el mismo panel que el ícono de cuenta (antes navegaba a `/dashboard/perfil`, una pantalla distinta al panel). `AccountMenu` expone `open()` por ref para que el hamburguesa pueda disparar el mismo panel sin duplicarlo. "Mi cuenta" y "Cerrar sesión" quedan en negrita más marcada para que se destaquen del resto de los links de navegación.
+- **Mis publicaciones — botones y contadores apilados** (desktop y mobile): "Publicar vehículo", "Comprar publicaciones", "Publicaciones realizadas" y "Publicaciones disponibles" pasan de una fila con salto de línea desprolijo a una columna, cada uno en su propia línea.
+- **Mis publicaciones — pestañas a ancho completo en desktop**: Activas/Destacadas/Reservadas/Inactivas/Vendidas ahora se reparten todo el ancho disponible (`flex-1` cada una) en vez de quedar pegadas a la izquierda.
+- **Mis publicaciones — selector de pestañas en mobile**: la barra horizontal (que había que desplazar) se reemplaza por un botón "Filtros" (mismo ícono que el catálogo) que abre un panel con las opciones una debajo de otra — se agrega "Todos" al principio de la lista — y tocar una aplica al toque, sin botón "Aplicar".
+
 ### Changed (2026-08-07, noche) — Concesionarias y Agencias: filtro por tipo, panel de filtros unificado y padding simétrico
 - **Padding simétrico en `Select`** (componente centralizado, usado en todos los filtros de la app): tenía `px-3 pr-9` para dejarle lugar a la flechita, así que el valor quedaba visiblemente corrido hacia la izquierda dentro del campo. Ahora es `px-3` en los dos lados (con `overflow-hidden`/`text-ellipsis` para valores largos) y la flechita se superpone como decoración en vez de reservar espacio — corrige la asimetría en todos los `Select` de la app de una sola vez.
 - **`/concesionarias` ahora usa el mismo patrón de filtros que el catálogo**: panel fijo en la barra lateral en desktop, panel deslizable con botón "Filtros" en mobile (antes era un simple formulario arriba de los resultados) — mismo componente visual (`AgencyFilters`/`AgencyFiltersDrawer`, mismo contenedor que `CatalogFilters`).

@@ -5,19 +5,12 @@ import { getAvailablePublications, getOwnerListingGroups } from "@/server/data/l
 import { getFullProfile } from "@/server/data/users";
 import { OwnerListingCard } from "@/components/dashboard/OwnerListingCard";
 import { PublishedListingModal } from "@/components/dashboard/PublishedListingModal";
+import { PublicacionesTabs } from "@/components/dashboard/PublicacionesTabs";
 import { buttonVariants } from "@/components/ui/Button";
 import { BackButton } from "@/components/ui/BackButton";
-import { cn } from "@/lib/utils";
+import { PUBLICACIONES_TABS, type PublicacionesTabKey } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Mis publicaciones" };
-
-const TABS = [
-  { key: "activas", label: "Activas" },
-  { key: "destacadas", label: "Destacadas" },
-  { key: "reservadas", label: "Reservadas" },
-  { key: "inactivas", label: "Inactivas" },
-  { key: "vendidas", label: "Vendidas" },
-] as const;
 
 function param(sp: Record<string, string | string[] | undefined>, key: string) {
   const value = sp[key];
@@ -27,7 +20,8 @@ function param(sp: Record<string, string | string[] | undefined>, key: string) {
 export default async function MisPublicacionesPage(props: PageProps<"/dashboard/publicaciones">) {
   const sp = await props.searchParams;
   const requestedTab = param(sp, "tab");
-  const activeTab = TABS.find((t) => t.key === requestedTab)?.key ?? "activas";
+  const activeTab: PublicacionesTabKey | "todas" =
+    requestedTab === "todas" ? "todas" : (PUBLICACIONES_TABS.find((t) => t.key === requestedTab)?.key ?? "activas");
   const publishedSlug = param(sp, "published");
 
   const session = await auth();
@@ -36,7 +30,16 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
     getFullProfile(session!.user.id),
     getAvailablePublications(session!.user.id),
   ]);
-  const listings = groups[activeTab];
+  const allListings = PUBLICACIONES_TABS.flatMap((tab) => groups[tab.key]);
+  const listings = activeTab === "todas" ? allListings : groups[activeTab];
+  const counts = {
+    todas: allListings.length,
+    activas: groups.activas.length,
+    destacadas: groups.destacadas.length,
+    reservadas: groups.reservadas.length,
+    inactivas: groups.inactivas.length,
+    vendidas: groups.vendidas.length,
+  };
 
   return (
     <div>
@@ -47,45 +50,29 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Mis publicaciones</h1>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-4 flex flex-col items-start gap-3">
         <Link href="/dashboard/publicaciones/nueva" className={buttonVariants({ variant: "primary" })}>
           Publicar vehículo
         </Link>
-        {profile && (
-          <p className="text-xs text-muted-foreground">
-            Publicaciones realizadas: <span className="font-semibold text-foreground">{profile.activationCount}</span>
-            {" · "}
-            Publicaciones disponibles: <span className="font-semibold text-foreground">{available}</span>
-          </p>
-        )}
         <Link
           href="/dashboard/pago#comprar-publicaciones"
           className={buttonVariants({ variant: "outline", size: "sm" })}
         >
           Comprar publicaciones
         </Link>
+        {profile && (
+          <div className="text-xs text-muted-foreground">
+            <p>
+              Publicaciones realizadas: <span className="font-semibold text-foreground">{profile.activationCount}</span>
+            </p>
+            <p>
+              Publicaciones disponibles: <span className="font-semibold text-foreground">{available}</span>
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="mt-6 flex gap-1 overflow-x-auto border-b border-border">
-        {TABS.map((tab) => (
-          <Link
-            key={tab.key}
-            href={`/dashboard/publicaciones?tab=${tab.key}`}
-            // Cambiar de pestaña reemplaza la entrada del historial en vez de
-            // apilar una nueva — si no, "Volver" te hace recorrer pestaña por
-            // pestaña en vez de salir de la pantalla directamente.
-            replace
-            className={cn(
-              "shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors",
-              activeTab === tab.key
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {tab.label} ({groups[tab.key].length})
-          </Link>
-        ))}
-      </div>
+      <PublicacionesTabs activeTab={activeTab} counts={counts} />
 
       <div className="mt-6">
         {listings.length === 0 ? (

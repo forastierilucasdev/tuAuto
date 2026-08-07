@@ -70,7 +70,7 @@ function AgencyCard({ agency }: { agency: Agency }) {
 
 function AgencyGrid({ agencies }: { agencies: Agency[] }) {
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
       {agencies.map((agency) => (
         <AgencyCard key={agency.userId} agency={agency} />
       ))}
@@ -95,16 +95,20 @@ export default async function ConcesionariasPage(props: PageProps<"/concesionari
   const provincia = param(sp, "provincia") ?? "";
   const localidad = param(sp, "localidad") ?? "";
   const tipo = (param(sp, "tipo") as AgencyAccountType | undefined) ?? "";
-  const hasFilters = Boolean(provincia || localidad || tipo);
+  // Las destacadas siguen al filtro de tipo (si elegís "Concesionarias" seguís
+  // viendo las concesionarias destacadas), no a los filtros de texto
+  // provincia/localidad — esos solo acotan el listado completo de abajo.
+  const showConcesionariasDestacadas = tipo === "" || tipo === "CONCESIONARIA";
+  const showAgenciasDestacadas = tipo === "" || tipo === "AGENCIA";
 
   const [agencies, featuredConcesionarias, featuredAgencias] = await Promise.all([
     getAgencies({ province: provincia || undefined, city: localidad || undefined, accountType: tipo || undefined }),
-    hasFilters ? Promise.resolve([]) : getFeaturedAgencies("CONCESIONARIA", 4),
-    hasFilters ? Promise.resolve([]) : getFeaturedAgencies("AGENCIA", 4),
+    showConcesionariasDestacadas ? getFeaturedAgencies("CONCESIONARIA", 4) : Promise.resolve([]),
+    showAgenciasDestacadas ? getFeaturedAgencies("AGENCIA", 4) : Promise.resolve([]),
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-2xl font-bold text-navy sm:text-3xl">Concesionarias y Agencias</h1>
       <p className="mt-1 text-muted-foreground">Agencias y concesionarias que publican en Motoresya.</p>
 
@@ -117,7 +121,7 @@ export default async function ConcesionariasPage(props: PageProps<"/concesionari
           <AgencyFiltersDrawer />
 
           <div className="space-y-10">
-            {!hasFilters && featuredConcesionarias.length > 0 && (
+            {showConcesionariasDestacadas && featuredConcesionarias.length > 0 && (
               <section>
                 <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-bold text-navy">
                   <Star className="h-5 w-5 fill-current text-warning" />
@@ -127,7 +131,7 @@ export default async function ConcesionariasPage(props: PageProps<"/concesionari
               </section>
             )}
 
-            {!hasFilters && featuredAgencias.length > 0 && (
+            {showAgenciasDestacadas && featuredAgencias.length > 0 && (
               <section>
                 <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-bold text-navy">
                   <Star className="h-5 w-5 fill-current text-warning" />

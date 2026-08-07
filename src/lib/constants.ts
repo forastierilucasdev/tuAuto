@@ -107,6 +107,17 @@ export const NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ] as const;
 
+/** Pestañas de "Mis publicaciones" — única fuente de verdad para la página y el selector mobile (`PublicacionesTabs`). */
+export const PUBLICACIONES_TABS = [
+  { key: "activas", label: "Activas" },
+  { key: "destacadas", label: "Destacadas" },
+  { key: "reservadas", label: "Reservadas" },
+  { key: "inactivas", label: "Inactivas" },
+  { key: "vendidas", label: "Vendidas" },
+] as const;
+
+export type PublicacionesTabKey = (typeof PUBLICACIONES_TABS)[number]["key"];
+
 export const SITE_NAME = "Motoresya";
 
 export const FALLBACK_IMAGE = "https://picsum.photos/seed/tuauto-placeholder/800/600";

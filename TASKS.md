@@ -254,6 +254,17 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales: sin filtros (destacadas x2 + "Todos los resultados"), `tipo=CONCESIONARIA`, `tipo=AGENCIA`, filtro sin resultados, y que el `Select` renderizado ya no tiene `pr-9` — todo 200, sin errores de servidor
 - [ ] Prueba manual en navegador (imprescindible, es mayormente visual): padding simétrico en los selects de toda la app, el panel de filtros de Concesionarias/Agencias en desktop y mobile, y que las tarjetas y encabezados cambien correctamente al tocar cada opción del filtro "Tipo"
 
+## Fase 24 — Ajustes de Concesionarias/Agencias, menú mobile y Mis publicaciones (solicitado por el usuario)
+- [x] Concesionarias/Agencias: mismo ancho de tarjetas y contenedor que el catálogo (`max-w-7xl`, `xl:grid-cols-3`)
+- [x] Destacadas (Concesionarias/Agencias) siguen al filtro "Tipo", no a los filtros de texto provincia/localidad
+- [x] Menú hamburguesa mobile: "Mi perfil" → "Mi cuenta", abre el mismo panel que el ícono de cuenta (`AccountMenu` con ref); "Mi cuenta" y "Cerrar sesión" en negrita más marcada
+- [x] Mis publicaciones: botones (Publicar vehículo, Comprar publicaciones) y contadores (realizadas, disponibles) apilados en columna, desktop y mobile
+- [x] Mis publicaciones: pestañas a ancho completo en desktop
+- [x] Mis publicaciones: selector de pestañas en mobile vía botón "Filtros" + panel deslizable con "Todos" + las 5 pestañas, aplica al toque
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: ancho/grilla de `/concesionarias`, destacadas correctas en `tipo=CONCESIONARIA`/`tipo=AGENCIA`, `/dashboard/publicaciones` sin error de servidor (redirige a login sin sesión, esperado) — todo sin 500
+- [ ] Prueba manual en navegador (imprescindible, es mayormente visual/interactivo y depende de `useSession()`): menú hamburguesa mobile logueado, panel "Mi cuenta" abriendo desde ahí, y el nuevo selector de pestañas de Mis publicaciones en mobile
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

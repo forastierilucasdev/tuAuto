@@ -30,17 +30,28 @@ type AccountMenuProps = {
   panelSide?: "left" | "right";
 };
 
+export type AccountMenuHandle = { open: () => void };
+
 /**
  * Ícono de cuenta (foto o iniciales) que abre un menú de navegación vertical
  * hacia las pantallas de la cuenta — mismo mecanismo que el drawer de
  * filtros del catálogo (`SlideOverPanel`). `panelSide` controla desde qué
  * borde entra, para que abra "desde donde tocaste" según en qué lado del
  * header viva el avatar.
+ *
+ * Expone `open()` por ref para que otro disparador (ej. "Mi cuenta" en el
+ * menú hamburguesa mobile de `Header`) pueda abrir este mismo panel en vez
+ * de duplicarlo.
  */
-export function AccountMenu({ avatarSize = "sm", showGreeting = false, panelSide = "left" }: AccountMenuProps) {
+export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>(function AccountMenu(
+  { avatarSize = "sm", showGreeting = false, panelSide = "left" },
+  ref
+) {
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile>(null);
+
+  React.useImperativeHandle(ref, () => ({ open: () => setOpen(true) }));
 
   React.useEffect(() => {
     if (session?.user) getMyProfileAction().then(setProfile);
@@ -93,4 +104,4 @@ export function AccountMenu({ avatarSize = "sm", showGreeting = false, panelSide
       </SlideOverPanel>
     </>
   );
-}
+});
