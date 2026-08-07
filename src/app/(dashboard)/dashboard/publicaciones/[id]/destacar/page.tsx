@@ -38,10 +38,10 @@ export default async function DestacarPublicacionPage(
 
   return (
     <div className="mx-auto max-w-lg">
-      <div className="flex items-start justify-between gap-4">
-        <h1 className="text-2xl font-bold text-navy">Destacar anuncio</h1>
+      <div className="flex justify-end">
         <BackButton />
       </div>
+      <h1 className="mt-2 text-2xl font-bold text-navy">Destacar anuncio</h1>
 
       <Card className="mt-6 overflow-hidden p-0">
         <div className="flex gap-3 p-4">

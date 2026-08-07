@@ -22,13 +22,11 @@ export default async function EditarPublicacionPage(props: PageProps<"/dashboard
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Editar publicación</h1>
-          <p className="mt-1 mb-6 text-muted-foreground">Actualizá los datos de tu publicación.</p>
-        </div>
+      <div className="flex justify-end">
         <BackButton />
       </div>
+      <h1 className="mt-2 text-2xl font-bold text-navy">Editar publicación</h1>
+      <p className="mt-1 mb-6 text-muted-foreground">Actualizá los datos de tu publicación.</p>
       {REACTIVATABLE.has(listing.status) && (
         <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
           {listing.status === "DRAFT" ? (

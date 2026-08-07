@@ -341,6 +341,24 @@ export async function attachListingImages(listingId: string, urls: string[]) {
   });
 }
 
+export class LastImageError extends Error {
+  constructor() {
+    super("La publicación necesita al menos una foto — subí otra antes de borrar esta.");
+    this.name = "LastImageError";
+  }
+}
+
+/**
+ * No borra el archivo en Supabase Storage, solo la fila — mismo límite ya
+ * documentado para eliminar una publicación entera (ver ERRORES.md).
+ */
+export async function deleteListingImage(listingId: string, imageId: string, userId: string) {
+  await assertOwnership(listingId, userId);
+  const imageCount = await prisma.image.count({ where: { listingId } });
+  if (imageCount <= 1) throw new LastImageError();
+  await prisma.image.deleteMany({ where: { id: imageId, listingId } });
+}
+
 async function assertOwnership(listingId: string, userId: string) {
   const listing = await prisma.listing.findUnique({ where: { id: listingId }, select: { userId: true } });
   if (!listing || listing.userId !== userId) {

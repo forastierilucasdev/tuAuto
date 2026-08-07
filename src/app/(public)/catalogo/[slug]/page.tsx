@@ -155,17 +155,19 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col px-4 py-8 sm:px-6 lg:px-8">
-      {/* Mobile: fotos primero. Desktop (sm+): título primero, luego fotos. */}
-      <div className="order-2 mt-6 flex items-start justify-between gap-4 sm:order-1 sm:mt-0 sm:mb-6">
-        <h1 className="text-2xl font-bold text-navy sm:text-3xl">{listing.title}</h1>
+      {/* Mismo orden en mobile y desktop: Volver arriba de todo, después el
+          título, después las fotos. */}
+      <div className="flex justify-end">
         <BackButton />
       </div>
 
-      <div className="order-1 sm:order-2">
+      <h1 className="mt-2 text-2xl font-bold text-navy sm:text-3xl">{listing.title}</h1>
+
+      <div className="mt-4 sm:mt-6">
         <VehicleGallery images={listing.images} title={listing.title} />
       </div>
 
-      <div className="order-3 mt-6 sm:mt-4">
+      <div className="mt-6 sm:mt-4">
         <VerticalTabs tabs={tabs} />
       </div>
 
@@ -173,7 +175,7 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
         href={whatsappHref}
         target="_blank"
         rel="noopener noreferrer"
-        className={cn(buttonVariants({ variant: "primary", size: "lg" }), "order-4 mt-4 w-full sm:w-auto")}
+        className={cn(buttonVariants({ variant: "primary", size: "lg" }), "mt-4 w-full sm:w-auto")}
       >
         <MessageCircle className="h-4 w-4" />
         Contactar por WhatsApp

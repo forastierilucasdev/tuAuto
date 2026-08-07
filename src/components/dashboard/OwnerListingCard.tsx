@@ -172,10 +172,10 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
             <p className="mt-1 text-muted-foreground">
               El anuncio se va a seguir mostrando en el catálogo, indicado como reservado. ¿Deseás continuar?
             </p>
-            <form action={pauseListingAction} className="mt-2">
+            <form action={pauseListingAction} className="mt-2" onSubmit={() => setTimeout(() => setPauseOpen(false), 0)}>
               <input type="hidden" name="listingId" value={listing.id} />
               <input type="hidden" name="status" value="RESERVADA" />
-              <Button type="submit" size="sm" variant="outline" onClick={() => setPauseOpen(false)}>
+              <Button type="submit" size="sm" variant="outline">
                 Sí, marcar como reservada
               </Button>
             </form>
@@ -185,10 +185,10 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
             <p className="mt-1 text-muted-foreground">
               El anuncio va a dejar de mostrarse en el catálogo hasta que lo reactives. ¿Deseás continuar?
             </p>
-            <form action={pauseListingAction} className="mt-2">
+            <form action={pauseListingAction} className="mt-2" onSubmit={() => setTimeout(() => setPauseOpen(false), 0)}>
               <input type="hidden" name="listingId" value={listing.id} />
               <input type="hidden" name="status" value="PAUSADA" />
-              <Button type="submit" size="sm" variant="outline" onClick={() => setPauseOpen(false)}>
+              <Button type="submit" size="sm" variant="outline">
                 Sí, pausar
               </Button>
             </form>

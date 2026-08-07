@@ -44,15 +44,15 @@ export default async function PagoPage() {
 
   return (
     <div className="space-y-10">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Método de pago</h1>
-          <p className="mt-1 text-muted-foreground">
-            Esta sección funciona con datos simulados — la integración real con Mercado Pago todavía está
-            pendiente (ver ARCHITECTURE.md).
-          </p>
-        </div>
+      <div className="flex justify-end">
         <BackButton />
+      </div>
+      <div>
+        <h1 className="mt-2 text-2xl font-bold text-navy">Método de pago</h1>
+        <p className="mt-1 text-muted-foreground">
+          Esta sección funciona con datos simulados — la integración real con Mercado Pago todavía está
+          pendiente (ver ARCHITECTURE.md).
+        </p>
       </div>
 
       <section>

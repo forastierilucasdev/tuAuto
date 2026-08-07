@@ -42,10 +42,10 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
     <div>
       <PublishedListingModal slug={publishedSlug} />
 
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-navy">Mis publicaciones</h1>
+      <div className="flex justify-end">
         <BackButton />
       </div>
+      <h1 className="mt-2 text-2xl font-bold text-navy">Mis publicaciones</h1>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Link href="/dashboard/publicaciones/nueva" className={buttonVariants({ variant: "primary" })}>

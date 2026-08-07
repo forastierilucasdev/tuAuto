@@ -23,13 +23,11 @@ export default async function PerfilPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Mi perfil</h1>
-          <p className="mt-1 mb-6 text-muted-foreground">Gestioná los datos de tu cuenta.</p>
-        </div>
+      <div className="flex justify-end">
         <BackButton />
       </div>
+      <h1 className="mt-2 text-2xl font-bold text-navy">Mi perfil</h1>
+      <p className="mt-1 mb-6 text-muted-foreground">Gestioná los datos de tu cuenta.</p>
 
       <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 shadow-card">
         <div className="flex items-center gap-2">

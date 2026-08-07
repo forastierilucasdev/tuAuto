@@ -18,15 +18,13 @@ export default async function VerificarPerfilPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Verificar perfil</h1>
-          <p className="mt-1 mb-6 text-muted-foreground">
-            Verificá tu identidad para que los compradores vean tu perfil como confiable.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <BackButton />
       </div>
+      <h1 className="mt-2 text-2xl font-bold text-navy">Verificar perfil</h1>
+      <p className="mt-1 mb-6 text-muted-foreground">
+        Verificá tu identidad para que los compradores vean tu perfil como confiable.
+      </p>
 
       {profile.isVerified ? (
         <p className="rounded-2xl border border-success/30 bg-success/5 p-6 text-center text-success">

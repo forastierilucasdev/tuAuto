@@ -24,6 +24,7 @@ import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
 import { cn, formatCurrency, formatKm } from "@/lib/utils";
 import {
   createListingAction,
+  deleteListingImageAction,
   updateListingAction,
   type ListingActionState,
 } from "@/server/actions/listing.actions";
@@ -122,9 +123,26 @@ export function ListingForm(props: ListingFormProps) {
   );
 
   // --- Fotos ---
-  const existingImages = isEdit ? props.existingImages : [];
+  const [existingImages, setExistingImages] = React.useState<ExistingImage[]>(
+    isEdit ? props.existingImages : []
+  );
+  const [deletingImageId, setDeletingImageId] = React.useState<string | null>(null);
+  const [deleteImageError, setDeleteImageError] = React.useState<string>();
   const [photos, setPhotos] = React.useState<{ file: File; preview: string }[]>([]);
   const remainingSlots = Math.max(0, MAX_IMAGES - existingImages.length - photos.length);
+
+  async function removeExistingImage(imageId: string) {
+    if (!isEdit) return;
+    setDeleteImageError(undefined);
+    setDeletingImageId(imageId);
+    const result = await deleteListingImageAction(props.listingId, imageId);
+    setDeletingImageId(null);
+    if (result?.error) {
+      setDeleteImageError(result.error);
+      return;
+    }
+    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+  }
 
   // --- Observaciones ---
   const [description, setDescription] = React.useState(
@@ -568,9 +586,19 @@ export function ListingForm(props: ListingFormProps) {
                   {existingImages.map((img) => (
                     <div key={img.id} className="relative h-20 w-28 overflow-hidden rounded-lg border border-border">
                       <Image src={img.url} alt="" fill sizes="112px" className="object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeExistingImage(img.id)}
+                        disabled={deletingImageId === img.id}
+                        title="Quitar foto"
+                        className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70 disabled:opacity-50"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </div>
                   ))}
                 </div>
+                {deleteImageError && <p className="mt-2 text-xs text-danger">{deleteImageError}</p>}
               </div>
             )}
 
@@ -713,24 +741,34 @@ export function ListingForm(props: ListingFormProps) {
         )}
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button type="button" variant="outline" onClick={goBack} disabled={stepIndex === 0}>
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={goBack}
+            disabled={stepIndex === 0}
+          >
             Atrás
           </Button>
           {isEdit && (
-            <Link href="/dashboard/publicaciones" className={buttonVariants({ variant: "ghost" })}>
+            <Link
+              href="/dashboard/publicaciones"
+              className={cn(buttonVariants({ variant: "ghost" }), "w-full sm:w-auto")}
+            >
               Cancelar edición
             </Link>
           )}
         </div>
 
         {isLastStep ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             {!isEdit && (
               <Button
                 type="button"
                 variant="outline"
+                className="w-full sm:w-auto"
                 disabled={pending || missingFields.length > 0}
                 onClick={() => submitListing("DRAFT")}
               >
@@ -739,6 +777,7 @@ export function ListingForm(props: ListingFormProps) {
             )}
             <Button
               type="button"
+              className="w-full sm:w-auto"
               disabled={pending || missingFields.length > 0}
               size="lg"
               onClick={() => (isEdit && !isReactivation ? submitListing() : setConfirmPublishOpen(true))}
@@ -748,7 +787,7 @@ export function ListingForm(props: ListingFormProps) {
             </Button>
           </div>
         ) : (
-          <Button type="button" onClick={goNext} disabled={!canProceed()}>
+          <Button type="button" className="w-full sm:w-auto" onClick={goNext} disabled={!canProceed()}>
             Siguiente
           </Button>
         )}

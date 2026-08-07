@@ -9,7 +9,9 @@ import { validateImageFile } from "@/lib/image-validation";
 import {
   attachListingImages,
   createListing,
+  deleteListingImage,
   deleteOwnedListing,
+  LastImageError,
   markListingAsSold,
   QuotaExceededError,
   setListingPauseStatus,
@@ -173,6 +175,23 @@ export async function pauseListingAction(formData: FormData) {
   await setListingPauseStatus(listingId, session.user.id, status);
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
+}
+
+export type DeleteImageState = { error?: string } | undefined;
+
+export async function deleteListingImageAction(listingId: string, imageId: string): Promise<DeleteImageState> {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  try {
+    await deleteListingImage(listingId, imageId, session.user.id);
+  } catch (error) {
+    if (error instanceof LastImageError) return { error: error.message };
+    throw error;
+  }
+
+  revalidatePath("/dashboard/publicaciones");
+  revalidatePath(`/dashboard/publicaciones/${listingId}/editar`);
 }
 
 export async function deleteListingAction(formData: FormData) {

@@ -171,6 +171,17 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con login real contra Supabase: 5 pestañas, cupo/packs visibles, paso "Datos" bloqueado en edición, detalle de catálogo con Volver, pantalla de destacar
 - [ ] Prueba manual en navegador (imprescindible): probar el flujo completo pausar→reactivar, publicar hasta agotar el cupo y comprar un pack, guardar un borrador y publicarlo después, y confirmar que el diálogo "Sí, revisar/No, publicar" se ve bien
 
+## Fase 15 — Bugs reportados tras probar el rediseño de publicaciones (solicitado por el usuario)
+- [x] Corregido bug crítico: "Pausar"/"Reservar" no cambiaba el estado (carrera entre cerrar el modal y el submit del Server Action)
+- [x] Corregido: publicaciones vendidas (y cualquier estado) no se podían abrir desde "Mis publicaciones"
+- [x] Corregido: "Volver" después de "Ver publicación" mostraba de nuevo el mensaje de éxito (URL stale en el historial)
+- [x] "Volver" reordenado arriba de todo (fila propia), después el título, después el contenido — mismo orden en mobile y desktop, en catálogo, Mi perfil, Mis publicaciones, Publicar, Editar, Destacar, Verificar perfil y Método de pago
+- [x] Botones del último paso del wizard ya no desbordan en mobile (se apilan en columna)
+- [x] Eliminar fotos ya subidas al editar una publicación (con mínimo de una foto)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con login real contra Supabase: páginas responden 200, orden Volver/título confirmado en el HTML; el fix de Pausar se confirmó leyendo el código (no reproducible por curl, ver ERRORES.md)
+- [ ] Prueba manual en navegador (imprescindible): pausar/reservar una publicación y confirmar que cambia de estado, publicar y volver desde "Ver publicación", eliminar una foto al editar, y revisar que los botones no desborden en el celular
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
