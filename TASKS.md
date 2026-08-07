@@ -299,6 +299,13 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales a `/dashboard/anuncios`, `/dashboard/compra` (ambos modos), `/dashboard/publicaciones`, `/dashboard/pago`, catálogo, home y detalle de publicación — sin errores de servidor
 - [ ] Prueba manual en navegador (imprescindible, es la parte más grande e interactiva de la app): los 3 flujos de compra completos (publicación simple, combo con wizard, destacar por día con carrito), suscripciones, y que Pausar/Reactivar/Vender confirmen sin navegar
 
+## Fase 28 — Logo real e imagen de fondo del buscador principal (solicitado por el usuario)
+- [x] Logo (`public/logo.svg`) reemplaza el texto "Motoresya" del header, mobile y desktop
+- [x] Buscador principal: mismo patrón "foto de fondo + buscador embebido" en desktop y mobile (antes solo mobile), con la foto nueva (`public/hero-bg.jpg`)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: `logo.svg` y `hero-bg.jpg` (vía `/_next/image`) responden 200, la home los referencia
+- [ ] Prueba manual en navegador (visual)
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

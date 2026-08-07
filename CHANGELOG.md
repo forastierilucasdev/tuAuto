@@ -5,6 +5,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-07, noche) — Logo real e imagen de fondo en el buscador principal
+- **Logo**: el texto "Motoresya" del header se reemplaza por el logo (`public/logo.svg`), en mobile y desktop. Se usa `<img>` en vez de `next/image` a propósito: Next.js bloquea SVG en `next/image` salvo que se habilite `dangerouslyAllowSVG` (riesgo de XSS si el SVG trae script embebido), y un vector no gana nada de esa optimización de todos modos — cargado vía `<img>` el navegador tampoco ejecuta scripts embebidos en el SVG (a diferencia de inlinearlo en el DOM), así que es la opción simple y seguirá siendo segura.
+- **Buscador principal**: la foto de fondo con el buscador embebido encima (antes solo en mobile) pasa a ser el mismo patrón en desktop — antes ahí la foto se mostraba aparte, al costado del texto/buscador. Nueva foto (`public/hero-bg.jpg`, la de fondo negro con el auto) reemplaza el placeholder de picsum.photos.
+
 ### Added (2026-08-07, noche) — Modelo de negocio definitivo: Administrador de anuncios, Compra y Suscripciones
 Reemplaza el modelo de monetización provisorio (packs 1/5/10/20, "Destacar anuncio" a precio fijo, suscripción de concesionaria sin efecto real) por el definitivo. Ver `ARCHITECTURE.md` para el diseño completo.
 

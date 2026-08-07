@@ -30,8 +30,9 @@ export function Header() {
             derecha — su panel abre desde ese mismo borde]. */}
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <div className="flex shrink-0 items-center gap-3">
-            <Link href="/" className="hidden text-lg font-extrabold tracking-tight text-navy sm:text-xl md:block">
-              {SITE_NAME}
+            <Link href="/" className="hidden h-9 md:block">
+              {/* eslint-disable-next-line @next/next/no-img-element -- SVG: next/image bloquea SVG salvo dangerouslyAllowSVG, y un vector no gana nada de la optimización */}
+              <img src="/logo.svg" alt={SITE_NAME} className="h-full w-auto object-contain" />
             </Link>
             <div className="md:hidden">
               <AccountMenu ref={accountMenuRef} />
@@ -39,8 +40,9 @@ export function Header() {
           </div>
 
           <div className="flex items-center justify-center">
-            <Link href="/" className="text-lg font-extrabold tracking-tight text-navy md:hidden">
-              {SITE_NAME}
+            <Link href="/" className="h-8 md:hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element -- ver comentario arriba */}
+              <img src="/logo.svg" alt={SITE_NAME} className="h-full w-auto object-contain" />
             </Link>
             <nav className="hidden items-center gap-1 md:flex">
               {NAV_LINKS.map((link) => {

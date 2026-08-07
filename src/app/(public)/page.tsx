@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { HeroSearch } from "@/components/home/HeroSearch";
 import { CategoryGrid } from "@/components/vehicles/CategoryGrid";
@@ -15,55 +16,31 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Mobile: foto de fondo con el buscador superpuesto */}
-      <section className="relative lg:hidden">
-        <div className="relative flex min-h-[32rem] w-full flex-col justify-end overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://picsum.photos/seed/tuauto-hero/900/700"
+      {/* Foto de fondo con el buscador embebido encima — mismo patrón en
+          mobile y desktop, antes desktop mostraba la foto aparte al costado. */}
+      <section className="relative">
+        <div className="relative flex min-h-[32rem] w-full flex-col justify-end overflow-hidden lg:min-h-[38rem] lg:justify-center">
+          <Image
+            src="/hero-bg.jpg"
             alt="Vehículo destacado"
-            className="absolute inset-0 h-full w-full object-cover"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/60 to-navy/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/60 to-navy/10 lg:bg-gradient-to-r lg:from-navy/95 lg:via-navy/70 lg:to-navy/10" />
 
-          <div className="relative px-4 pb-6 pt-24">
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">
+          <div className="relative px-4 pb-6 pt-24 sm:px-6 lg:max-w-2xl lg:px-8 lg:py-20">
+            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
               Encontrá el vehículo de tus sueños.
             </h1>
-            <p className="mt-3 max-w-xl text-base text-white/85">
+            <p className="mt-3 max-w-xl text-base text-white/85 sm:text-lg">
               Autos, camionetas, motos y más, publicados por particulares y concesionarias de
               todo el país.
             </p>
-            <div className="mt-6">
+            <div className="mt-6 lg:mt-8">
               <HeroSearch />
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Desktop: texto/buscador y foto separados */}
-      <section className="hidden border-b border-border bg-gradient-to-b from-surface-muted to-background lg:block">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-20">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-navy sm:text-4xl lg:text-5xl">
-              Encontrá el vehículo de tus sueños.
-            </h1>
-            <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-              Autos, camionetas, motos y más, publicados por particulares y concesionarias de
-              todo el país.
-            </p>
-            <div className="mt-8">
-              <HeroSearch />
-            </div>
-          </div>
-
-          <div className="aspect-4/3 overflow-hidden rounded-2xl bg-surface-muted shadow-card">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://picsum.photos/seed/tuauto-hero/900/700"
-              alt="Vehículo destacado"
-              className="h-full w-full object-cover"
-            />
           </div>
         </div>
       </section>
