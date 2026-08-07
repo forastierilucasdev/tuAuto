@@ -324,53 +324,61 @@ async function main() {
   }
 
   console.log("Seed: planes...");
-  await prisma.plan.upsert({
-    where: { code: "FEATURE_15D" },
-    update: {},
-    create: { code: "FEATURE_15D", name: "Destacado 15 días", price: 5000, durationDays: 15 },
+
+  // Planes viejos (precios provisorios de la primera versión) — se
+  // desactivan en vez de borrarse: el historial de pagos (`Payment.planCode`)
+  // sigue apuntando a estos códigos para compras ya hechas.
+  const RETIRED_PLAN_CODES = [
+    "PUBLICATIONS_PACK_5",
+    "PUBLICATIONS_PACK_10",
+    "PUBLICATIONS_PACK_20",
+    "FEATURE_LISTING",
+    "FEATURE_15D",
+    "FEATURE_30D",
+    "AGENCY_MONTHLY",
+  ];
+  await prisma.plan.updateMany({
+    where: { code: { in: RETIRED_PLAN_CODES } },
+    data: { isActive: false },
   });
-  await prisma.plan.upsert({
-    where: { code: "FEATURE_30D" },
-    update: {},
-    create: { code: "FEATURE_30D", name: "Destacado 30 días", price: 9000, durationDays: 30 },
-  });
-  await prisma.plan.upsert({
-    where: { code: "FEATURE_LISTING" },
-    update: {},
-    // Plan usado por la pantalla dedicada "Destacar anuncio" (por publicación,
-    // desde "Mis publicaciones"). Precio provisorio, se va a ajustar luego.
-    create: { code: "FEATURE_LISTING", name: "Destacar anuncio", price: 9999, durationDays: 30 },
-  });
-  // Packs de publicaciones (precios provisorios, se van a ajustar luego).
+
+  // Modelo de negocio definitivo: Compra (pago único) + Suscripciones (cupo
+  // temporal por 30 días). Ver ARCHITECTURE.md para el detalle de cómo
+  // interactúa cada uno con `Listing.expiresAt`/`featured` y los contadores
+  // de `User` (`purchasedPublications`, `subscriptionQuota`, `pendingFeaturedVouchers`).
   await prisma.plan.upsert({
     where: { code: "PUBLICATIONS_PACK_1" },
-    update: {},
-    create: { code: "PUBLICATIONS_PACK_1", name: "1 publicación", price: 2000, quantity: 1 },
+    update: { name: "Publicación 30 días", price: 4999, quantity: 1, isActive: true },
+    create: { code: "PUBLICATIONS_PACK_1", name: "Publicación 30 días", price: 4999, quantity: 1 },
   });
   await prisma.plan.upsert({
-    where: { code: "PUBLICATIONS_PACK_5" },
-    update: {},
-    create: { code: "PUBLICATIONS_PACK_5", name: "5 publicaciones", price: 8000, quantity: 5 },
+    where: { code: "PUBLICATION_30D_FEATURED_7D" },
+    // `durationDays` acá representa los días destacados que incluye el
+    // combo (7), no un vencimiento del plan en sí.
+    update: { name: "Publicación 30 días + 7 días destacado", price: 14999, durationDays: 7, isActive: true },
+    create: { code: "PUBLICATION_30D_FEATURED_7D", name: "Publicación 30 días + 7 días destacado", price: 14999, durationDays: 7 },
   });
   await prisma.plan.upsert({
-    where: { code: "PUBLICATIONS_PACK_10" },
-    update: {},
-    create: { code: "PUBLICATIONS_PACK_10", name: "10 publicaciones", price: 15000, quantity: 10 },
+    where: { code: "FEATURE_PER_DAY" },
+    // `price` acá es el precio POR DÍA — se multiplica por la cantidad de
+    // días elegida en el contador (ver `purchaseFeatureByDays`).
+    update: { name: "Destacar publicación por día", price: 999, isActive: true },
+    create: { code: "FEATURE_PER_DAY", name: "Destacar publicación por día", price: 999 },
   });
   await prisma.plan.upsert({
-    where: { code: "PUBLICATIONS_PACK_20" },
-    update: {},
-    create: { code: "PUBLICATIONS_PACK_20", name: "20 publicaciones", price: 25000, quantity: 20 },
+    where: { code: "SUBSCRIPTION_5" },
+    update: { name: "5 publicaciones por 30 días", price: 19999, quantity: 5, durationDays: 30, isActive: true },
+    create: { code: "SUBSCRIPTION_5", name: "5 publicaciones por 30 días", price: 19999, quantity: 5, durationDays: 30 },
   });
   await prisma.plan.upsert({
-    where: { code: "AGENCY_MONTHLY" },
-    update: {},
-    create: {
-      code: "AGENCY_MONTHLY",
-      name: "Suscripción concesionaria mensual",
-      price: 25000,
-      durationDays: 30,
-    },
+    where: { code: "SUBSCRIPTION_10" },
+    update: { name: "10 publicaciones por 30 días", price: 34999, quantity: 10, durationDays: 30, isActive: true },
+    create: { code: "SUBSCRIPTION_10", name: "10 publicaciones por 30 días", price: 34999, quantity: 10, durationDays: 30 },
+  });
+  await prisma.plan.upsert({
+    where: { code: "SUBSCRIPTION_30" },
+    update: { name: "30 publicaciones por 30 días", price: 49999, quantity: 30, durationDays: 30, isActive: true },
+    create: { code: "SUBSCRIPTION_30", name: "30 publicaciones por 30 días", price: 49999, quantity: 30, durationDays: 30 },
   });
 
   console.log("Seed completado.");

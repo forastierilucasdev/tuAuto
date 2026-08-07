@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
-import { CreditCard, FileText, LogOut, PlusCircle, User as UserIcon } from "lucide-react";
+import { CreditCard, KeyRound, LayoutDashboard, LogOut, PlusCircle, User as UserIcon } from "lucide-react";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { getMyProfileAction } from "@/server/actions/profile.actions";
@@ -11,11 +11,13 @@ import { cn } from "@/lib/utils";
 
 type Profile = Awaited<ReturnType<typeof getMyProfileAction>>;
 
+// "Publicar anuncio" no vive acá — se renderiza aparte, justo debajo del
+// nombre, como acceso destacado (ver más abajo).
 const MENU_ITEMS = [
   { href: "/dashboard/perfil", label: "Mi perfil", icon: UserIcon },
-  { href: "/dashboard/publicaciones", label: "Mis publicaciones", icon: FileText },
+  { href: "/dashboard/anuncios", label: "Administrador de anuncios", icon: LayoutDashboard },
   { href: "/dashboard/pago", label: "Método de pago", icon: CreditCard },
-  { href: "/dashboard/publicaciones/nueva", label: "Publicar anuncio", icon: PlusCircle },
+  { href: "/dashboard/perfil/password", label: "Cambiar contraseña", icon: KeyRound },
 ];
 
 const itemClasses =
@@ -92,6 +94,12 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
         {displayName && (
           <>
             <p className="px-3 pb-3 text-sm font-medium text-foreground">{displayName}</p>
+            <Link href="/dashboard/publicaciones/nueva" onClick={() => setOpen(false)} className={itemClasses}>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+                <PlusCircle className="h-5 w-5" />
+              </span>
+              Publicar anuncio
+            </Link>
             <hr className="mb-2 border-border" />
           </>
         )}

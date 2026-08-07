@@ -181,29 +181,46 @@ export async function markListingSoldAction(listingId: string, formData: FormDat
   revalidatePath("/catalogo");
 }
 
-export async function pauseListingAction(formData: FormData) {
+export type PauseListingState = { error?: string } | undefined;
+
+/**
+ * Se llama directo desde el cliente (no como `<form action>`) para poder
+ * mostrar el modal de confirmación ("Publicación pausada"/"marcada como
+ * reservada") recién cuando termina, en vez de un `<form>` sin feedback.
+ */
+export async function pauseListingAction(
+  listingId: string,
+  status: "RESERVADA" | "PAUSADA"
+): Promise<PauseListingState> {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if (!listingId) return { error: "Publicación inválida." };
 
-  const listingId = String(formData.get("listingId") ?? "");
-  const status = String(formData.get("status") ?? "");
-  if (!listingId || (status !== "RESERVADA" && status !== "PAUSADA")) return;
+  try {
+    await setListingPauseStatus(listingId, session.user.id, status);
+  } catch (error) {
+    if (error instanceof Error) return { error: error.message };
+    throw error;
+  }
 
-  await setListingPauseStatus(listingId, session.user.id, status);
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
 }
 
-export type ReactivateListingState = { error?: string; slug?: string } | undefined;
+export type ReactivateListingState = { error?: string } | undefined;
 
-/** "No, publicar" al reactivar — sin pasar por el formulario de edición. */
+/**
+ * "Publicar"/"Reactivar" sin pasar por el formulario de edición. No navega —
+ * el llamador se queda en la misma pantalla y muestra un modal de
+ * confirmación (así, si hay varias publicaciones para reactivar, no hace
+ * falta volver a entrar a "Inactivas" después de cada una).
+ */
 export async function reactivateListingAction(listingId: string): Promise<ReactivateListingState> {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  let listing;
   try {
-    listing = await reactivateListing(listingId, session.user.id);
+    await reactivateListing(listingId, session.user.id);
   } catch (error) {
     if (error instanceof QuotaExceededError) return { error: error.message };
     throw error;
@@ -211,7 +228,6 @@ export async function reactivateListingAction(listingId: string): Promise<Reacti
 
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
-  return { slug: listing.slug };
 }
 
 export type DeleteImageState = { error?: string } | undefined;

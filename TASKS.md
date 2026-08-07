@@ -279,6 +279,26 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales: todas las rutas del dashboard siguen redirigiendo a login sin sesión (307), sin errores de servidor
 - [ ] Prueba manual en navegador (imprescindible, depende de `useSession()`): header consistente en las pantallas del dashboard, saludo abreviado, y el nombre completo + separador dentro del panel "Mi cuenta"
 
+## Fase 27 — Modelo de negocio definitivo: Administrador de anuncios, Compra y Suscripciones (solicitado por el usuario)
+- [x] Fix previo: vencimiento efectivo de "destacado" (`getEffectiveFeatured`), antes nunca se vencía solo
+- [x] Migración aditiva en `User`: `subscriptionQuota`, `subscriptionExpiresAt`, `pendingFeaturedVouchers`
+- [x] Motor de cupo centralizado (`loadActivationContext`) en `createListing`/`updateOwnedListing`/`reactivateListing`
+- [x] Compra por día ("Destacar publicación") con contador recortado server-side + carrito para varias publicaciones
+- [x] Combo "Publicación 30 días + 7 días destacado" con wizard (publicación existente vs. próxima publicación)
+- [x] Suscripciones (5/10/30 por 30 días) con cupo temporal que se pierde al vencer sin renovar
+- [x] Reemplazo de los planes viejos en el seed (desactivados, no borrados — el historial de pagos sigue apuntando a esos códigos)
+- [x] Administrador de anuncios: Resumen (nueva) + Mis publicaciones + Mis compras (nueva), con `AnunciosSubNav` compartido
+- [x] Método de pago simplificado a solo métodos guardados
+- [x] Se elimina la pantalla dedicada "Destacar anuncio"; el botón en la card ahora abre Mis compras preseleccionada
+- [x] Panel "Mi cuenta": Publicar anuncio arriba (ícono azul), Cambiar contraseña agregado, se saca del formulario de perfil
+- [x] Pausar/Reactivar/Vender: modal de confirmación en vez de navegar fuera de la pantalla
+- [x] Detalle de publicación: foto del vendedor/agencia + insignia de verificación en la pestaña Contacto
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] `prisma migrate dev` + `prisma db seed` aplicados contra la base real
+- [x] Script desechable verificado contra la DB real: aritmética de cupo/suscripción/voucher y vencimiento efectivo de destacados — revertido al terminar
+- [x] Verificado con requests reales a `/dashboard/anuncios`, `/dashboard/compra` (ambos modos), `/dashboard/publicaciones`, `/dashboard/pago`, catálogo, home y detalle de publicación — sin errores de servidor
+- [ ] Prueba manual en navegador (imprescindible, es la parte más grande e interactiva de la app): los 3 flujos de compra completos (publicación simple, combo con wizard, destacar por día con carrito), suscripciones, y que Pausar/Reactivar/Vender confirmen sin navegar
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

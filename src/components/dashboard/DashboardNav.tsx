@@ -6,7 +6,9 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/dashboard/perfil", label: "Mi perfil" },
-  { href: "/dashboard/publicaciones", label: "Mis publicaciones" },
+  // "Mis publicaciones" y "Mis compras" viven bajo esta sección (AnunciosSubNav
+  // arriba de esas 2 páginas) — se resalta acá también, no son ítems propios.
+  { href: "/dashboard/anuncios", label: "Administrador de anuncios", activePrefixes: ["/dashboard/anuncios", "/dashboard/publicaciones", "/dashboard/compra"] },
   { href: "/dashboard/pago", label: "Método de pago" },
 ];
 
@@ -22,7 +24,9 @@ export function DashboardSidebarNav() {
     <aside className="hidden w-56 shrink-0 md:block">
       <nav className="space-y-1">
         {NAV.map((item) => {
-          const active = pathname === item.href;
+          const active = item.activePrefixes
+            ? item.activePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+            : pathname === item.href;
           return (
             <Link
               key={item.href}

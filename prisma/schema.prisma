@@ -86,6 +86,21 @@ model User {
   purchasedPublications Int     @default(0)
   isVerified            Boolean @default(false)
 
+  // Cupo temporal de una suscripción activa (Suscripciones, 5/10/30
+  // publicaciones por 30 días): a diferencia de `purchasedPublications`
+  // (permanente), este cupo se pierde si `subscriptionExpiresAt` pasó sin
+  // comprar una suscripción nueva — no hay proceso en segundo plano, se
+  // descuenta al leer (ver `getAvailablePublications`). Comprar una
+  // suscripción nueva reemplaza estos dos campos, no se acumulan.
+  subscriptionQuota     Int       @default(0)
+  subscriptionExpiresAt DateTime?
+
+  // Créditos de "destacar" pendientes de aplicar: se suman al comprar
+  // "Publicación 30 días + 7 días destacado" eligiendo "aplicar a la próxima
+  // publicación" (en vez de a una publicación existente) — se consumen solos
+  // en la próxima publicación/reactivación (ver `loadActivationContext`).
+  pendingFeaturedVouchers Int @default(0)
+
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 

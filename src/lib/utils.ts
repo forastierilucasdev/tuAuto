@@ -27,6 +27,17 @@ export function getInitials(fullName: string) {
   return (first + last).toUpperCase();
 }
 
+/**
+ * Días enteros que faltan hasta `expiresAt` (nunca negativo). `null`/pasado
+ * → 0. `now` es opcional: en un componente de cliente, pasar un `now`
+ * capturado una sola vez (lazy `useState`) evita llamar a `Date.now()`
+ * directamente en el render (impuro).
+ */
+export function daysRemaining(expiresAt: Date | null, now: number = Date.now()): number {
+  if (!expiresAt) return 0;
+  return Math.max(0, Math.ceil((expiresAt.getTime() - now) / 86400000));
+}
+
 /** Evita "open redirect": solo acepta una ruta relativa propia del sitio. */
 export function safeRedirectTarget(value: string | null | undefined) {
   if (value && value.startsWith("/") && !value.startsWith("//")) return value;

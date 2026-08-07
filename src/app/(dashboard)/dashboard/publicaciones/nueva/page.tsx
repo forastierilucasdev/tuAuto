@@ -20,7 +20,7 @@ export default async function NuevaPublicacionPage() {
       <h1 className="mt-2 text-2xl font-bold text-navy">Publicar vehículo</h1>
       <p className="mt-1 mb-6 text-muted-foreground">
         Completá los datos de tu vehículo. Podés publicar aunque no tengas una suscripción activa; para
-        destacarlo, hacelo luego desde &quot;Método de pago&quot;.
+        destacarlo, hacelo luego desde &quot;Administrador de anuncios &gt; Mis compras&quot;.
       </p>
       <ListingForm
         mode="create"

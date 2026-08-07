@@ -6,6 +6,7 @@ import { getFullProfile } from "@/server/data/users";
 import { OwnerListingCard } from "@/components/dashboard/OwnerListingCard";
 import { PublishedListingModal } from "@/components/dashboard/PublishedListingModal";
 import { PublicacionesTabs } from "@/components/dashboard/PublicacionesTabs";
+import { AnunciosSubNav } from "@/components/dashboard/AnunciosSubNav";
 import { buttonVariants } from "@/components/ui/Button";
 import { BackButton } from "@/components/ui/BackButton";
 import { PUBLICACIONES_TABS, type PublicacionesTabKey } from "@/lib/constants";
@@ -51,15 +52,14 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Mis publicaciones</h1>
 
+      <AnunciosSubNav />
+
       <div className="mt-4 flex flex-col items-start gap-3">
         <div className="flex w-full max-w-xs flex-col gap-3">
           <Link href="/dashboard/publicaciones/nueva" className={cn(buttonVariants({ variant: "primary" }), "w-full")}>
             Publicar vehículo
           </Link>
-          <Link
-            href="/dashboard/pago#comprar-publicaciones"
-            className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-          >
+          <Link href="/dashboard/compra" className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
             Comprar publicaciones
           </Link>
         </div>

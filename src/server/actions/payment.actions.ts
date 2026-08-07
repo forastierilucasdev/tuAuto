@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import {
   addPaymentMethod,
-  purchaseFeaturePlan,
+  purchaseFeatureByDays,
+  purchaseFeatureCombo,
   purchasePublicationPack,
   purchaseSubscription,
 } from "@/server/data/payments";
@@ -29,25 +30,11 @@ export async function addPaymentMethodAction(
   return { success: true };
 }
 
-/**
- * Usada desde la pantalla dedicada "Destacar anuncio" (por publicación) —
- * al pagar, vuelve a "Mis publicaciones" en la pestaña Destacadas para
- * mostrar el resultado.
- */
-export async function payListingFeatureAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-
-  const planCode = String(formData.get("planCode") ?? "");
-  const listingId = String(formData.get("listingId") ?? "");
-  if (!planCode || !listingId) return;
-
-  await purchaseFeaturePlan(session.user.id, planCode, listingId);
-
-  revalidatePath("/dashboard/pago");
+function revalidateAfterPurchase() {
+  revalidatePath("/dashboard/anuncios");
+  revalidatePath("/dashboard/compra");
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
-  redirect("/dashboard/publicaciones?tab=destacadas");
 }
 
 export async function purchaseSubscriptionAction(formData: FormData) {
@@ -58,7 +45,7 @@ export async function purchaseSubscriptionAction(formData: FormData) {
   if (!planCode) return;
 
   await purchaseSubscription(session.user.id, planCode);
-  revalidatePath("/dashboard/pago");
+  revalidateAfterPurchase();
 }
 
 export async function purchasePublicationPackAction(formData: FormData) {
@@ -69,6 +56,47 @@ export async function purchasePublicationPackAction(formData: FormData) {
   if (!planCode) return;
 
   await purchasePublicationPack(session.user.id, planCode);
-  revalidatePath("/dashboard/pago");
-  revalidatePath("/dashboard/publicaciones");
+  revalidateAfterPurchase();
+}
+
+export type PurchaseFeatureState = { error?: string } | undefined;
+
+/**
+ * "Destacar publicación por día" — invocada directo desde el cliente (no
+ * `<form action>`) para poder mandar un array de líneas del carrito; por eso
+ * devuelve estado en vez de redirigir (mismo motivo que `reactivateListingAction`).
+ */
+export async function purchaseFeatureByDaysAction(
+  items: { listingId: string; days: number }[]
+): Promise<PurchaseFeatureState> {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  try {
+    await purchaseFeatureByDays(session.user.id, items);
+  } catch (error) {
+    if (error instanceof Error) return { error: error.message };
+    throw error;
+  }
+
+  revalidateAfterPurchase();
+  return undefined;
+}
+
+/** "Publicación 30 días + 7 días destacado" — wizard con 2 ramas, ver `purchaseFeatureCombo`. */
+export async function purchaseFeatureComboAction(
+  choice: { listingId: string } | { forNextListing: true }
+): Promise<PurchaseFeatureState> {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  try {
+    await purchaseFeatureCombo(session.user.id, choice);
+  } catch (error) {
+    if (error instanceof Error) return { error: error.message };
+    throw error;
+  }
+
+  revalidateAfterPurchase();
+  return undefined;
 }

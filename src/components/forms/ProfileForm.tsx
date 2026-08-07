@@ -2,8 +2,7 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import Link from "next/link";
-import { Camera, ImagePlus, KeyRound } from "lucide-react";
+import { Camera, ImagePlus } from "lucide-react";
 import { updateProfileAction, type ProfileActionState } from "@/server/actions/profile.actions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -273,13 +272,6 @@ export function ProfileForm({
         <Button type="submit" disabled={pending}>
           {pending ? "Guardando..." : "Guardar cambios"}
         </Button>
-        <Link
-          href="/dashboard/perfil/password"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-        >
-          <KeyRound className="h-4 w-4" />
-          Cambiar contraseña
-        </Link>
       </div>
     </form>
   );

@@ -14,6 +14,8 @@ import { VehicleGallery } from "@/components/vehicles/VehicleGallery";
 import { VerticalTabs, type VerticalTabItem } from "@/components/ui/VerticalTabs";
 import { buttonVariants } from "@/components/ui/Button";
 import { BackButton } from "@/components/ui/BackButton";
+import { Badge } from "@/components/ui/Badge";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { getListingBySlug } from "@/server/data/listings";
 import { auth } from "@/lib/auth";
 import { buildWhatsAppLink, cn, formatCurrency, formatKm } from "@/lib/utils";
@@ -138,30 +140,42 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
       label: "Contacto",
       icon: <Phone className="h-4 w-4 shrink-0" />,
       content: (
-        <dl className="space-y-4">
-          <Field label="Nombre y apellido" value={listing.user.fullName} />
-          {isBusiness && businessName && (
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <div className="flex shrink-0 flex-col items-center gap-2">
+            <UserAvatar
+              avatarUrl={isBusiness ? listing.user.agencyProfile?.logoUrl : listing.user.avatarUrl}
+              fullName={businessName ?? listing.user.fullName}
+              size="lg"
+            />
+            <Badge variant={listing.user.isVerified ? "success" : "default"}>
+              {listing.user.isVerified ? "Vendedor verificado" : "Sin verificar"}
+            </Badge>
+          </div>
+          <dl className="flex-1 space-y-4">
+            <Field label="Nombre y apellido" value={listing.user.fullName} />
+            {isBusiness && businessName && (
+              <Field
+                label={listing.user.accountType === "CONCESIONARIA" ? "Concesionaria" : "Agencia"}
+                value={
+                  <span className="inline-flex items-center gap-1.5">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    {businessName}
+                  </span>
+                }
+              />
+            )}
             <Field
-              label={listing.user.accountType === "CONCESIONARIA" ? "Concesionaria" : "Agencia"}
+              label="WhatsApp"
               value={
                 <span className="inline-flex items-center gap-1.5">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  {businessName}
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  {listing.user.phone}
                 </span>
               }
             />
-          )}
-          <Field
-            label="WhatsApp"
-            value={
-              <span className="inline-flex items-center gap-1.5">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                {listing.user.phone}
-              </span>
-            }
-          />
-          {contactAddress && <Field label="Dirección" value={contactAddress} />}
-        </dl>
+            {contactAddress && <Field label="Dirección" value={contactAddress} />}
+          </dl>
+        </div>
       ),
     },
   ];

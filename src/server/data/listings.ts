@@ -35,7 +35,7 @@ export function toVehicleCardData(listing: ListingWithCardData): VehicleCardData
     year: listing.year,
     mileageKm: listing.mileageKm,
     imageUrl: listing.images[0]?.url ?? FALLBACK_IMAGE,
-    featured: listing.featured,
+    featured: getEffectiveFeatured(listing.featured, listing.featuredUntil),
     vehicleType: listing.vehicleType,
     condition: listing.condition,
     city: listing.city,
@@ -71,6 +71,21 @@ function visibleStatusWhere(): Prisma.ListingWhereInput {
   return {
     OR: PUBLICLY_VISIBLE_STATUSES.map((status) => ({ status, ...notExpiredWhere() })),
   };
+}
+
+// `featured` se pone en `true` al comprar un destacado (por N días,
+// `featuredUntil`), pero nada lo vuelve a poner en `false` solo — se calcula
+// al leer, mismo criterio que `getEffectiveStatus`.
+export function getEffectiveFeatured(featured: boolean, featuredUntil: Date | null): boolean {
+  if (!featured) return false;
+  if (featuredUntil && featuredUntil.getTime() < Date.now()) return false;
+  return true;
+}
+
+function effectivelyFeaturedWhere(featured: boolean): Prisma.ListingWhereInput {
+  return featured
+    ? { featured: true, OR: [{ featuredUntil: null }, { featuredUntil: { gt: new Date() } }] }
+    : { OR: [{ featured: false }, { featuredUntil: { lte: new Date() } }] };
 }
 
 function buildWhere(filters: CatalogFilters): Prisma.ListingWhereInput {
@@ -111,12 +126,12 @@ export async function getCatalogResults(filters: CatalogFilters) {
 
   const [featured, rest] = await Promise.all([
     prisma.listing.findMany({
-      where: { ...baseWhere, featured: true },
+      where: { ...baseWhere, ...effectivelyFeaturedWhere(true) },
       orderBy: { createdAt: "desc" },
       include: CARD_INCLUDE,
     }),
     prisma.listing.findMany({
-      where: { ...baseWhere, featured: false },
+      where: { ...baseWhere, ...effectivelyFeaturedWhere(false) },
       orderBy: { createdAt: "desc" },
       include: CARD_INCLUDE,
     }),
@@ -130,7 +145,7 @@ export async function getCatalogResults(filters: CatalogFilters) {
 
 export async function getFeaturedListings(limit = 3) {
   const listings = await prisma.listing.findMany({
-    where: { ...visibleStatusWhere(), featured: true },
+    where: { ...visibleStatusWhere(), ...effectivelyFeaturedWhere(true) },
     orderBy: { createdAt: "desc" },
     take: limit,
     include: CARD_INCLUDE,
@@ -155,7 +170,9 @@ export async function getListingBySlug(slug: string, viewerUserId?: string) {
           fullName: true,
           phone: true,
           accountType: true,
-          agencyProfile: { select: { businessName: true, city: true, province: true, address: true } },
+          avatarUrl: true,
+          isVerified: true,
+          agencyProfile: { select: { businessName: true, city: true, province: true, address: true, logoUrl: true } },
         },
       },
     },
@@ -223,10 +240,10 @@ export async function getOwnerListingGroups(userId: string) {
 
   return {
     destacadas: withEffectiveStatus
-      .filter((l) => l.status === "ACTIVE" && l.listing.featured)
+      .filter((l) => l.status === "ACTIVE" && getEffectiveFeatured(l.listing.featured, l.listing.featuredUntil))
       .map((l) => toOwnerListingData(l.listing)),
     activas: withEffectiveStatus
-      .filter((l) => l.status === "ACTIVE" && !l.listing.featured)
+      .filter((l) => l.status === "ACTIVE" && !getEffectiveFeatured(l.listing.featured, l.listing.featuredUntil))
       .map((l) => toOwnerListingData(l.listing)),
     reservadas: withEffectiveStatus.filter((l) => l.status === "RESERVADA").map((l) => toOwnerListingData(l.listing)),
     // Borrador, pausada y vencida: en las tres se dejó de operar el anuncio
@@ -241,28 +258,67 @@ export async function getOwnerListingGroups(userId: string) {
 
 const LISTING_DURATION_DAYS = 30;
 
+// Días que otorga un voucher de "destacar" pendiente (comprado como
+// "Publicación 30 días + 7 días destacado", aplicado a la próxima
+// publicación/reactivación en vez de a una publicación existente) — también
+// usado cuando ese mismo combo se aplica directo a una publicación existente
+// (ver `purchaseFeatureCombo` en `server/data/payments.ts`).
+export const FEATURED_VOUCHER_DAYS = 7;
+
 // Cupo gratuito de publicaciones por cuenta. El disponible es
-// FREE_PUBLICATION_QUOTA + purchasedPublications - quotaConsumed (ver
-// modelo User en schema.prisma). Comprar un pack suma a `purchasedPublications`.
+// FREE_PUBLICATION_QUOTA + purchasedPublications + cupoDeSuscripciónVigente -
+// quotaConsumed (ver modelo User en schema.prisma). Comprar un pack suma a
+// `purchasedPublications` (permanente); comprar una suscripción reemplaza
+// `subscriptionQuota`/`subscriptionExpiresAt` (temporal, se pierde al vencer).
 export const FREE_PUBLICATION_QUOTA = 10;
 
 export class QuotaExceededError extends Error {
   constructor() {
-    super("No te quedan publicaciones disponibles. Comprá un pack para seguir publicando.");
+    super("No te quedan publicaciones disponibles. Comprá un pack o una suscripción para seguir publicando.");
     this.name = "QuotaExceededError";
   }
 }
 
-export async function getAvailablePublications(userId: string) {
+/**
+ * Punto único que decide, para cualquier publicación/reactivación: cuántas
+ * publicaciones quedan disponibles, hasta cuándo va a vencer (el ciclo normal
+ * de 30 días, o la fecha de la suscripción activa si hay una — así todos los
+ * avisos de una suscripción vencen juntos), y si hay un voucher de destacado
+ * pendiente para aplicar. Se consulta una sola vez por operación — evita que
+ * distintas funciones calculen estos números con criterios distintos.
+ */
+export async function loadActivationContext(userId: string) {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { quotaConsumed: true, purchasedPublications: true },
+    select: {
+      quotaConsumed: true,
+      purchasedPublications: true,
+      subscriptionQuota: true,
+      subscriptionExpiresAt: true,
+      pendingFeaturedVouchers: true,
+    },
   });
-  return Math.max(0, FREE_PUBLICATION_QUOTA + user.purchasedPublications - user.quotaConsumed);
+  const now = Date.now();
+  const hasActiveSubscription = Boolean(user.subscriptionExpiresAt && user.subscriptionExpiresAt.getTime() > now);
+  const effectiveSubscriptionQuota = hasActiveSubscription ? user.subscriptionQuota : 0;
+
+  return {
+    available: Math.max(
+      0,
+      FREE_PUBLICATION_QUOTA + user.purchasedPublications + effectiveSubscriptionQuota - user.quotaConsumed
+    ),
+    expiresAt: hasActiveSubscription
+      ? user.subscriptionExpiresAt!
+      : new Date(now + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
+    useFeaturedVoucher: user.pendingFeaturedVouchers > 0,
+  };
 }
 
-async function assertHasAvailablePublications(userId: string) {
-  const available = await getAvailablePublications(userId);
+export async function getAvailablePublications(userId: string) {
+  return (await loadActivationContext(userId)).available;
+}
+
+function assertAvailable(available: number) {
   if (available <= 0) throw new QuotaExceededError();
 }
 
@@ -305,7 +361,8 @@ export async function createListing(input: {
   asDraft?: boolean;
 }) {
   // Guardar como borrador nunca consume cupo; publicar de una sí.
-  if (!input.asDraft) await assertHasAvailablePublications(input.userId);
+  const activation = input.asDraft ? null : await loadActivationContext(input.userId);
+  if (activation) assertAvailable(activation.available);
 
   const brand = await prisma.brand.findUniqueOrThrow({ where: { slug: input.brandSlug } });
   const model = await prisma.model.findFirstOrThrow({
@@ -347,7 +404,10 @@ export async function createListing(input: {
       : {
           status: "ACTIVE" as const,
           publishedAt: new Date(),
-          expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
+          expiresAt: activation!.expiresAt,
+          ...(activation!.useFeaturedVoucher
+            ? { featured: true, featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000) }
+            : {}),
         }),
   };
 
@@ -356,14 +416,18 @@ export async function createListing(input: {
   // de verdad.
   const [listing] = await prisma.$transaction([
     prisma.listing.create({ data: listingData }),
-    ...(input.asDraft
-      ? []
-      : [
+    ...(activation
+      ? [
           prisma.user.update({
             where: { id: input.userId },
-            data: { activationCount: { increment: 1 }, quotaConsumed: { increment: 1 } },
+            data: {
+              activationCount: { increment: 1 },
+              quotaConsumed: { increment: 1 },
+              ...(activation.useFeaturedVoucher ? { pendingFeaturedVouchers: { decrement: 1 } } : {}),
+            },
           }),
-        ]),
+        ]
+      : []),
   ]);
   return listing;
 }
@@ -432,8 +496,8 @@ export async function updateOwnedListing(
   // sola por edición.
   const reactivating = REACTIVATABLE_STATUSES.includes(current.status);
   const cost = reactivating ? getReactivationCost(current.status) : null;
-
-  if (cost?.consumesQuota) await assertHasAvailablePublications(userId);
+  const activation = reactivating ? await loadActivationContext(userId) : null;
+  if (cost?.consumesQuota) assertAvailable(activation!.available);
 
   const [listing] = await prisma.$transaction([
     prisma.listing.update({
@@ -444,19 +508,23 @@ export async function updateOwnedListing(
           ? {
               status: "ACTIVE" as const,
               soldAt: null,
-              expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
+              expiresAt: activation!.expiresAt,
               ...(cost?.countsAsNewListing ? { publishedAt: new Date() } : {}),
+              ...(activation!.useFeaturedVoucher
+                ? { featured: true, featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000) }
+                : {}),
             }
           : {}),
       },
     }),
-    ...(cost?.consumesQuota
+    ...(reactivating && (cost?.consumesQuota || activation!.useFeaturedVoucher)
       ? [
           prisma.user.update({
             where: { id: userId },
             data: {
-              quotaConsumed: { increment: 1 },
-              ...(cost.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
+              ...(cost?.consumesQuota ? { quotaConsumed: { increment: 1 } } : {}),
+              ...(cost?.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
+              ...(activation!.useFeaturedVoucher ? { pendingFeaturedVouchers: { decrement: 1 } } : {}),
             },
           }),
         ]
@@ -476,7 +544,8 @@ export async function reactivateListing(listingId: string, userId: string) {
     throw new Error("Esta publicación no se puede reactivar.");
   }
   const cost = getReactivationCost(current.status);
-  if (cost.consumesQuota) await assertHasAvailablePublications(userId);
+  const activation = await loadActivationContext(userId);
+  if (cost.consumesQuota) assertAvailable(activation.available);
 
   const [listing] = await prisma.$transaction([
     prisma.listing.update({
@@ -484,17 +553,21 @@ export async function reactivateListing(listingId: string, userId: string) {
       data: {
         status: "ACTIVE",
         soldAt: null,
-        expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
+        expiresAt: activation.expiresAt,
         ...(cost.countsAsNewListing ? { publishedAt: new Date() } : {}),
+        ...(activation.useFeaturedVoucher
+          ? { featured: true, featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000) }
+          : {}),
       },
     }),
-    ...(cost.consumesQuota
+    ...(cost.consumesQuota || activation.useFeaturedVoucher
       ? [
           prisma.user.update({
             where: { id: userId },
             data: {
-              quotaConsumed: { increment: 1 },
+              ...(cost.consumesQuota ? { quotaConsumed: { increment: 1 } } : {}),
               ...(cost.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
+              ...(activation.useFeaturedVoucher ? { pendingFeaturedVouchers: { decrement: 1 } } : {}),
             },
           }),
         ]
@@ -540,4 +613,38 @@ export async function getOwnedListingForEdit(listingId: string, userId: string) 
     where: { id: listingId, userId },
     include: { images: { orderBy: { order: "asc" } }, brand: true, model: true },
   });
+}
+
+/**
+ * Estado mínimo de una publicación propia para validar una compra de
+ * destacado (ownership + ACTIVE + no destacada todavía) — usado por
+ * `purchaseFeatureByDays`/`purchaseFeatureCombo` en `server/data/payments.ts`
+ * antes de armar su propia transacción (Payment + Listing.update).
+ */
+export async function getListingForFeatureCheck(listingId: string, userId: string) {
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+    select: { id: true, userId: true, title: true, status: true, expiresAt: true, featured: true, featuredUntil: true },
+  });
+  if (!listing || listing.userId !== userId) return null;
+  return listing;
+}
+
+/** Publicaciones propias elegibles para destacar (activas, no destacadas todavía) — selector de Mis compras. */
+export async function getFeaturableListings(userId: string) {
+  const listings = await prisma.listing.findMany({
+    where: { userId, status: "ACTIVE" },
+    orderBy: { createdAt: "desc" },
+    include: CARD_INCLUDE,
+  });
+  return listings
+    .filter((l) => !getEffectiveFeatured(l.featured, l.featuredUntil))
+    .map((l) => ({
+      id: l.id,
+      title: l.title,
+      price: Number(l.price),
+      currency: l.currency,
+      imageUrl: l.images[0]?.url ?? FALLBACK_IMAGE,
+      expiresAt: l.expiresAt,
+    }));
 }

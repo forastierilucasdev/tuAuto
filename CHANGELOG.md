@@ -5,6 +5,25 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-07, noche) — Modelo de negocio definitivo: Administrador de anuncios, Compra y Suscripciones
+Reemplaza el modelo de monetización provisorio (packs 1/5/10/20, "Destacar anuncio" a precio fijo, suscripción de concesionaria sin efecto real) por el definitivo. Ver `ARCHITECTURE.md` para el diseño completo.
+
+- **Fix de base necesario primero**: `Listing.featuredUntil` se escribía al destacar pero nunca se leía en ningún lado — un destacado nunca vencía solo. Nuevo `getEffectiveFeatured()` (mismo patrón que `getEffectiveStatus`), aplicado en catálogo, home, y "Mis publicaciones".
+- **Nuevos campos en `User`** (migración aditiva): `subscriptionQuota`/`subscriptionExpiresAt` (cupo temporal de una suscripción activa — se pierde solo si vence sin renovarse) y `pendingFeaturedVouchers` (créditos de "destacar" pendientes de aplicar).
+- **Motor de cupo centralizado** (`loadActivationContext` en `server/data/listings.ts`): un solo lugar decide, para cualquier publicación/reactivación, cuánto cupo queda disponible (gratis + comprado + suscripción vigente), hasta cuándo va a vencer (el ciclo normal de 30 días, o la fecha de la suscripción activa — así todos los avisos de una suscripción vencen juntos) y si hay un voucher de destacado pendiente para aplicar. Reemplaza la lógica duplicada que tenían `createListing`/`updateOwnedListing`/`reactivateListing`.
+- **Administrador de anuncios** (nuevo ítem del panel "Mi cuenta" y de la barra lateral del dashboard, reemplaza los accesos sueltos a "Mis publicaciones"): 3 secciones bajo un mismo sub-nav (`AnunciosSubNav`, mismo lenguaje visual que las pestañas de Mis publicaciones):
+  - **Resumen** (`/dashboard/anuncios`, nueva): publicaciones disponibles/realizadas/destacadas, destacados disponibles, suscripción activa (con vencimiento), reservadas/inactivas/vendidas.
+  - **Mis publicaciones** (`/dashboard/publicaciones`, ya existía, ahora con el sub-nav arriba).
+  - **Mis compras** (`/dashboard/compra`, nueva) — "Pago individual" | "Suscripciones":
+    - Pago individual: **Publicación 30 días** ($4999), **Publicación 30 días + 7 días destacado** ($14999, wizard para elegir aplicarlo a una publicación existente o guardarlo para la próxima que publiques/reactives), **Destacar publicación por día** ($999/día, contador 1 a 1 recortado a los días que le quedan a la publicación, con carrito para destacar varias en una sola compra). Incluye "Anuncios destacados" e "Historial de pagos" (se mudaron desde Método de pago).
+    - Suscripciones: 5/10/30 publicaciones por 30 días ($19999/$34999/$49999) — contratar una nueva reemplaza la anterior, no se apilan.
+- **Método de pago** (`/dashboard/pago`) se simplifica: solo métodos guardados.
+- Se elimina la pantalla dedicada "Destacar anuncio" (`/dashboard/publicaciones/[id]/destacar`) — el botón "Destacar anuncio" de cada publicación ahora abre Mis compras con esa publicación preseleccionada.
+- **Panel "Mi cuenta"**: "Publicar anuncio" pasa a ser el primer ítem (ícono relleno en azul, como acceso destacado) y se agrega "Cambiar contraseña" (se saca del formulario de perfil, donde vivía antes).
+- **Pausar/Reactivar/Vender ya no navegan** fuera de la pantalla — muestran un modal de confirmación corto ("Publicación pausada/reactivada/vendida", botón Aceptar) y la pantalla se queda donde estaba, así reactivar varias publicaciones seguidas no obliga a volver a entrar a "Inactivas" cada vez.
+- **Detalle de publicación, pestaña Contacto**: ahora muestra la foto del vendedor (o el logo, si es agencia/concesionaria) junto a los datos de contacto, con una insignia "Vendedor verificado"/"Sin verificar".
+- Verificado con `tsc`/`eslint`/`build` limpios, migración + seed aplicados contra la base real, un script desechable que confirma la aritmética del cupo/suscripción/voucher y el vencimiento efectivo de destacados, y requests reales a todas las rutas nuevas/afectadas sin errores de servidor.
+
 ### Changed (2026-08-07, noche) — Header unificado en todo el dashboard + saludo abreviado
 - **El dashboard (Mi perfil, Mis publicaciones, Método de pago, etc.) ahora usa el mismo header que el resto del sitio** (`Header`, el mismo componente de las páginas públicas): nav completo, "Publicar anuncio", "Bienvenido, {nombre}" + ícono de cuenta en desktop, menú hamburguesa con "Mi cuenta"/"Cerrar sesión" en mobile. Antes tenía uno propio, más simple (solo logo + nombre + "Cerrar sesión", sin nav ni ícono de cuenta en mobile).
 - Como consecuencia, se sacó el avatar duplicado que tenía `DashboardSidebarNav` arriba de la lista de secciones — ya lo provee el header, arriba de todo, igual que en cualquier otra pantalla.

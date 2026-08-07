@@ -3,7 +3,6 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Star, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -14,7 +13,7 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { FieldError } from "@/components/ui/FieldError";
 import { mileageUnitFor } from "@/lib/constants";
-import { cn, formatCurrency, formatKm } from "@/lib/utils";
+import { cn, daysRemaining, formatCurrency, formatKm } from "@/lib/utils";
 import {
   deleteListingAction,
   markListingSoldAction,
@@ -46,16 +45,22 @@ const REACTIVATABLE: OwnerListingData["status"][] = ["RESERVADA", "PAUSADA", "EX
 const dateFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
-  const router = useRouter();
   const [pauseOpen, setPauseOpen] = React.useState(false);
   const [reactivateOpen, setReactivateOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [soldOpen, setSoldOpen] = React.useState(false);
   const [reactivating, setReactivating] = React.useState(false);
   const [reactivateError, setReactivateError] = React.useState<string>();
+  const [pausing, setPausing] = React.useState(false);
+  const [pauseError, setPauseError] = React.useState<string>();
   const [selling, setSelling] = React.useState(false);
   const [soldError, setSoldError] = React.useState<string>();
   const [soldFieldErrors, setSoldFieldErrors] = React.useState<Record<string, string[]>>();
+  // "Publicación pausada" / "reactivada" / "vendida" — confirma la operación
+  // sin navegar, así la pantalla se queda en la misma pestaña (si hay varias
+  // publicaciones para reactivar, no hace falta volver a entrar a
+  // "Inactivas" después de cada una).
+  const [confirmMessage, setConfirmMessage] = React.useState<string>();
   // Lazy initializer: evita llamar a Date.now() directamente en el render
   // (impuro). Se calcula una sola vez, al montar — de sobra para un
   // contador de días y para precargar la fecha de venta de hoy.
@@ -71,9 +76,21 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
       setReactivateError(result.error);
       return;
     }
-    if (result?.slug) {
-      router.push(`/dashboard/publicaciones?published=${result.slug}`);
+    setReactivateOpen(false);
+    setConfirmMessage(isDraft ? "Publicación publicada." : "Publicación reactivada.");
+  }
+
+  async function handlePause(status: "RESERVADA" | "PAUSADA") {
+    setPausing(true);
+    setPauseError(undefined);
+    const result = await pauseListingAction(listing.id, status);
+    setPausing(false);
+    if (result?.error) {
+      setPauseError(result.error);
+      return;
     }
+    setPauseOpen(false);
+    setConfirmMessage(status === "RESERVADA" ? "Publicación marcada como reservada." : "Publicación pausada.");
   }
 
   async function handleMarkSoldSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -90,6 +107,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
       return;
     }
     setSoldOpen(false);
+    setConfirmMessage("Publicación vendida.");
   }
 
   // El dueño puede abrir su propia publicación en cualquier estado (ver
@@ -105,9 +123,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   const showMarkSold = !isSold && !isDraft;
   const showEditDelete = !isSold;
 
-  const daysRemaining = listing.expiresAt
-    ? Math.max(0, Math.ceil((new Date(listing.expiresAt).getTime() - now) / 86400000))
-    : null;
+  const remainingDays = listing.expiresAt ? daysRemaining(new Date(listing.expiresAt), now) : null;
 
   const actions: React.ReactNode[] = [];
   if (showEditDelete) {
@@ -213,7 +229,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
           listing.publishedAt && (
             <p className="text-xs text-muted-foreground">
               Publicado el {dateFormatter.format(new Date(listing.publishedAt))}
-              {daysRemaining !== null && <> · Vence en {daysRemaining} día{daysRemaining === 1 ? "" : "s"}</>}
+              {remainingDays !== null && <> · Vence en {remainingDays} día{remainingDays === 1 ? "" : "s"}</>}
             </p>
           )
         )}
@@ -224,7 +240,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
 
         {showDestacar && (
           <Link
-            href={`/dashboard/publicaciones/${listing.id}/destacar`}
+            href={`/dashboard/compra?destacar=${listing.id}`}
             className={cn(
               buttonVariants({ size: "sm" }),
               "mt-1 w-full bg-warning text-white hover:bg-warning/90"
@@ -243,27 +259,34 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
             <p className="mt-1 text-muted-foreground">
               El anuncio se va a seguir mostrando en el catálogo, indicado como reservado. ¿Deseás continuar?
             </p>
-            <form action={pauseListingAction} className="mt-2" onSubmit={() => setTimeout(() => setPauseOpen(false), 0)}>
-              <input type="hidden" name="listingId" value={listing.id} />
-              <input type="hidden" name="status" value="RESERVADA" />
-              <Button type="submit" size="sm" variant="outline">
-                Sí, marcar como reservada
-              </Button>
-            </form>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="mt-2"
+              disabled={pausing}
+              onClick={() => handlePause("RESERVADA")}
+            >
+              {pausing ? "Guardando..." : "Sí, marcar como reservada"}
+            </Button>
           </div>
           <div className="rounded-lg border border-border p-3">
             <p className="font-semibold text-foreground">Pausar publicación</p>
             <p className="mt-1 text-muted-foreground">
               El anuncio va a dejar de mostrarse en el catálogo hasta que lo reactives. ¿Deseás continuar?
             </p>
-            <form action={pauseListingAction} className="mt-2" onSubmit={() => setTimeout(() => setPauseOpen(false), 0)}>
-              <input type="hidden" name="listingId" value={listing.id} />
-              <input type="hidden" name="status" value="PAUSADA" />
-              <Button type="submit" size="sm" variant="outline">
-                Sí, pausar
-              </Button>
-            </form>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="mt-2"
+              disabled={pausing}
+              onClick={() => handlePause("PAUSADA")}
+            >
+              {pausing ? "Guardando..." : "Sí, pausar"}
+            </Button>
           </div>
+          {pauseError && <p className="text-danger">{pauseError}</p>}
         </div>
       </Modal>
 
@@ -365,6 +388,17 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
                 Sí, eliminar
               </Button>
             </form>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={Boolean(confirmMessage)} onClose={() => setConfirmMessage(undefined)} title="¡Listo!">
+        <div className="space-y-4 text-sm">
+          <p className="text-foreground">{confirmMessage}</p>
+          <div className="flex justify-end">
+            <Button type="button" size="sm" onClick={() => setConfirmMessage(undefined)}>
+              Aceptar
+            </Button>
           </div>
         </div>
       </Modal>
