@@ -182,6 +182,23 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con login real contra Supabase: páginas responden 200, orden Volver/título confirmado en el HTML; el fix de Pausar se confirmó leyendo el código (no reproducible por curl, ver ERRORES.md)
 - [ ] Prueba manual en navegador (imprescindible): pausar/reservar una publicación y confirmar que cambia de estado, publicar y volver desde "Ver publicación", eliminar una foto al editar, y revisar que los botones no desborden en el celular
 
+## Fase 16 — Reactivar sin editar y fecha de venta (solicitado por el usuario)
+- [x] Nueva acción `reactivateListingAction`/`reactivateListing`: reactiva directo (sin pasar por edición), respeta el cupo de publicaciones
+- [x] Modal de reactivar rediseñado: "¿Querés editar los datos de la publicación antes de volver a publicarla?" con Sí, editar / No, publicar / Cancelar — igual para Reservada, Pausada y Vencida
+- [x] Publicación vendida muestra "Vendida el dd/mm/aaaa" en vez de "Publicado el... Vence en N días"
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado contra la base real: reactivar sin editar cambia el estado y suma al contador de activaciones; `soldAt` se guarda al marcar vendida
+- [ ] Prueba manual en navegador: los tres botones del diálogo de reactivar, y que la tarjeta de una publicación vendida muestre la fecha de venta
+
+## Fase 17 — Modal de confirmación al vender, con datos opcionales (solicitado por el usuario)
+- [x] Nuevos campos en `Listing`: `buyerInfo`, `realSalePrice`, `saleConditions` (todos opcionales, privados)
+- [x] "Marcar vendido" abre un modal de confirmación en vez de cambiar el estado con un click (evita marcarla vendida por error)
+- [x] Campos opcionales en el modal: fecha de venta (precargada con hoy), datos del comprador, precio real de venta, condiciones
+- [x] La tarjeta muestra el precio real de venta junto a "Vendida el ..." cuando está cargado
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado contra la base real: los 4 campos se guardan y se leen correctamente
+- [ ] Prueba manual en navegador: completar el modal de venta con y sin los campos opcionales, confirmar que no se puede vender por accidente
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

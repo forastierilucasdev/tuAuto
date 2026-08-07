@@ -8,8 +8,17 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/Textarea";
+import { FieldError } from "@/components/ui/FieldError";
 import { cn, formatCurrency, formatKm } from "@/lib/utils";
-import { deleteListingAction, markListingSoldAction, pauseListingAction } from "@/server/actions/listing.actions";
+import {
+  deleteListingAction,
+  markListingSoldAction,
+  pauseListingAction,
+  reactivateListingAction,
+} from "@/server/actions/listing.actions";
 import type { OwnerListingData } from "@/server/data/listings";
 
 const STATUS_LABEL: Record<OwnerListingData["status"], string> = {
@@ -38,10 +47,42 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   const [pauseOpen, setPauseOpen] = React.useState(false);
   const [reactivateOpen, setReactivateOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [soldOpen, setSoldOpen] = React.useState(false);
+  const [reactivating, setReactivating] = React.useState(false);
+  const [reactivateError, setReactivateError] = React.useState<string>();
+  const [selling, setSelling] = React.useState(false);
+  const [soldError, setSoldError] = React.useState<string>();
+  const [soldFieldErrors, setSoldFieldErrors] = React.useState<Record<string, string[]>>();
   // Lazy initializer: evita llamar a Date.now() directamente en el render
   // (impuro). Se calcula una sola vez, al montar — de sobra para un
-  // contador de días.
+  // contador de días y para precargar la fecha de venta de hoy.
   const [now] = React.useState(() => Date.now());
+  const [todayIso] = React.useState(() => new Date().toISOString().slice(0, 10));
+
+  async function handlePublishNow() {
+    setReactivating(true);
+    setReactivateError(undefined);
+    const result = await reactivateListingAction(listing.id);
+    // Si no hubo error, la acción ya redirigió — este código no sigue.
+    setReactivating(false);
+    if (result?.error) setReactivateError(result.error);
+  }
+
+  async function handleMarkSoldSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSelling(true);
+    setSoldError(undefined);
+    setSoldFieldErrors(undefined);
+    const formData = new FormData(event.currentTarget);
+    const result = await markListingSoldAction(listing.id, formData);
+    setSelling(false);
+    if (result?.error || result?.fieldErrors) {
+      setSoldError(result.error);
+      setSoldFieldErrors(result.fieldErrors);
+      return;
+    }
+    setSoldOpen(false);
+  }
 
   // El dueño puede abrir su propia publicación en cualquier estado (ver
   // `getListingBySlug`, que la muestra sin el filtro de visibilidad pública
@@ -73,12 +114,16 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   }
   if (showMarkSold) {
     actions.push(
-      <form key="vendido" action={markListingSoldAction}>
-        <input type="hidden" name="listingId" value={listing.id} />
-        <Button type="submit" variant="ghost" size="sm" className="w-full">
-          Marcar vendido
-        </Button>
-      </form>
+      <Button
+        key="vendido"
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        onClick={() => setSoldOpen(true)}
+      >
+        Marcar vendido
+      </Button>
     );
   }
   if (showPausar) {
@@ -140,11 +185,20 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
           {formatKm(listing.mileageKm)} · {listing.year}
         </p>
 
-        {listing.publishedAt && (
+        {isSold && listing.soldAt ? (
           <p className="text-xs text-muted-foreground">
-            Publicado el {dateFormatter.format(new Date(listing.publishedAt))}
-            {daysRemaining !== null && <> · Vence en {daysRemaining} día{daysRemaining === 1 ? "" : "s"}</>}
+            Vendida el {dateFormatter.format(new Date(listing.soldAt))}
+            {listing.realSalePrice !== null && (
+              <> · {formatCurrency(listing.realSalePrice, listing.currency)}</>
+            )}
           </p>
+        ) : (
+          listing.publishedAt && (
+            <p className="text-xs text-muted-foreground">
+              Publicado el {dateFormatter.format(new Date(listing.publishedAt))}
+              {daysRemaining !== null && <> · Vence en {daysRemaining} día{daysRemaining === 1 ? "" : "s"}</>}
+            </p>
+          )
         )}
 
         {actions.length > 0 && (
@@ -204,12 +258,16 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
         <div className="space-y-3 text-sm">
           <p className="text-muted-foreground">
             {isDraft
-              ? "¿Querés publicar este borrador? Vas a poder revisar y completar los datos antes de que se publique."
-              : "¿Querés conservar los datos de tu publicación? Vas a poder revisarlos y actualizarlos; al guardar los cambios, tu anuncio vuelve a estar activo."}
+              ? "¿Querés editar los datos de la publicación antes de publicarla?"
+              : "¿Querés editar los datos de la publicación antes de volver a publicarla?"}
           </p>
-          <div className="flex justify-end gap-2">
+          {reactivateError && <p className="text-danger">{reactivateError}</p>}
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="ghost" size="sm" onClick={() => setReactivateOpen(false)}>
               Cancelar
+            </Button>
+            <Button type="button" variant="outline" size="sm" disabled={reactivating} onClick={handlePublishNow}>
+              {reactivating ? "Publicando..." : "No, publicar"}
             </Button>
             <Link
               href={`/dashboard/publicaciones/${listing.id}/editar`}
@@ -219,6 +277,54 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
             </Link>
           </div>
         </div>
+      </Modal>
+
+      <Modal open={soldOpen} onClose={() => setSoldOpen(false)} title="Marcar como vendida">
+        <form onSubmit={handleMarkSoldSubmit} className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            Confirmá que se vendió &quot;{listing.title}&quot;. Los siguientes datos son opcionales, quedan solo
+            para tu registro — no se muestran en el catálogo.
+          </p>
+          <div>
+            <Label htmlFor={`soldAt-${listing.id}`}>Fecha de venta</Label>
+            <Input id={`soldAt-${listing.id}`} name="soldAt" type="date" defaultValue={todayIso} />
+            <FieldError messages={soldFieldErrors?.soldAt} />
+          </div>
+          <div>
+            <Label htmlFor={`buyerInfo-${listing.id}`}>Datos del comprador (opcional)</Label>
+            <Input id={`buyerInfo-${listing.id}`} name="buyerInfo" placeholder="Nombre, teléfono..." />
+            <FieldError messages={soldFieldErrors?.buyerInfo} />
+          </div>
+          <div>
+            <Label htmlFor={`realSalePrice-${listing.id}`}>Precio real de venta (opcional)</Label>
+            <Input
+              id={`realSalePrice-${listing.id}`}
+              name="realSalePrice"
+              inputMode="numeric"
+              placeholder="Ej: 15000000"
+            />
+            <FieldError messages={soldFieldErrors?.realSalePrice} />
+          </div>
+          <div>
+            <Label htmlFor={`saleConditions-${listing.id}`}>Condiciones (opcional)</Label>
+            <Textarea
+              id={`saleConditions-${listing.id}`}
+              name="saleConditions"
+              rows={3}
+              placeholder="Ej: contado, con permuta..."
+            />
+            <FieldError messages={soldFieldErrors?.saleConditions} />
+          </div>
+          {soldError && <p className="text-danger">{soldError}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setSoldOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" size="sm" disabled={selling}>
+              {selling ? "Guardando..." : "Confirmar venta"}
+            </Button>
+          </div>
+        </form>
       </Modal>
 
       <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Eliminar publicación">

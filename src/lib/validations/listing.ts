@@ -78,5 +78,15 @@ export const updateListingSchema = z.object({
   contactAddress: contactAddressSchema,
 });
 
+// Todos los campos son opcionales — el modal de "Marcar vendido" existe
+// sobre todo para confirmar antes de cambiar el estado, no para exigir datos.
+export const markSoldSchema = z.object({
+  soldAt: z.coerce.date().optional(),
+  buyerInfo: z.string().trim().max(200).optional(),
+  realSalePrice: z.coerce.number().positive().optional(),
+  saleConditions: z.string().trim().max(500).optional(),
+});
+
 export type CreateListingInput = z.infer<typeof createListingSchema>;
 export type UpdateListingInput = z.infer<typeof updateListingSchema>;
+export type MarkSoldInput = z.infer<typeof markSoldSchema>;

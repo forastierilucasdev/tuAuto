@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { createListingSchema, updateListingSchema } from "@/lib/validations/listing";
+import { createListingSchema, markSoldSchema, updateListingSchema } from "@/lib/validations/listing";
 import { uploadListingImage } from "@/lib/supabase-storage";
 import { validateImageFile } from "@/lib/image-validation";
 import {
@@ -14,6 +14,7 @@ import {
   LastImageError,
   markListingAsSold,
   QuotaExceededError,
+  reactivateListing,
   setListingPauseStatus,
   updateOwnedListing,
 } from "@/server/data/listings";
@@ -152,14 +153,30 @@ export async function updateListingAction(
   redirect(reactivated ? `/dashboard/publicaciones?published=${updatedSlug}` : "/dashboard/publicaciones");
 }
 
-export async function markListingSoldAction(formData: FormData) {
+export type MarkSoldState = { error?: string; fieldErrors?: Record<string, string[]> } | undefined;
+
+/**
+ * Se llama directo desde el cliente (no como `<form action>`) para poder
+ * mostrar errores de validación y cerrar el modal recién si sale bien —
+ * evita el mismo problema de carrera que tenía "Pausar" (ver ERRORES.md).
+ */
+export async function markListingSoldAction(listingId: string, formData: FormData): Promise<MarkSoldState> {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  if (!listingId) return { error: "Publicación inválida." };
 
-  const listingId = String(formData.get("listingId") ?? "");
-  if (!listingId) return;
+  const raw = Object.fromEntries(formData);
+  const parsed = markSoldSchema.safeParse({
+    soldAt: raw.soldAt || undefined,
+    buyerInfo: raw.buyerInfo || undefined,
+    realSalePrice: raw.realSalePrice || undefined,
+    saleConditions: raw.saleConditions || undefined,
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
+  }
 
-  await markListingAsSold(listingId, session.user.id);
+  await markListingAsSold(listingId, session.user.id, parsed.data);
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
 }
@@ -175,6 +192,26 @@ export async function pauseListingAction(formData: FormData) {
   await setListingPauseStatus(listingId, session.user.id, status);
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
+}
+
+export type ReactivateListingState = { error?: string } | undefined;
+
+/** "No, publicar" al reactivar — sin pasar por el formulario de edición. */
+export async function reactivateListingAction(listingId: string): Promise<ReactivateListingState> {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  let listing;
+  try {
+    listing = await reactivateListing(listingId, session.user.id);
+  } catch (error) {
+    if (error instanceof QuotaExceededError) return { error: error.message };
+    throw error;
+  }
+
+  revalidatePath("/dashboard/publicaciones");
+  revalidatePath("/catalogo");
+  redirect(`/dashboard/publicaciones?published=${listing.slug}`);
 }
 
 export type DeleteImageState = { error?: string } | undefined;

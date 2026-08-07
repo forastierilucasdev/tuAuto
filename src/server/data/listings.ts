@@ -185,6 +185,8 @@ export type OwnerListingData = VehicleCardData & {
   createdAt: Date;
   publishedAt: Date | null;
   expiresAt: Date | null;
+  soldAt: Date | null;
+  realSalePrice: number | null;
 };
 
 function toOwnerListingData(listing: ListingWithCardData): OwnerListingData {
@@ -195,6 +197,8 @@ function toOwnerListingData(listing: ListingWithCardData): OwnerListingData {
     createdAt: listing.createdAt,
     publishedAt: listing.publishedAt,
     expiresAt: listing.expiresAt,
+    soldAt: listing.soldAt,
+    realSalePrice: listing.realSalePrice ? Number(listing.realSalePrice) : null,
   };
 }
 
@@ -424,11 +428,48 @@ export async function updateOwnedListing(
   return { listing, reactivated: reactivating };
 }
 
-export async function markListingAsSold(listingId: string, userId: string) {
+/** Reactiva sin pasar por edición ("No, publicar" al reactivar). */
+export async function reactivateListing(listingId: string, userId: string) {
+  await assertOwnership(listingId, userId);
+  const current = await prisma.listing.findUniqueOrThrow({
+    where: { id: listingId },
+    select: { status: true },
+  });
+  if (!REACTIVATABLE_STATUSES.includes(current.status)) {
+    throw new Error("Esta publicación no se puede reactivar.");
+  }
+  await assertHasAvailablePublications(userId);
+  const wasDraft = current.status === "DRAFT";
+
+  const [listing] = await prisma.$transaction([
+    prisma.listing.update({
+      where: { id: listingId },
+      data: {
+        status: "ACTIVE",
+        soldAt: null,
+        expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
+        ...(wasDraft ? { publishedAt: new Date() } : {}),
+      },
+    }),
+    prisma.user.update({ where: { id: userId }, data: { activationCount: { increment: 1 } } }),
+  ]);
+  return listing;
+}
+
+export async function markListingAsSold(
+  listingId: string,
+  userId: string,
+  details: {
+    soldAt?: Date;
+    buyerInfo?: string;
+    realSalePrice?: number;
+    saleConditions?: string;
+  } = {}
+) {
   await assertOwnership(listingId, userId);
   return prisma.listing.update({
     where: { id: listingId },
-    data: { status: "SOLD", soldAt: new Date() },
+    data: { status: "SOLD", soldAt: details.soldAt ?? new Date(), ...details },
   });
 }
 

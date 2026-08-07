@@ -31,6 +31,7 @@ Al reportar un problema a soporte, incluir siempre:
 - **Eliminar una publicación o una foto no borra el archivo del Storage**: al eliminar un anuncio (imágenes incluidas, por cascada) o al quitar una foto puntual desde el editor, se borra la fila en la base, pero el archivo ya subido a Supabase Storage queda huérfano — no hay una limpieza automática todavía.
 - **Vencimiento calculado al leer, no con un proceso en segundo plano**: una publicación vencida (30 días desde que se publicó) se trata como "Vencida" en todas las pantallas y en el catálogo público apenas se lee, pero el campo `status` en la base sigue diciendo `ACTIVE`/`RESERVADA`/`PAUSADA` hasta que el dueño la edite o reactive (recién ahí se escribe `EXPIRED`/`ACTIVE` de verdad). No afecta lo que ve nadie, pero una consulta directa a la base puede mostrar un status "desactualizado" que no coincide con lo que se ve en la app.
 - **Packs de publicaciones sin devolución/cancelación**: comprar un pack suma publicaciones disponibles al instante (pago simulado) y no hay forma de cancelarlo ni de reembolsarlo desde la app.
+- **Datos de venta no editables después de confirmar**: al marcar una publicación como vendida se puede cargar fecha, comprador, precio real y condiciones — pero una vez guardados no hay forma de corregirlos desde la app (quedaría reeditar directamente en la base).
 
 ## Historial de errores resueltos
 
