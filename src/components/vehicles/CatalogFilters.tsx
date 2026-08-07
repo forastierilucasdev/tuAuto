@@ -6,7 +6,7 @@ import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import { VEHICLE_TYPES, CONDITION_OPTIONS } from "@/lib/constants";
+import { VEHICLE_TYPES, CONDITION_OPTIONS, mileageUnitFor } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
 import type { VehicleType } from "@/generated/prisma/client";
@@ -30,6 +30,10 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
   const [kmMax, setKmMax] = React.useState(searchParams.get("kmMax") ?? "");
 
   const { brands, models, years } = useVehicleTaxonomy(tipo, marca, modelo);
+  // Sin tipo elegido (todos mezclados) se muestra el filtro genérico de Km;
+  // con un tipo elegido, se adapta (Horas para lanchas/barcos, oculto para
+  // motos/bicicletas) — ver lib/constants.ts.
+  const mileageUnit = tipo ? mileageUnitFor(tipo) : "km";
 
   function applyFilters() {
     const params = new URLSearchParams();
@@ -70,9 +74,18 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
           id="f-tipo"
           value={tipo}
           onChange={(e) => {
-            setTipo(e.target.value as VehicleType | "");
+            const nextTipo = e.target.value as VehicleType | "";
+            setTipo(nextTipo);
             setMarca("");
             setModelo("");
+            // Si el nuevo tipo no usa Km/Horas (moto, bicicleta), un filtro
+            // de Km cargado de antes quedaría invisible pero seguiría
+            // aplicando — se limpia para evitar ese filtro fantasma. "Todos
+            // los tipos" (nextTipo vacío) sí conserva el filtro genérico.
+            if (nextTipo && !mileageUnitFor(nextTipo)) {
+              setKmMin("");
+              setKmMax("");
+            }
           }}
         >
           <option value="">Todos los tipos</option>
@@ -179,23 +192,25 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
         </div>
       </div>
 
-      <div>
-        <Label>Kilometraje</Label>
-        <div className="flex gap-2">
-          <Input
-            inputMode="numeric"
-            placeholder="Mín"
-            value={kmMin}
-            onChange={(e) => setKmMin(e.target.value.replace(/\D/g, ""))}
-          />
-          <Input
-            inputMode="numeric"
-            placeholder="Máx"
-            value={kmMax}
-            onChange={(e) => setKmMax(e.target.value.replace(/\D/g, ""))}
-          />
+      {mileageUnit && (
+        <div>
+          <Label>{mileageUnit === "km" ? "Kilometraje" : "Horas de uso"}</Label>
+          <div className="flex gap-2">
+            <Input
+              inputMode="numeric"
+              placeholder="Mín"
+              value={kmMin}
+              onChange={(e) => setKmMin(e.target.value.replace(/\D/g, ""))}
+            />
+            <Input
+              inputMode="numeric"
+              placeholder="Máx"
+              value={kmMax}
+              onChange={(e) => setKmMax(e.target.value.replace(/\D/g, ""))}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex gap-2 pt-1">
         <Button type="button" onClick={applyFilters} className="flex-1">

@@ -26,14 +26,18 @@ type AccountMenuProps = {
   avatarSize?: "sm" | "md";
   /** "Bienvenido, {nombre}" al lado del avatar — header público en desktop. */
   showGreeting?: boolean;
+  /** Desde qué borde entra el panel — "right" cuando el avatar está pegado a la derecha del todo. */
+  panelSide?: "left" | "right";
 };
 
 /**
- * Ícono de cuenta (foto o iniciales) que abre, desde la izquierda, un menú
- * de navegación vertical hacia las pantallas de la cuenta — mismo mecanismo
- * que el drawer de filtros del catálogo (`SlideOverPanel`, `side="left"`).
+ * Ícono de cuenta (foto o iniciales) que abre un menú de navegación vertical
+ * hacia las pantallas de la cuenta — mismo mecanismo que el drawer de
+ * filtros del catálogo (`SlideOverPanel`). `panelSide` controla desde qué
+ * borde entra, para que abra "desde donde tocaste" según en qué lado del
+ * header viva el avatar.
  */
-export function AccountMenu({ avatarSize = "sm", showGreeting = false }: AccountMenuProps) {
+export function AccountMenu({ avatarSize = "sm", showGreeting = false, panelSide = "left" }: AccountMenuProps) {
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile>(null);
@@ -51,6 +55,11 @@ export function AccountMenu({ avatarSize = "sm", showGreeting = false }: Account
   return (
     <>
       <div className="flex items-center gap-2">
+        {showGreeting && displayName && (
+          <span className="hidden text-sm font-medium text-foreground md:inline">
+            Bienvenido, {displayName}
+          </span>
+        )}
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -59,14 +68,9 @@ export function AccountMenu({ avatarSize = "sm", showGreeting = false }: Account
         >
           <UserAvatar avatarUrl={profile?.avatarUrl} fullName={displayName} size={avatarSize} />
         </button>
-        {showGreeting && displayName && (
-          <span className="hidden text-sm font-medium text-foreground md:inline">
-            Bienvenido, {displayName}
-          </span>
-        )}
       </div>
 
-      <SlideOverPanel open={open} onClose={() => setOpen(false)} side="left" title="Mi cuenta">
+      <SlideOverPanel open={open} onClose={() => setOpen(false)} side={panelSide} title="Mi cuenta">
         <nav className="space-y-1">
           {MENU_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>

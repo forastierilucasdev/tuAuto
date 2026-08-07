@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { FieldError } from "@/components/ui/FieldError";
+import { mileageUnitFor } from "@/lib/constants";
 import { cn, formatCurrency, formatKm } from "@/lib/utils";
 import {
   deleteListingAction,
@@ -89,6 +90,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   // cuando el visitante es el dueño) — todas las tarjetas son clickeables.
   const isSold = listing.status === "SOLD";
   const isDraft = listing.status === "DRAFT";
+  const mileageUnit = mileageUnitFor(listing.vehicleType);
   const showDestacar = listing.status === "ACTIVE" && !listing.featured;
   const showPausar = listing.status === "ACTIVE";
   const showReactivar = REACTIVATABLE.includes(listing.status);
@@ -189,7 +191,8 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
         </Link>
         <p className="font-bold text-primary">{formatCurrency(listing.price, listing.currency)}</p>
         <p className="text-xs text-muted-foreground">
-          {formatKm(listing.mileageKm)} · {listing.year}
+          {mileageUnit ? `${formatKm(listing.mileageKm, mileageUnit)} · ` : ""}
+          {listing.year}
         </p>
 
         {isSold && listing.soldAt ? (

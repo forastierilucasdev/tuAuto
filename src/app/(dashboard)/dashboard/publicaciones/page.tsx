@@ -71,6 +71,10 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
           <Link
             key={tab.key}
             href={`/dashboard/publicaciones?tab=${tab.key}`}
+            // Cambiar de pestaña reemplaza la entrada del historial en vez de
+            // apilar una nueva — si no, "Volver" te hace recorrer pestaña por
+            // pestaña en vez de salir de la pantalla directamente.
+            replace
             className={cn(
               "shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors",
               activeTab === tab.key

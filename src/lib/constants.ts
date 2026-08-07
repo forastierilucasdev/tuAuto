@@ -34,6 +34,25 @@ export function vehicleTypeIcon(value: string): LucideIcon {
   return VEHICLE_TYPES.find((t) => t.value === value)?.icon ?? Car;
 }
 
+// El wizard, los filtros y las tarjetas de publicación se adaptan según el
+// tipo de vehículo: kilometraje solo tiene sentido en autos/camionetas/
+// monopatines, "horas de motor" en lanchas/barcos, y motos/bicicletas no
+// muestran ninguno de los dos. Única fuente de verdad para esta regla.
+const KM_VEHICLE_TYPES: VehicleTypeValue[] = ["AUTO", "CAMIONETA", "MONOPATIN"];
+const HOURS_VEHICLE_TYPES: VehicleTypeValue[] = ["LANCHA", "BARCO"];
+const TRANSMISSION_VEHICLE_TYPES: VehicleTypeValue[] = ["AUTO", "CAMIONETA"];
+
+/** `"km"` | `"horas"` | `null` (el tipo no usa ninguno de los dos, ej. moto/bicicleta). */
+export function mileageUnitFor(vehicleType: string): "km" | "horas" | null {
+  if (KM_VEHICLE_TYPES.includes(vehicleType as VehicleTypeValue)) return "km";
+  if (HOURS_VEHICLE_TYPES.includes(vehicleType as VehicleTypeValue)) return "horas";
+  return null;
+}
+
+export function usesTransmission(vehicleType: string): boolean {
+  return TRANSMISSION_VEHICLE_TYPES.includes(vehicleType as VehicleTypeValue);
+}
+
 export const CONDITION_OPTIONS = [
   { value: "NUEVO", label: "Nuevo" },
   { value: "USADO", label: "Usado" },

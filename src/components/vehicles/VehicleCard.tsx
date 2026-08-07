@@ -4,12 +4,13 @@ import { Building2, Gauge, MapPin, Tag, User } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, formatKm } from "@/lib/utils";
-import { accountTypeLabel, conditionLabel, isBusinessAccountType } from "@/lib/constants";
+import { accountTypeLabel, conditionLabel, isBusinessAccountType, mileageUnitFor } from "@/lib/constants";
 import type { VehicleCardData } from "@/types/vehicle";
 
 export function VehicleCard({ vehicle }: { vehicle: VehicleCardData }) {
   const location = [vehicle.province, vehicle.city].filter(Boolean).join(" - ");
   const SellerIcon = isBusinessAccountType(vehicle.sellerAccountType) ? Building2 : User;
+  const mileageUnit = mileageUnitFor(vehicle.vehicleType);
 
   return (
     <Link href={`/catalogo/${vehicle.slug}`} className="group block h-full">
@@ -34,10 +35,12 @@ export function VehicleCard({ vehicle }: { vehicle: VehicleCardData }) {
             {formatCurrency(vehicle.price, vehicle.currency)}
           </p>
           <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <Gauge className="h-3.5 w-3.5" />
-              {formatKm(vehicle.mileageKm)}
-            </span>
+            {mileageUnit && (
+              <span className="inline-flex items-center gap-1">
+                <Gauge className="h-3.5 w-3.5" />
+                {formatKm(vehicle.mileageKm, mileageUnit)}
+              </span>
+            )}
             {location && (
               <span className="inline-flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />

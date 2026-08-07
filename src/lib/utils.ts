@@ -13,9 +13,10 @@ export function formatCurrency(amount: number, currency: "ARS" | "USD" = "ARS") 
   }).format(amount);
 }
 
-export function formatKm(km: number | null) {
-  if (km === null) return "—";
-  return `${new Intl.NumberFormat("es-AR").format(km)} km`;
+/** `unit`: "km" para autos/camionetas/monopatines, "horas" para lanchas/barcos (ver `lib/constants.ts`). */
+export function formatKm(value: number | null, unit: "km" | "horas" = "km") {
+  if (value === null) return "—";
+  return `${new Intl.NumberFormat("es-AR").format(value)} ${unit}`;
 }
 
 /** "Juan Pérez" -> "JP". Nombres de una sola palabra devuelven una sola letra. */

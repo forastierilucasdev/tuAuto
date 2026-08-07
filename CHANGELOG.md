@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-07, noche) — Campos del wizard adaptados por tipo de vehículo
+- El paso "Datos principales" del wizard (alta y edición), el catálogo (detalle, tarjetas, filtros) y "Mis publicaciones" ahora se adaptan según el tipo de vehículo elegido, centralizado en `mileageUnitFor()`/`usesTransmission()` (`lib/constants.ts`):
+  - **Kilometraje**: solo Auto, Camioneta y Monopatín.
+  - **Horas de uso** (mismo campo `mileageKm`, otra etiqueta): Lancha y Barco.
+  - **Ninguno de los dos**: Moto y Bicicleta.
+  - **Transmisión**: solo Auto y Camioneta.
+- Al enviar el formulario, los campos que no aplican al tipo elegido directamente no se mandan (evita guardar un dato sin sentido, ej. transmisión en una moto).
+- El filtro de Km del catálogo también se adapta: si elegís un tipo sin Km/Horas se oculta (y se limpia el filtro si tenía algo cargado); si elegís Lancha/Barco pasa a "Horas de uso"; sin tipo elegido (todos mezclados) se mantiene el filtro genérico de Km.
+
+### Fixed (2026-08-07, noche) — "Volver" en Mis publicaciones recorría cada pestaña
+- Cambiar de pestaña (Activas/Destacadas/Reservadas/Inactivas/Vendidas) apilaba una entrada nueva en el historial del navegador en cada click, así que "Volver" te hacía recorrer pestaña por pestaña en vez de salir de la pantalla. Se agregó la prop `replace` a esos links (Next.js reemplaza la entrada actual en vez de apilar una nueva) — el resto de los "Volver" de la app siguen usando el historial normal, este cambio es puntual a esta pantalla.
+
+### Changed (2026-08-07, noche) — Header desktop: avatar a la derecha, panel desde la derecha
+- En la versión de escritorio, el logo se queda a la izquierda y el avatar ("EI" + "Bienvenido, ...") pasa a la punta derecha del header, después de "Publicar anuncio" — antes estaba pegado al logo, a la izquierda. Al tocarlo, el panel de la cuenta ahora abre desde la derecha (antes siempre desde la izquierda, sin importar dónde estuviera el avatar). En mobile no cambia nada (avatar arriba a la izquierda, panel desde la izquierda, como ya estaba).
+- `AccountMenu` ahora acepta `panelSide` ("left" por defecto, "right" para este caso) en vez de tener el lado fijo.
+- Menú de 3 líneas (mobile): con sesión iniciada, debajo de "Contacto" se agregó una línea divisoria y los accesos "Mi perfil" y "Cerrar sesión".
+
 ### Fixed (2026-08-07, tarde) — Segunda pasada de botones: relleno sólido y bordes faltantes
 - La primera pasada de colores (variantes `outline-*`, borde + texto de color) no era lo que se pedía — se reemplazó por **relleno sólido con letra blanca**: nueva variante `success` (verde) y se reutilizan `primary` (azul) y `destructive` (rojo, ya existía) para los tres botones de decisión.
 - **"No, publicar" → "Publicar"** en todos lados: el prefijo "No," confundía a simple vista sobre una acción positiva. Aplica al diálogo de reactivar (`OwnerListingCard`) y al diálogo de confirmar publicación (`ListingForm`, donde además faltaba corregirle el color — seguía usando el azul por defecto).

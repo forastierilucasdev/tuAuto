@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, formatKm } from "@/lib/utils";
-import { isBusinessAccountType } from "@/lib/constants";
+import { isBusinessAccountType, mileageUnitFor } from "@/lib/constants";
 import { BackButton } from "@/components/ui/BackButton";
 
 export const metadata: Metadata = { title: "Método de pago" };
@@ -127,7 +127,11 @@ export default async function PagoPage() {
                     {listing.title}
                   </p>
                   <p className="text-sm font-bold text-primary">{formatCurrency(listing.price, listing.currency)}</p>
-                  <p className="text-xs text-muted-foreground">{formatKm(listing.mileageKm)}</p>
+                  {mileageUnitFor(listing.vehicleType) && (
+                    <p className="text-xs text-muted-foreground">
+                      {formatKm(listing.mileageKm, mileageUnitFor(listing.vehicleType)!)}
+                    </p>
+                  )}
                 </div>
               </Link>
             ))}

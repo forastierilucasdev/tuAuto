@@ -217,6 +217,15 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
 - [ ] Prueba manual en navegador (imprescindible, es 100% visual): confirmar los colores y bordes en cada pantalla mencionada
 
+## Fase 20 — Header desktop, menú mobile, Volver en Mis publicaciones y campos por tipo de vehículo (solicitado por el usuario)
+- [x] Desktop: logo a la izquierda, avatar+saludo a la derecha del todo (después de "Publicar anuncio"), panel abre desde la derecha (`AccountMenu` con `panelSide`)
+- [x] Menú de 3 líneas (mobile, con sesión iniciada): línea divisoria + "Mi perfil" + "Cerrar sesión" debajo de "Contacto"
+- [x] "Volver" en Mis publicaciones ya no recorre cada pestaña (tabs con `replace` en vez de apilar historial)
+- [x] Wizard, catálogo (detalle/tarjetas/filtros) y Mis publicaciones se adaptan por tipo de vehículo: Kilometraje (Auto/Camioneta/Monopatín), Horas de uso (Lancha/Barco), ninguno (Moto/Bicicleta), Transmisión (solo Auto/Camioneta)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: detalle de lancha muestra "Horas de uso", detalle de moto no muestra ni Km ni Horas ni Transmisión, detalle de auto muestra "Km"
+- [ ] Prueba manual en navegador (imprescindible, depende de `useSession()` client-side): posición del avatar y lado del panel en desktop, contenido del menú mobile logueado, y que "Volver" en Mis publicaciones salga de la pantalla en un solo toque
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

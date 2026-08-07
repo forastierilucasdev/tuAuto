@@ -17,7 +17,13 @@ import { BackButton } from "@/components/ui/BackButton";
 import { getListingBySlug } from "@/server/data/listings";
 import { auth } from "@/lib/auth";
 import { buildWhatsAppLink, cn, formatCurrency, formatKm } from "@/lib/utils";
-import { accountTypeLabel, conditionLabel, isBusinessAccountType, transmissionLabel } from "@/lib/constants";
+import {
+  accountTypeLabel,
+  conditionLabel,
+  isBusinessAccountType,
+  mileageUnitFor,
+  transmissionLabel,
+} from "@/lib/constants";
 
 export async function generateMetadata(props: PageProps<"/catalogo/[slug]">): Promise<Metadata> {
   const { slug } = await props.params;
@@ -44,6 +50,8 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
   const businessName = listing.user.agencyProfile?.businessName;
   const contactAddress = listing.contactAddress ?? listing.user.agencyProfile?.address ?? null;
 
+  const mileageUnit = mileageUnitFor(listing.vehicleType);
+
   const whatsappHref = buildWhatsAppLink(
     listing.user.phone,
     `Hola te contacto a través de Motoresya.com.ar, quiero más información sobre la publicación ${listing.title}`
@@ -63,7 +71,12 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
           {listing.transmission && (
             <Field label="Transmisión" value={transmissionLabel(listing.transmission)} />
           )}
-          <Field label="Km" value={formatKm(listing.mileageKm)} />
+          {mileageUnit && (
+            <Field
+              label={mileageUnit === "km" ? "Km" : "Horas de uso"}
+              value={formatKm(listing.mileageKm, mileageUnit)}
+            />
+          )}
           <Field label="Condición" value={conditionLabel(listing.condition)} />
           <Field label="Tipo de vendedor" value={accountTypeLabel(listing.user.accountType)} />
         </dl>

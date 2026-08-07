@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Menu, X } from "lucide-react";
 import { NAV_LINKS, SITE_NAME } from "@/lib/constants";
 import { buttonVariants } from "@/components/ui/Button";
@@ -24,14 +24,17 @@ export function Header() {
       <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
         {/* 3 columnas para poder centrar el logo en mobile de forma robusta,
             sin importar el ancho de los elementos a los costados: en mobile
-            es [avatar] [logo] [hamburguesa]; en desktop, [logo+avatar] [nav]
-            [Publicar anuncio]. */}
+            es [avatar] [logo] [hamburguesa]; en desktop, [logo] [nav]
+            [Publicar anuncio + avatar, éste último pegado del todo a la
+            derecha — su panel abre desde ese mismo borde]. */}
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <div className="flex shrink-0 items-center gap-3">
             <Link href="/" className="hidden text-lg font-extrabold tracking-tight text-navy sm:text-xl md:block">
               {SITE_NAME}
             </Link>
-            <AccountMenu showGreeting />
+            <div className="md:hidden">
+              <AccountMenu />
+            </div>
           </div>
 
           <div className="flex items-center justify-center">
@@ -79,6 +82,10 @@ export function Header() {
               </Link>
             )}
 
+            <div className="hidden md:block">
+              <AccountMenu showGreeting panelSide="right" />
+            </div>
+
             <button
               type="button"
               aria-label={open ? "Cerrar menú" : "Abrir menú"}
@@ -111,6 +118,25 @@ export function Header() {
                 >
                   Iniciar sesión
                 </Link>
+              )}
+              {isAuthed && (
+                <>
+                  <hr className="my-2 border-border" />
+                  <Link
+                    href="/dashboard/perfil"
+                    onClick={() => setOpen(false)}
+                    className="rounded-md px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-surface-muted"
+                  >
+                    Mi perfil
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="rounded-md px-3 py-2 text-left text-sm font-medium text-danger hover:bg-danger/10"
+                  >
+                    Cerrar sesión
+                  </button>
+                </>
               )}
             </nav>
           </div>

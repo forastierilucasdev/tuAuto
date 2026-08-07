@@ -17,7 +17,9 @@ import {
   CONDITION_OPTIONS,
   TRANSMISSION_OPTIONS,
   conditionLabel,
+  mileageUnitFor,
   transmissionLabel,
+  usesTransmission,
   vehicleTypeLabel,
 } from "@/lib/constants";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
@@ -96,6 +98,11 @@ export function ListingForm(props: ListingFormProps) {
     brands.find((b) => b.slug === brandSlug)?.name ?? (isEdit ? props.brandName : "");
   const selectedModelName =
     models.find((m) => m.slug === modelSlug)?.name ?? (isEdit ? props.modelName : "");
+  // El wizard se adapta según el tipo de vehículo: kilometraje solo en
+  // autos/camionetas/monopatines, "horas de uso" en lanchas/barcos, y
+  // transmisión solo en autos/camionetas (ver lib/constants.ts).
+  const mileageUnit = mileageUnitFor(vehicleType);
+  const showTransmission = usesTransmission(vehicleType);
 
   // --- Precio ---
   const [price, setPrice] = React.useState(isEdit ? String(props.defaultValues.price) : "");
@@ -262,14 +269,17 @@ export function ListingForm(props: ListingFormProps) {
     }
 
     formData.set("version", version);
-    formData.set("transmission", transmission);
+    // Solo se manda transmisión/kilometraje si el tipo de vehículo elegido
+    // los usa — evita guardar un dato que no tiene sentido para ese tipo
+    // (ej. transmisión en una moto, o km en una bicicleta).
+    if (showTransmission) formData.set("transmission", transmission);
     formData.set("condition", condition);
     formData.set("price", price);
     formData.set("currency", currency);
     if (priceNegotiable) formData.set("priceNegotiable", "on");
     if (acceptsTrade) formData.set("acceptsTrade", "on");
     if (acceptsFinancing) formData.set("acceptsFinancing", "on");
-    formData.set("mileageKm", mileageKm);
+    if (mileageUnit) formData.set("mileageKm", mileageKm);
     formData.set("city", city);
     formData.set("province", province);
     formData.set("contactAddress", contactAddress);
@@ -423,7 +433,7 @@ export function ListingForm(props: ListingFormProps) {
               </div>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className={cn("grid gap-5", showTransmission && "sm:grid-cols-2")}>
               <div>
                 <Label htmlFor="version">Versión (opcional)</Label>
                 <Input
@@ -433,29 +443,33 @@ export function ListingForm(props: ListingFormProps) {
                   placeholder="Ej: XEI CVT"
                 />
               </div>
-              <div>
-                <Label htmlFor="transmission">Transmisión</Label>
-                <Select id="transmission" value={transmission} onChange={(e) => setTransmission(e.target.value)}>
-                  <option value="">No especifica</option>
-                  {TRANSMISSION_OPTIONS.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+              {showTransmission && (
+                <div>
+                  <Label htmlFor="transmission">Transmisión</Label>
+                  <Select id="transmission" value={transmission} onChange={(e) => setTransmission(e.target.value)}>
+                    <option value="">No especifica</option>
+                    {TRANSMISSION_OPTIONS.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="mileageKm">Kilometraje</Label>
-                <Input
-                  id="mileageKm"
-                  inputMode="numeric"
-                  value={mileageKm}
-                  onChange={(e) => setMileageKm(e.target.value.replace(/\D/g, ""))}
-                />
-              </div>
+            <div className={cn("grid gap-5", mileageUnit && "sm:grid-cols-2")}>
+              {mileageUnit && (
+                <div>
+                  <Label htmlFor="mileageKm">{mileageUnit === "km" ? "Kilometraje" : "Horas de uso"}</Label>
+                  <Input
+                    id="mileageKm"
+                    inputMode="numeric"
+                    value={mileageKm}
+                    onChange={(e) => setMileageKm(e.target.value.replace(/\D/g, ""))}
+                  />
+                </div>
+              )}
               <div>
                 <Label>Condición</Label>
                 <div className="flex gap-2">
@@ -711,7 +725,7 @@ export function ListingForm(props: ListingFormProps) {
               <span className="font-medium text-foreground">
                 {vehicleTypeLabel(vehicleType)} {selectedBrandName} {selectedModelName} {year}
                 {version ? ` (${version})` : ""} · {conditionLabel(condition)}
-                {transmission ? ` · ${transmissionLabel(transmission)}` : ""}
+                {showTransmission && transmission ? ` · ${transmissionLabel(transmission)}` : ""}
               </span>
             </p>
             <p>
@@ -720,10 +734,16 @@ export function ListingForm(props: ListingFormProps) {
                 {price ? formatCurrency(Number(price), currency) : "—"}
               </span>
             </p>
-            <p>
-              <span className="text-muted-foreground">Kilometraje:</span>{" "}
-              <span className="font-medium text-foreground">{formatKm(mileageKm ? Number(mileageKm) : null)}</span>
-            </p>
+            {mileageUnit && (
+              <p>
+                <span className="text-muted-foreground">
+                  {mileageUnit === "km" ? "Kilometraje" : "Horas de uso"}:
+                </span>{" "}
+                <span className="font-medium text-foreground">
+                  {formatKm(mileageKm ? Number(mileageKm) : null, mileageUnit)}
+                </span>
+              </p>
+            )}
             <p>
               <span className="text-muted-foreground">Ubicación:</span>{" "}
               <span className="font-medium text-foreground">
