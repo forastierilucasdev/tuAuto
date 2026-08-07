@@ -45,8 +45,13 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <h2 className="mb-6 text-xl font-bold text-navy sm:text-2xl">Explorá por categoría</h2>
+        <CategoryGrid />
+      </section>
+
       {featured.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-xl font-bold text-navy sm:text-2xl">Publicaciones destacadas</h2>
             <Link href="/catalogo" className="text-sm font-medium text-primary hover:underline">
@@ -60,11 +65,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-        <h2 className="mb-6 text-xl font-bold text-navy sm:text-2xl">Explorá por categoría</h2>
-        <CategoryGrid />
-      </section>
 
       <section className="bg-navy py-14 text-white">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 text-center sm:px-6 lg:px-8">

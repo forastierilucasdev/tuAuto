@@ -34,10 +34,14 @@ export function HeroSearch() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 rounded-2xl bg-surface p-4 shadow-card sm:flex-row sm:flex-wrap sm:items-end"
+      // Mobile: fondo traslúcido + blur ("vidrio esmerilado") para que la
+      // foto de fondo se siga viendo alrededor de cada campo — los campos en
+      // sí (Select/Input) ya son blancos sólidos, eso no cambia. Desktop
+      // sigue con la tarjeta blanca opaca de siempre.
+      className="flex flex-col gap-3 rounded-2xl border border-white/25 bg-white/15 p-4 shadow-card backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-end lg:border-0 lg:bg-surface lg:backdrop-blur-none"
     >
       <div className="sm:flex-1 sm:min-w-36">
-        <label htmlFor="hero-tipo" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+        <label htmlFor="hero-tipo" className="mb-1.5 block text-xs font-medium text-white lg:text-muted-foreground">
           Tipo de vehículo
         </label>
         <Select
@@ -59,7 +63,7 @@ export function HeroSearch() {
       </div>
 
       <div className="sm:flex-1 sm:min-w-36">
-        <label htmlFor="hero-marca" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+        <label htmlFor="hero-marca" className="mb-1.5 block text-xs font-medium text-white lg:text-muted-foreground">
           Marca
         </label>
         <Select
@@ -80,7 +84,7 @@ export function HeroSearch() {
       </div>
 
       <div className="sm:flex-1 sm:min-w-36">
-        <label htmlFor="hero-modelo" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+        <label htmlFor="hero-modelo" className="mb-1.5 block text-xs font-medium text-white lg:text-muted-foreground">
           Modelo
         </label>
         <Select id="hero-modelo" value={modelo} onChange={(e) => setModelo(e.target.value)} disabled={!marca}>
@@ -94,7 +98,7 @@ export function HeroSearch() {
       </div>
 
       <div className="sm:flex-1 sm:min-w-28">
-        <label htmlFor="hero-anio" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+        <label htmlFor="hero-anio" className="mb-1.5 block text-xs font-medium text-white lg:text-muted-foreground">
           Año
         </label>
         <Select id="hero-anio" value={anio} onChange={(e) => setAnio(e.target.value)}>
@@ -108,7 +112,7 @@ export function HeroSearch() {
       </div>
 
       <div className="sm:flex-1 sm:min-w-28">
-        <label htmlFor="hero-condicion" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+        <label htmlFor="hero-condicion" className="mb-1.5 block text-xs font-medium text-white lg:text-muted-foreground">
           Condición
         </label>
         <Select id="hero-condicion" value={condicion} onChange={(e) => setCondicion(e.target.value)}>
@@ -121,8 +125,8 @@ export function HeroSearch() {
         </Select>
       </div>
 
-      <div className="sm:flex-1 sm:min-w-36">
-        <label htmlFor="hero-vendedor" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+      <div className="sm:flex-1 sm:min-w-44">
+        <label htmlFor="hero-vendedor" className="mb-1.5 block text-xs font-medium text-white lg:text-muted-foreground">
           Tipo de vendedor
         </label>
         <Select

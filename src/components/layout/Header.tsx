@@ -23,14 +23,20 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
-        {/* 3 columnas para poder centrar el logo en mobile de forma robusta,
-            sin importar el ancho de los elementos a los costados: en mobile
-            es [avatar] [logo] [hamburguesa]; en desktop, [logo] [nav]
+        {/* 3 columnas para centrar la del medio (logo en mobile, nav en
+            desktop) de verdad, sin importar el ancho de los costados: en
+            mobile es [avatar] [logo] [hamburguesa]; en desktop, [logo] [nav]
             [Publicar anuncio + avatar, éste último pegado del todo a la
-            derecha — su panel abre desde ese mismo borde]. */}
-        <div className="mx-auto grid h-16 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:px-8">
+            derecha — su panel abre desde ese mismo borde]. Los costados son
+            "1fr" (mismo ancho entre sí, cada uno absorbe la mitad del
+            espacio sobrante) y el medio es "auto" (el tamaño de su propio
+            contenido) — así el medio queda centrado de verdad aunque los
+            costados tengan contenido de ancho distinto (con "auto 1fr auto"
+            el nav quedaba corrido hacia la izquierda al iniciar sesión,
+            porque "Publicar anuncio" + avatar pesan más que el logo solo). */}
+        <div className="mx-auto grid h-16 max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <div className="flex shrink-0 items-center gap-3">
-            <Link href="/" className="hidden h-9 md:block">
+            <Link href="/" className="hidden h-10 md:block">
               {/* eslint-disable-next-line @next/next/no-img-element -- SVG: next/image bloquea SVG salvo dangerouslyAllowSVG, y un vector no gana nada de la optimización */}
               <img src="/logo.svg" alt={SITE_NAME} className="h-full w-auto object-contain" />
             </Link>
@@ -40,7 +46,7 @@ export function Header() {
           </div>
 
           <div className="flex items-center justify-center">
-            <Link href="/" className="h-8 md:hidden">
+            <Link href="/" className="h-9 md:hidden">
               {/* eslint-disable-next-line @next/next/no-img-element -- ver comentario arriba */}
               <img src="/logo.svg" alt={SITE_NAME} className="h-full w-auto object-contain" />
             </Link>
