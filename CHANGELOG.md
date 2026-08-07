@@ -5,6 +5,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-07, tarde) — Segunda pasada de botones: relleno sólido y bordes faltantes
+- La primera pasada de colores (variantes `outline-*`, borde + texto de color) no era lo que se pedía — se reemplazó por **relleno sólido con letra blanca**: nueva variante `success` (verde) y se reutilizan `primary` (azul) y `destructive` (rojo, ya existía) para los tres botones de decisión.
+- **"No, publicar" → "Publicar"** en todos lados: el prefijo "No," confundía a simple vista sobre una acción positiva. Aplica al diálogo de reactivar (`OwnerListingCard`) y al diálogo de confirmar publicación (`ListingForm`, donde además faltaba corregirle el color — seguía usando el azul por defecto).
+- **`ListingForm` — diálogo "¿Desea publicar?"**: "Sí, revisar" pasa a azul (`primary`), "Publicar" a verde (`success`).
+- **Variante `outline` reforzada**: borde más oscuro y más grueso (`border-2 border-slate-300`, antes `border border-border` casi invisible sobre blanco) — afecta a todos los botones que la usan sin tocar cada uno por separado (Atrás, Guardar como borrador, Cancelar edición, Editar, etc.).
+- **Botones sin borde corregidos** (usaban `variant="ghost"`, sin borde en absoluto): Pausar, Marcar vendido, Reactivar, Eliminar (card), Cerrar (anuncio publicado), Cancelar (eliminar y marcar vendido), Cancelar edición — todos pasan a `outline` (neutro, con borde). La variante `ghost` queda definida pero sin ningún uso actual en la app (se documentó en el propio archivo para qué reservarla).
+
 ### Fixed (2026-08-07) — Contador de publicaciones y colores de botones centralizados
 - **Bug**: "Publicaciones realizadas" y "Publicaciones disponibles" cambiaban cada vez que se reactivaba una publicación (incluso desde Reservada/Pausada), como si fuera una publicación nueva cada vez. Ahora se separan dos conceptos:
   - `activationCount` ("Publicaciones realizadas") suma **una única vez por publicación**, la primera vez que se publica de verdad — reactivar la misma publicación nunca la vuelve a sumar.

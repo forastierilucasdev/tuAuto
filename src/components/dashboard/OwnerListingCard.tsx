@@ -117,7 +117,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
       <Button
         key="vendido"
         type="button"
-        variant="ghost"
+        variant="outline"
         size="sm"
         className="w-full"
         onClick={() => setSoldOpen(true)}
@@ -128,7 +128,14 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   }
   if (showPausar) {
     actions.push(
-      <Button key="pausar" type="button" variant="ghost" size="sm" className="w-full" onClick={() => setPauseOpen(true)}>
+      <Button
+        key="pausar"
+        type="button"
+        variant="outline"
+        size="sm"
+        className="w-full"
+        onClick={() => setPauseOpen(true)}
+      >
         Pausar
       </Button>
     );
@@ -138,7 +145,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
       <Button
         key="reactivar"
         type="button"
-        variant="ghost"
+        variant="outline"
         size="sm"
         className="w-full"
         onClick={() => setReactivateOpen(true)}
@@ -152,9 +159,9 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
       <Button
         key="eliminar"
         type="button"
-        variant="ghost"
+        variant="outline"
         size="sm"
-        className="w-full text-danger hover:bg-danger/10"
+        className="w-full border-danger/50 text-danger hover:border-danger hover:bg-danger/10"
         onClick={() => setDeleteOpen(true)}
       >
         <Trash2 className="h-4 w-4" />
@@ -263,21 +270,21 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
           </p>
           {reactivateError && <p className="text-danger">{reactivateError}</p>}
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline-danger" size="sm" onClick={() => setReactivateOpen(false)}>
+            <Button type="button" variant="destructive" size="sm" onClick={() => setReactivateOpen(false)}>
               Cancelar
             </Button>
             <Button
               type="button"
-              variant="outline-success"
+              variant="success"
               size="sm"
               disabled={reactivating}
               onClick={handlePublishNow}
             >
-              {reactivating ? "Publicando..." : "No, publicar"}
+              {reactivating ? "Publicando..." : "Publicar"}
             </Button>
             <Link
               href={`/dashboard/publicaciones/${listing.id}/editar`}
-              className={buttonVariants({ variant: "outline-primary", size: "sm" })}
+              className={buttonVariants({ variant: "primary", size: "sm" })}
             >
               Sí, editar
             </Link>
@@ -323,7 +330,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
           </div>
           {soldError && <p className="text-danger">{soldError}</p>}
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setSoldOpen(false)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setSoldOpen(false)}>
               Cancelar
             </Button>
             <Button type="submit" size="sm" disabled={selling}>
@@ -339,7 +346,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
             ¿Estás seguro que querés eliminar &quot;{listing.title}&quot;? Esta acción no se puede deshacer.
           </p>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setDeleteOpen(false)}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setDeleteOpen(false)}>
               Cancelar
             </Button>
             <form action={deleteListingAction}>

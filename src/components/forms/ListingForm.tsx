@@ -755,7 +755,7 @@ export function ListingForm(props: ListingFormProps) {
           {isEdit && (
             <Link
               href="/dashboard/publicaciones"
-              className={cn(buttonVariants({ variant: "ghost" }), "w-full sm:w-auto")}
+              className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
             >
               Cancelar edición
             </Link>
@@ -801,17 +801,18 @@ export function ListingForm(props: ListingFormProps) {
         <div className="space-y-3 text-sm">
           <p className="text-muted-foreground">¿Querés revisar los datos antes de publicar?</p>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={() => setConfirmPublishOpen(false)}>
+            <Button type="button" variant="primary" onClick={() => setConfirmPublishOpen(false)}>
               Sí, revisar
             </Button>
             <Button
               type="button"
+              variant="success"
               onClick={() => {
                 setConfirmPublishOpen(false);
                 submitListing("ACTIVE");
               }}
             >
-              No, publicar
+              Publicar
             </Button>
           </div>
         </div>

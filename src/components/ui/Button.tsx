@@ -7,18 +7,25 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // Acción principal de una pantalla (una sola por vista, salvo los
+        // trillizos de diálogo de abajo).
         primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
         secondary: "bg-navy text-white hover:bg-navy/90",
-        outline: "border border-border bg-transparent text-foreground hover:bg-surface-muted",
+        // Relleno verde + letra blanca: acción positiva directa (ej.
+        // "Publicar" en un diálogo de "Sí, editar / Publicar / Cancelar").
+        // Mismo lenguaje visual (verde/azul/rojo, siempre rellenos, nunca
+        // solo texto) en toda la app — cambiar acá alcanza para todos lados.
+        success: "bg-success text-white hover:bg-success/90",
+        // Sin color asignado: siempre necesita borde visible para no
+        // desaparecer sobre fondo blanco (border-border es deliberadamente
+        // más oscuro que el borde decorativo de las Card).
+        outline: "border-2 border-slate-300 bg-transparent text-foreground hover:bg-surface-muted hover:border-slate-400",
+        // Reservado para casos puntuales sin acción de decisión (ej. un
+        // ícono suelto) — evitar en botones de confirmar/cancelar.
         ghost: "bg-transparent text-foreground hover:bg-surface-muted",
+        // Relleno rojo + letra blanca: "Cancelar" en diálogos de decisión, y
+        // cualquier acción que borra datos de verdad (ej. "Sí, eliminar").
         destructive: "bg-danger text-white hover:bg-danger/90",
-        // Trío semántico con borde visible, para diálogos de confirmación
-        // con más de una acción positiva (ej. "Sí, editar" / "No, publicar"
-        // / "Cancelar"): mismo lenguaje visual en toda la app, un solo lugar
-        // para ajustar el color si hace falta más adelante.
-        "outline-primary": "border border-primary bg-transparent text-primary hover:bg-primary/10",
-        "outline-success": "border border-success bg-transparent text-success hover:bg-success/10",
-        "outline-danger": "border border-danger bg-transparent text-danger hover:bg-danger/10",
       },
       size: {
         sm: "h-9 px-3",

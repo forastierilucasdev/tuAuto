@@ -208,6 +208,15 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado contra la base real: Reservada/Pausada→Reactivar no cambia ningún contador; Vencida→Reactivar suma +1 solo a `quotaConsumed`
 - [ ] Prueba manual en navegador: confirmar que "Publicaciones realizadas"/"disponibles" ya no suben con cada pausar/reactivar, y que los 3 botones del diálogo se ven con los colores correctos
 
+## Fase 19 — Segunda pasada de botones: relleno sólido y bordes faltantes (solicitado por el usuario)
+- [x] Nueva variante centralizada `success` (verde, relleno + letra blanca); se reutilizan `primary` (azul) y `destructive` (rojo) para el trío de decisión, en vez de las variantes "outline-color" de la ronda anterior
+- [x] "No, publicar" renombrado a "Publicar" en todos lados (reactivar y confirmar publicación)
+- [x] Diálogo "¿Desea publicar?" de `ListingForm`: "Sí, revisar" pasa a azul, "Publicar" a verde (antes quedaba azul por defecto sin querer)
+- [x] Variante `outline` reforzada (borde más oscuro y grueso) en un solo lugar, beneficia a todos los botones que ya la usaban
+- [x] Todos los botones que usaban `ghost` (sin borde) pasan a `outline`: Pausar, Marcar vendido, Reactivar, Eliminar, Cerrar, Cancelar (x2), Cancelar edición — `ghost` queda sin usos en la app
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [ ] Prueba manual en navegador (imprescindible, es 100% visual): confirmar los colores y bordes en cada pantalla mencionada
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

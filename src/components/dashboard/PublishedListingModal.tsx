@@ -33,7 +33,7 @@ export function PublishedListingModal({ slug }: { slug: string | undefined }) {
         <p className="text-base font-bold text-navy">Tu anuncio fue publicado con éxito</p>
         <p className="text-sm text-muted-foreground">Ya está visible en el catálogo.</p>
         <div className="mt-2 flex w-full gap-2">
-          <Button type="button" variant="ghost" className="flex-1" onClick={close}>
+          <Button type="button" variant="outline" className="flex-1" onClick={close}>
             Cerrar
           </Button>
           <Button type="button" className="flex-1" onClick={view}>
