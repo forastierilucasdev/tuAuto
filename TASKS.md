@@ -270,6 +270,15 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
 - [ ] Prueba manual en navegador (visual)
 
+## Fase 26 — Header unificado en el dashboard y saludo abreviado (solicitado por el usuario)
+- [x] Dashboard (`Mi perfil`, `Mis publicaciones`, `Método de pago`, etc.) usa el mismo `Header` que las páginas públicas — nav, "Publicar anuncio", "Bienvenido, {nombre}" + ícono de cuenta en desktop, hamburguesa con "Mi cuenta"/"Cerrar sesión" en mobile
+- [x] Avatar duplicado sacado de `DashboardSidebarNav` (ya lo provee el header)
+- [x] "Bienvenido" muestra solo el primer nombre (particular); nombre comercial completo en Agencia/Concesionaria
+- [x] Panel "Mi cuenta": nombre completo (o razón social) + línea divisoria debajo del título, antes de las opciones — mobile y desktop
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: todas las rutas del dashboard siguen redirigiendo a login sin sesión (307), sin errores de servidor
+- [ ] Prueba manual en navegador (imprescindible, depende de `useSession()`): header consistente en las pantallas del dashboard, saludo abreviado, y el nombre completo + separador dentro del panel "Mi cuenta"
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

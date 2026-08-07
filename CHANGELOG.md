@@ -5,6 +5,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-07, noche) — Header unificado en todo el dashboard + saludo abreviado
+- **El dashboard (Mi perfil, Mis publicaciones, Método de pago, etc.) ahora usa el mismo header que el resto del sitio** (`Header`, el mismo componente de las páginas públicas): nav completo, "Publicar anuncio", "Bienvenido, {nombre}" + ícono de cuenta en desktop, menú hamburguesa con "Mi cuenta"/"Cerrar sesión" en mobile. Antes tenía uno propio, más simple (solo logo + nombre + "Cerrar sesión", sin nav ni ícono de cuenta en mobile).
+- Como consecuencia, se sacó el avatar duplicado que tenía `DashboardSidebarNav` arriba de la lista de secciones — ya lo provee el header, arriba de todo, igual que en cualquier otra pantalla.
+- **"Bienvenido, {nombre}"** ahora muestra solo el primer nombre en vez del nombre completo (ej. "Bienvenido, Emiliano" en vez de "Bienvenido, Emiliano Insaurralde") — no aplica a cuentas de negocio, donde se sigue mostrando el nombre comercial completo (una razón social no tiene "nombre y apellido" para recortar).
+- **Panel "Mi cuenta"**: ahora muestra el nombre completo (o la razón social, en Agencia/Concesionaria) debajo del título, con una línea divisoria antes de las opciones — mismo criterio en mobile y desktop.
+
 ### Fixed (2026-08-07, noche) — Mis publicaciones: "Publicar vehículo" y "Comprar publicaciones" con el mismo ancho
 - Quedaban con distinto ancho (tamaños de botón distintos + "Comprar publicaciones" con más texto). Ahora los dos viven en una columna de ancho fijo compartido (`w-full` dentro de un contenedor común) y usan el mismo tamaño de botón.
 

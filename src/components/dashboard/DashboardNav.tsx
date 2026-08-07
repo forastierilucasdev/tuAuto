@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { AccountMenu } from "@/components/layout/AccountMenu";
 
 const NAV = [
   { href: "/dashboard/perfil", label: "Mi perfil" },
@@ -13,17 +12,14 @@ const NAV = [
 
 /**
  * Barra lateral vertical, solo en desktop (`md:` en adelante). En mobile el
- * único acceso a estas secciones es el `AccountMenu` del header del
- * dashboard — tener además esta lista horizontal ahí era redundante.
+ * único acceso a estas secciones es el header (ícono de cuenta / menú
+ * hamburguesa), igual que en el resto del sitio.
  */
 export function DashboardSidebarNav() {
   const pathname = usePathname();
 
   return (
     <aside className="hidden w-56 shrink-0 md:block">
-      <div className="mb-4 flex justify-center border-b border-border pb-4">
-        <AccountMenu avatarSize="md" />
-      </div>
       <nav className="space-y-1">
         {NAV.map((item) => {
           const active = pathname === item.href;

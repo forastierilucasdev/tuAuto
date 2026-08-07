@@ -61,14 +61,21 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
 
   // Para cuentas de negocio se saluda con el nombre comercial, no el nombre
   // personal del titular de la cuenta.
+  const isBusinessName = Boolean(profile?.agencyProfile?.businessName);
   const displayName = profile?.agencyProfile?.businessName ?? profile?.fullName ?? session.user.name ?? "";
+  // El saludo del header va solo con el primer nombre para no ocupar tanto
+  // espacio ("Bienvenido, Emiliano" en vez de "Bienvenido, Emiliano
+  // Insaurralde") — un nombre comercial ya es una sola identidad corta, así
+  // que ese no se recorta. El nombre completo se ve igual dentro del panel
+  // "Mi cuenta".
+  const greetingName = isBusinessName ? displayName : displayName.split(" ")[0];
 
   return (
     <>
       <div className="flex items-center gap-2">
-        {showGreeting && displayName && (
+        {showGreeting && greetingName && (
           <span className="hidden text-sm font-medium text-foreground md:inline">
-            Bienvenido, {displayName}
+            Bienvenido, {greetingName}
           </span>
         )}
         <button
@@ -82,6 +89,12 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
       </div>
 
       <SlideOverPanel open={open} onClose={() => setOpen(false)} side={panelSide} title="Mi cuenta">
+        {displayName && (
+          <>
+            <p className="px-3 pb-3 text-sm font-medium text-foreground">{displayName}</p>
+            <hr className="mb-2 border-border" />
+          </>
+        )}
         <nav className="space-y-1">
           {MENU_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
