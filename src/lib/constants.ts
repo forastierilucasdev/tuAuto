@@ -102,7 +102,7 @@ export function isBusinessAccountType(value: string): value is "AGENCIA" | "CONC
 export const NAV_LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/catalogo", label: "Catálogo" },
-  { href: "/concesionarias", label: "Concesionarias" },
+  { href: "/concesionarias", label: "Concesionarias | Agencias" },
   { href: "/blog", label: "Blog" },
   { href: "/contacto", label: "Contacto" },
 ] as const;

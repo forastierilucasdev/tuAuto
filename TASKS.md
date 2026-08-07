@@ -243,6 +243,17 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales: `/concesionarias` (destacadas + listado + filtro sin resultados), `/concesionarias/[id]`, `/catalogo?vendedor=...` — todo 200, sin errores de servidor
 - [ ] Prueba manual en navegador (imprescindible, depende de `useSession()`/formularios client-side): carga de foto de portada en Mi perfil, buscador de concesionarias, y el nuevo filtro de vendedor en el buscador principal y el catálogo
 
+## Fase 23 — Padding simétrico en Select y unificación del panel de filtros de Concesionarias/Agencias (solicitado por el usuario)
+- [x] `Select` (componente centralizado): padding simétrico `px-3` en los dos lados (antes `px-3 pr-9`, valor corrido a la izquierda); flechita ahora se superpone sin reservar espacio, con `overflow-hidden`/`text-ellipsis` para valores largos
+- [x] `/concesionarias` usa el mismo patrón de filtros que el catálogo: sidebar fija en desktop + panel deslizable en mobile (`AgencyFilters`/`AgencyFiltersDrawer`, mismo contenedor visual que `CatalogFilters`)
+- [x] Nuevo filtro "Tipo" (Concesionarias/Agencias/Todos); título de la sección de resultados adaptado ("Todas las concesionarias" / "Todas las agencias" / "Todos los resultados")
+- [x] "Concesionarias destacadas" y "Agencias destacadas" como secciones separadas, visibles solo sin filtros activos, reutilizando `getFeaturedAgencies(accountType)` sin duplicar lógica
+- [x] Tarjeta de cada agencia/concesionaria indica su tipo
+- [x] Nav "Concesionarias" → "Concesionarias | Agencias"; título de la página → "Concesionarias y Agencias"
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: sin filtros (destacadas x2 + "Todos los resultados"), `tipo=CONCESIONARIA`, `tipo=AGENCIA`, filtro sin resultados, y que el `Select` renderizado ya no tiene `pr-9` — todo 200, sin errores de servidor
+- [ ] Prueba manual en navegador (imprescindible, es mayormente visual): padding simétrico en los selects de toda la app, el panel de filtros de Concesionarias/Agencias en desktop y mobile, y que las tarjetas y encabezados cambien correctamente al tocar cada opción del filtro "Tipo"
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

@@ -3,16 +3,19 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 import { getVisibleListingCountByUser } from "@/server/data/listings";
 
+export type AgencyAccountType = "AGENCIA" | "CONCESIONARIA";
+
 export type AgencyFilters = {
   province?: string;
   city?: string;
+  accountType?: AgencyAccountType;
 };
 
 async function loadAgencies(where: Prisma.AgencyProfileWhereInput) {
   const profiles = await prisma.agencyProfile.findMany({
     where,
     orderBy: { businessName: "asc" },
-    include: { user: { select: { id: true } } },
+    include: { user: { select: { id: true, accountType: true } } },
   });
 
   // El contador de publicaciones reutiliza el mismo criterio de visibilidad
@@ -22,6 +25,7 @@ async function loadAgencies(where: Prisma.AgencyProfileWhereInput) {
   return Promise.all(
     profiles.map(async (p) => ({
       userId: p.userId,
+      accountType: p.user.accountType as AgencyAccountType,
       businessName: p.businessName,
       city: p.city,
       province: p.province,
@@ -38,12 +42,13 @@ export async function getAgencies(filters: AgencyFilters = {}) {
   const where: Prisma.AgencyProfileWhereInput = {};
   if (filters.province) where.province = { contains: filters.province, mode: "insensitive" };
   if (filters.city) where.city = { contains: filters.city, mode: "insensitive" };
+  if (filters.accountType) where.user = { accountType: filters.accountType };
   return loadAgencies(where);
 }
 
-/** Las de más publicaciones activas primero — para "Concesionarias destacadas". */
-export async function getFeaturedAgencies(limit = 4) {
-  const agencies = await loadAgencies({});
+/** Las de más publicaciones activas primero — para "Concesionarias destacadas" / "Agencias destacadas". */
+export async function getFeaturedAgencies(accountType: AgencyAccountType, limit = 4) {
+  const agencies = await loadAgencies({ user: { accountType } });
   return agencies
     .filter((a) => a.activeListings > 0)
     .sort((a, b) => b.activeListings - a.activeListings)

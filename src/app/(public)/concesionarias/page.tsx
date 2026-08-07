@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Building2, MapPin, Search, Star } from "lucide-react";
+import { Building2, MapPin, Star } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Button, buttonVariants } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
-import { getAgencies, getFeaturedAgencies } from "@/server/data/agencies";
+import { buttonVariants } from "@/components/ui/Button";
+import { AgencyFilters } from "@/components/vehicles/AgencyFilters";
+import { AgencyFiltersDrawer } from "@/components/vehicles/AgencyFiltersDrawer";
+import { getAgencies, getFeaturedAgencies, type AgencyAccountType } from "@/server/data/agencies";
+import { accountTypeLabel } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Concesionarias" };
+export const metadata: Metadata = { title: "Concesionarias y Agencias" };
 
 export const dynamic = "force-dynamic";
 
@@ -43,12 +44,18 @@ function AgencyCard({ agency }: { agency: Agency }) {
         </div>
         <div className="flex flex-1 flex-col gap-2 p-4">
           <p className="truncate font-semibold text-navy">{agency.businessName}</p>
-          {location && (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5" />
-              {location}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Building2 className="h-3.5 w-3.5" />
+              {accountTypeLabel(agency.accountType)}
             </span>
-          )}
+            {location && (
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                {location}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             {agency.activeListings} publicaci{agency.activeListings === 1 ? "ón" : "ones"}
           </p>
@@ -61,73 +68,88 @@ function AgencyCard({ agency }: { agency: Agency }) {
   );
 }
 
+function AgencyGrid({ agencies }: { agencies: Agency[] }) {
+  return (
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {agencies.map((agency) => (
+        <AgencyCard key={agency.userId} agency={agency} />
+      ))}
+    </div>
+  );
+}
+
+const RESULTS_HEADING: Record<AgencyAccountType | "", string> = {
+  CONCESIONARIA: "Todas las concesionarias",
+  AGENCIA: "Todas las agencias",
+  "": "Todos los resultados",
+};
+
+const EMPTY_MESSAGE: Record<AgencyAccountType | "", string> = {
+  CONCESIONARIA: "No encontramos concesionarias con esos filtros.",
+  AGENCIA: "No encontramos agencias con esos filtros.",
+  "": "No encontramos concesionarias ni agencias con esos filtros.",
+};
+
 export default async function ConcesionariasPage(props: PageProps<"/concesionarias">) {
   const sp = await props.searchParams;
   const provincia = param(sp, "provincia") ?? "";
   const localidad = param(sp, "localidad") ?? "";
-  const hasFilters = Boolean(provincia || localidad);
+  const tipo = (param(sp, "tipo") as AgencyAccountType | undefined) ?? "";
+  const hasFilters = Boolean(provincia || localidad || tipo);
 
-  const [agencies, featured] = await Promise.all([
-    getAgencies({ province: provincia || undefined, city: localidad || undefined }),
-    hasFilters ? Promise.resolve([]) : getFeaturedAgencies(4),
+  const [agencies, featuredConcesionarias, featuredAgencias] = await Promise.all([
+    getAgencies({ province: provincia || undefined, city: localidad || undefined, accountType: tipo || undefined }),
+    hasFilters ? Promise.resolve([]) : getFeaturedAgencies("CONCESIONARIA", 4),
+    hasFilters ? Promise.resolve([]) : getFeaturedAgencies("AGENCIA", 4),
   ]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-navy sm:text-3xl">Concesionarias</h1>
+      <h1 className="text-2xl font-bold text-navy sm:text-3xl">Concesionarias y Agencias</h1>
       <p className="mt-1 text-muted-foreground">Agencias y concesionarias que publican en Motoresya.</p>
 
-      <form
-        method="get"
-        className="mt-6 flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-card sm:flex-row sm:items-end"
-      >
-        <div className="sm:flex-1">
-          <Label htmlFor="provincia">Provincia</Label>
-          <Input id="provincia" name="provincia" defaultValue={provincia} placeholder="Ej: Buenos Aires" />
+      <div className="mt-6 lg:grid lg:grid-cols-[280px_1fr] lg:gap-8">
+        <div className="hidden lg:block">
+          <AgencyFilters />
         </div>
-        <div className="sm:flex-1">
-          <Label htmlFor="localidad">Localidad</Label>
-          <Input id="localidad" name="localidad" defaultValue={localidad} placeholder="Ej: La Plata" />
+
+        <div>
+          <AgencyFiltersDrawer />
+
+          <div className="space-y-10">
+            {!hasFilters && featuredConcesionarias.length > 0 && (
+              <section>
+                <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-bold text-navy">
+                  <Star className="h-5 w-5 fill-current text-warning" />
+                  Concesionarias destacadas
+                </h2>
+                <AgencyGrid agencies={featuredConcesionarias} />
+              </section>
+            )}
+
+            {!hasFilters && featuredAgencias.length > 0 && (
+              <section>
+                <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-bold text-navy">
+                  <Star className="h-5 w-5 fill-current text-warning" />
+                  Agencias destacadas
+                </h2>
+                <AgencyGrid agencies={featuredAgencias} />
+              </section>
+            )}
+
+            <section>
+              <h2 className="mb-4 text-lg font-bold text-navy">{RESULTS_HEADING[tipo]}</h2>
+              {agencies.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
+                  {EMPTY_MESSAGE[tipo]}
+                </p>
+              ) : (
+                <AgencyGrid agencies={agencies} />
+              )}
+            </section>
+          </div>
         </div>
-        <Button type="submit" className="sm:w-auto">
-          <Search className="h-4 w-4" />
-          Buscar
-        </Button>
-        {hasFilters && (
-          <Link href="/concesionarias" className={cn(buttonVariants({ variant: "outline" }), "sm:w-auto")}>
-            Limpiar
-          </Link>
-        )}
-      </form>
-
-      {!hasFilters && featured.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-bold text-navy">
-            <Star className="h-5 w-5 fill-current text-warning" />
-            Concesionarias destacadas
-          </h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((agency) => (
-              <AgencyCard key={agency.userId} agency={agency} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="mt-10">
-        {!hasFilters && <h2 className="mb-4 text-lg font-bold text-navy">Todas las concesionarias</h2>}
-        {agencies.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-            No encontramos concesionarias con esos filtros.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {agencies.map((agency) => (
-              <AgencyCard key={agency.userId} agency={agency} />
-            ))}
-          </div>
-        )}
-      </section>
+      </div>
     </div>
   );
 }

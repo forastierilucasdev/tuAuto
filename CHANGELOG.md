@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-07, noche) — Concesionarias y Agencias: filtro por tipo, panel de filtros unificado y padding simétrico
+- **Padding simétrico en `Select`** (componente centralizado, usado en todos los filtros de la app): tenía `px-3 pr-9` para dejarle lugar a la flechita, así que el valor quedaba visiblemente corrido hacia la izquierda dentro del campo. Ahora es `px-3` en los dos lados (con `overflow-hidden`/`text-ellipsis` para valores largos) y la flechita se superpone como decoración en vez de reservar espacio — corrige la asimetría en todos los `Select` de la app de una sola vez.
+- **`/concesionarias` ahora usa el mismo patrón de filtros que el catálogo**: panel fijo en la barra lateral en desktop, panel deslizable con botón "Filtros" en mobile (antes era un simple formulario arriba de los resultados) — mismo componente visual (`AgencyFilters`/`AgencyFiltersDrawer`, mismo contenedor que `CatalogFilters`).
+- **Nuevo filtro "Tipo"** (Concesionarias / Agencias / Todos) en ese panel. El título de la sección de resultados se adapta: "Todas las concesionarias" si el filtro es Concesionaria, "Todas las agencias" si es Agencia, "Todos los resultados" si no se aclaró el tipo.
+- **"Concesionarias destacadas" y "Agencias destacadas"** ahora son dos secciones separadas (antes una sola sin distinguir tipo) — se muestran solo cuando no hay ningún filtro activo. Reutilizan la misma función de datos parametrizada por tipo (`getFeaturedAgencies(accountType)`), sin duplicar la lógica.
+- Cada tarjeta de la grilla ahora indica si es Concesionaria o Agencia (útil en la vista sin filtrar, donde se mezclan ambos tipos).
+- El link "Concesionarias" del menú de navegación pasa a "Concesionarias | Agencias" y el título de la página a "Concesionarias y Agencias", reflejando que ahora incluye a las dos.
+
 ### Added (2026-08-07, noche) — Filtro de tipo de vendedor y buscador de concesionarias
 - **Filtro "Tipo de vendedor"** (Particular / Agencia / Concesionaria) agregado al buscador principal (`HeroSearch`) y al panel de filtros del catálogo (`CatalogFilters`), aplicando sobre `Listing.user.accountType` en `buildWhere` (`server/data/listings.ts`).
 - **Página `/concesionarias` rediseñada**: buscador exclusivo por provincia y localidad (texto libre, igual criterio que el resto de la app), sección "Concesionarias destacadas" (las 4 con más publicaciones visibles) cuando no hay filtros activos, y tarjetas con el mismo formato que los resultados de vehículos (foto de portada, nombre, provincia/localidad, cantidad de publicaciones, botón "Ver publicaciones").
