@@ -15,6 +15,8 @@ const agencyOnlyFields = {
   city: z.string().trim().max(80).optional(),
   province: z.string().trim().max(80).optional(),
   description: z.string().trim().max(1000).optional(),
+  address: z.string().trim().max(200).optional(),
+  website: z.string().trim().max(200).optional(),
 };
 
 export const updateAgenciaProfileSchema = registerAgenciaSchema

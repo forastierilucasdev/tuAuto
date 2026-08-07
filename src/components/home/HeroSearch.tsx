@@ -4,9 +4,9 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { VEHICLE_TYPES, CONDITION_OPTIONS } from "@/lib/constants";
+import { VEHICLE_TYPES, CONDITION_OPTIONS, ACCOUNT_TYPE_OPTIONS } from "@/lib/constants";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
-import type { VehicleType } from "@/generated/prisma/client";
+import type { AccountType, VehicleType } from "@/generated/prisma/client";
 
 export function HeroSearch() {
   const router = useRouter();
@@ -15,6 +15,7 @@ export function HeroSearch() {
   const [modelo, setModelo] = React.useState("");
   const [anio, setAnio] = React.useState("");
   const [condicion, setCondicion] = React.useState("");
+  const [vendedor, setVendedor] = React.useState<AccountType | "">("");
 
   const { brands, models, years } = useVehicleTaxonomy(tipo, marca, modelo);
 
@@ -26,6 +27,7 @@ export function HeroSearch() {
     if (modelo) params.set("modelo", modelo);
     if (anio) params.set("anio", anio);
     if (condicion) params.set("condicion", condicion);
+    if (vendedor) params.set("vendedor", vendedor);
     router.push(`/catalogo${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
@@ -114,6 +116,24 @@ export function HeroSearch() {
           {CONDITION_OPTIONS.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
+            </option>
+          ))}
+        </Select>
+      </div>
+
+      <div className="sm:flex-1 sm:min-w-36">
+        <label htmlFor="hero-vendedor" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+          Tipo de vendedor
+        </label>
+        <Select
+          id="hero-vendedor"
+          value={vendedor}
+          onChange={(e) => setVendedor(e.target.value as AccountType | "")}
+        >
+          <option value="">Todos los vendedores</option>
+          {ACCOUNT_TYPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </Select>

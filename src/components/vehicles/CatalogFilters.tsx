@@ -6,10 +6,10 @@ import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import { VEHICLE_TYPES, CONDITION_OPTIONS, mileageUnitFor } from "@/lib/constants";
+import { VEHICLE_TYPES, CONDITION_OPTIONS, ACCOUNT_TYPE_OPTIONS, mileageUnitFor } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
-import type { VehicleType } from "@/generated/prisma/client";
+import type { AccountType, VehicleType } from "@/generated/prisma/client";
 
 export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
   const router = useRouter();
@@ -23,6 +23,9 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
   const [modelo, setModelo] = React.useState(searchParams.get("modelo") ?? "");
   const [anio, setAnio] = React.useState(searchParams.get("anio") ?? "");
   const [condicion, setCondicion] = React.useState(searchParams.get("condicion") ?? "");
+  const [vendedor, setVendedor] = React.useState<AccountType | "">(
+    (searchParams.get("vendedor") as AccountType | null) ?? ""
+  );
   const [moneda, setMoneda] = React.useState(searchParams.get("moneda") ?? "ARS");
   const [precioMin, setPrecioMin] = React.useState(searchParams.get("precioMin") ?? "");
   const [precioMax, setPrecioMax] = React.useState(searchParams.get("precioMax") ?? "");
@@ -42,6 +45,7 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
     if (modelo) params.set("modelo", modelo);
     if (anio) params.set("anio", anio);
     if (condicion) params.set("condicion", condicion);
+    if (vendedor) params.set("vendedor", vendedor);
     if (precioMin || precioMax) params.set("moneda", moneda);
     if (precioMin) params.set("precioMin", precioMin);
     if (precioMax) params.set("precioMax", precioMax);
@@ -57,6 +61,7 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
     setModelo("");
     setAnio("");
     setCondicion("");
+    setVendedor("");
     setMoneda("ARS");
     setPrecioMin("");
     setPrecioMax("");
@@ -152,6 +157,22 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
           {CONDITION_OPTIONS.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
+            </option>
+          ))}
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="f-vendedor">Tipo de vendedor</Label>
+        <Select
+          id="f-vendedor"
+          value={vendedor}
+          onChange={(e) => setVendedor(e.target.value as AccountType | "")}
+        >
+          <option value="">Todos los vendedores</option>
+          {ACCOUNT_TYPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </Select>

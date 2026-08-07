@@ -233,6 +233,16 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
 - [ ] Prueba manual en navegador (imprescindible, es un bug de navegación client-side): reactivar una publicación pausada/reservada y confirmar que "Publicar" navega a Mis publicaciones sin quedar trabado
 
+## Fase 22 — Filtro de vendedor y buscador de concesionarias (solicitado por el usuario)
+- [x] Filtro "Tipo de vendedor" (Particular/Agencia/Concesionaria) en el buscador principal y en el panel de filtros del catálogo, aplicado en `buildWhere`
+- [x] `/concesionarias` rediseñada: buscador por provincia y localidad, sección "Concesionarias destacadas" (top 4 por publicaciones visibles), tarjetas con el mismo formato que los resultados de vehículos
+- [x] `/concesionarias/[id]`: foto de portada, dirección y sitio web
+- [x] Sección "Datos comerciales" en Mi perfil (Agencia/Concesionaria): foto de portada, dirección, sitio web — nuevo bucket `agency-logos`
+- [x] Contador de publicaciones de la tarjeta de concesionaria usa el mismo criterio de visibilidad que el listado real (antes solo contaba `ACTIVE`)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: `/concesionarias` (destacadas + listado + filtro sin resultados), `/concesionarias/[id]`, `/catalogo?vendedor=...` — todo 200, sin errores de servidor
+- [ ] Prueba manual en navegador (imprescindible, depende de `useSession()`/formularios client-side): carga de foto de portada en Mi perfil, buscador de concesionarias, y el nuevo filtro de vendedor en el buscador principal y el catálogo
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

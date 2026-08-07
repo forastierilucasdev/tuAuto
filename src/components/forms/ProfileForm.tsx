@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useActionState } from "react";
 import Link from "next/link";
-import { Camera, KeyRound } from "lucide-react";
+import { Camera, ImagePlus, KeyRound } from "lucide-react";
 import { updateProfileAction, type ProfileActionState } from "@/server/actions/profile.actions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -28,6 +28,9 @@ type ProfileFormProps = {
     city: string | null;
     province: string | null;
     description: string | null;
+    logoUrl: string | null;
+    address: string | null;
+    website: string | null;
   } | null;
   /** Se dispara cuando el guardado fue exitoso (ej. para refrescar el avatar del header). */
   onSaved?: () => void;
@@ -50,6 +53,8 @@ export function ProfileForm({
   const [preview, setPreview] = React.useState<string | null>(avatarUrl);
   const [nameForInitials, setNameForInitials] = React.useState(fullName);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(agency?.logoUrl ?? null);
+  const logoInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (state?.success) onSaved?.();
@@ -59,6 +64,11 @@ export function ProfileForm({
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (file) setPreview(URL.createObjectURL(file));
+  }
+
+  function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (file) setLogoPreview(URL.createObjectURL(file));
   }
 
   return (
@@ -196,6 +206,62 @@ export function ProfileForm({
           <div>
             <Label htmlFor="description">Descripción</Label>
             <Textarea id="description" name="description" defaultValue={agency?.description ?? ""} />
+          </div>
+
+          <div className="space-y-5 rounded-2xl border border-border bg-surface-muted/40 p-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Datos comerciales</p>
+              <p className="text-xs text-muted-foreground">
+                Se muestran en tu página pública de {accountType === "CONCESIONARIA" ? "concesionaria" : "agencia"}.
+              </p>
+            </div>
+
+            <div>
+              <Label>Foto de portada</Label>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="group relative h-20 w-32 shrink-0 overflow-hidden rounded-xl border border-border bg-surface"
+                >
+                  {logoPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={logoPreview}
+                      alt="Foto de portada"
+                      className="h-full w-full object-cover object-center"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-muted-foreground">
+                      <ImagePlus className="h-6 w-6" />
+                    </span>
+                  )}
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white">
+                    <Camera className="h-5 w-5" />
+                  </span>
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  Se muestra en la tarjeta y en el encabezado de tu página pública.
+                </p>
+              </div>
+              <input
+                ref={logoInputRef}
+                type="file"
+                name="logo"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                className="hidden"
+                onChange={handleLogoChange}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="address">Dirección</Label>
+              <Input id="address" name="address" defaultValue={agency?.address ?? ""} />
+            </div>
+            <div>
+              <Label htmlFor="website">Sitio web</Label>
+              <Input id="website" name="website" placeholder="https://" defaultValue={agency?.website ?? ""} />
+            </div>
           </div>
         </>
       )}

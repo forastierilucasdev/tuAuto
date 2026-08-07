@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const LISTING_IMAGES_BUCKET = "listing-images";
 const AVATARS_BUCKET = "avatars";
+const AGENCY_LOGOS_BUCKET = "agency-logos";
 const VERIFICATIONS_BUCKET = "verifications";
 
 function getAdminClient() {
@@ -72,6 +73,10 @@ export function uploadListingImage(file: File, listingId: string, index: number)
 
 export function uploadAvatarImage(file: File, userId: string) {
   return uploadImage(AVATARS_BUCKET, "2MB", file, `${userId}/${Date.now()}`);
+}
+
+export function uploadAgencyLogo(file: File, userId: string) {
+  return uploadImage(AGENCY_LOGOS_BUCKET, "2MB", file, `${userId}/${Date.now()}`);
 }
 
 /**

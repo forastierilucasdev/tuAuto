@@ -14,7 +14,7 @@ import {
   updatePassword,
   updateProfile,
 } from "@/server/data/users";
-import { uploadAvatarImage } from "@/lib/supabase-storage";
+import { uploadAgencyLogo, uploadAvatarImage } from "@/lib/supabase-storage";
 import { validateImageFile } from "@/lib/image-validation";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -60,6 +60,14 @@ export async function updateProfileAction(
   }
   const avatarUrl = hasNewAvatar ? await uploadAvatarImage(avatarFile, session.user.id) : undefined;
 
+  const logoFile = formData.get("logo");
+  const hasNewLogo = logoFile instanceof File && logoFile.size > 0;
+  if (hasNewLogo) {
+    const error = validateImageFile(logoFile, MAX_AVATAR_SIZE_BYTES);
+    if (error) return { error };
+  }
+  const logoUrl = hasNewLogo ? await uploadAgencyLogo(logoFile, session.user.id) : undefined;
+
   if (await dniExists(parsed.data.dni, session.user.id)) {
     return { fieldErrors: { dni: ["Ya existe una cuenta registrada con ese DNI."] } };
   }
@@ -93,6 +101,9 @@ export async function updateProfileAction(
         city: parsed.data.city,
         province: parsed.data.province,
         description: parsed.data.description,
+        logoUrl,
+        address: parsed.data.address,
+        website: parsed.data.website,
       });
     } else {
       await updateProfile(session.user.id, {
@@ -107,6 +118,9 @@ export async function updateProfileAction(
           city: parsed.data.city,
           province: parsed.data.province,
           description: parsed.data.description,
+          logoUrl,
+          address: parsed.data.address,
+          website: parsed.data.website,
         },
       });
     }

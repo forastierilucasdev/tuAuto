@@ -5,6 +5,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-07, noche) — Filtro de tipo de vendedor y buscador de concesionarias
+- **Filtro "Tipo de vendedor"** (Particular / Agencia / Concesionaria) agregado al buscador principal (`HeroSearch`) y al panel de filtros del catálogo (`CatalogFilters`), aplicando sobre `Listing.user.accountType` en `buildWhere` (`server/data/listings.ts`).
+- **Página `/concesionarias` rediseñada**: buscador exclusivo por provincia y localidad (texto libre, igual criterio que el resto de la app), sección "Concesionarias destacadas" (las 4 con más publicaciones visibles) cuando no hay filtros activos, y tarjetas con el mismo formato que los resultados de vehículos (foto de portada, nombre, provincia/localidad, cantidad de publicaciones, botón "Ver publicaciones").
+- **Página de detalle de concesionaria** (`/concesionarias/[id]`) ahora muestra la foto de portada, la dirección y el sitio web (si los cargó), además de la descripción y el listado de publicaciones activas que ya existía.
+- **Nueva sección "Datos comerciales" en Mi perfil** (solo Agencia/Concesionaria): foto de portada (nuevo bucket `agency-logos` en Supabase Storage, mismo patrón que la foto de perfil), dirección y sitio web — se guardan en los campos `logoUrl`/`address`/`website` de `AgencyProfile`, que ya existían en el schema pero no se exponían todavía.
+- El contador de "publicaciones" de la tarjeta de concesionaria ahora usa el mismo criterio de visibilidad que "Ver publicaciones" (activa o reservada, no vencida) en vez de solo `status = ACTIVE` — antes podía mostrar un número distinto al que aparecía al entrar.
+
 ### Fixed (2026-08-07, noche) — Botón "Publicar" del diálogo de reactivar quedaba trabado en "Publicando..."
 - `reactivateListingAction` se invoca directo desde el cliente (no como `<form action>`), y un `redirect()` server-side dentro de una Server Action invocada así no resuelve la promesa del lado del cliente — el botón quedaba en estado de carga para siempre y nunca navegaba. Se cambió la acción para que devuelva `{ slug }` en vez de redirigir, y `OwnerListingCard` navega con `router.push()` (mismo patrón ya usado en `PublishedListingModal`).
 

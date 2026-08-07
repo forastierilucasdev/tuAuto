@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import type { Currency, ListingStatus, Prisma, VehicleCondition, VehicleType } from "@/generated/prisma/client";
+import type { AccountType, Currency, ListingStatus, Prisma, VehicleCondition, VehicleType } from "@/generated/prisma/client";
 import type { VehicleCardData } from "@/types/vehicle";
 import { FALLBACK_IMAGE } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
@@ -16,6 +16,7 @@ export type CatalogFilters = {
   maxPrice?: number;
   minKm?: number;
   maxKm?: number;
+  sellerAccountType?: AccountType;
 };
 
 const CARD_INCLUDE = {
@@ -80,6 +81,7 @@ function buildWhere(filters: CatalogFilters): Prisma.ListingWhereInput {
   if (filters.modelSlug) where.model = { slug: filters.modelSlug };
   if (filters.year) where.year = filters.year;
   if (filters.condition) where.condition = filters.condition;
+  if (filters.sellerAccountType) where.user = { accountType: filters.sellerAccountType };
 
   if (filters.minKm !== undefined || filters.maxKm !== undefined) {
     where.mileageKm = {
@@ -168,6 +170,11 @@ export async function getListingBySlug(slug: string, viewerUserId?: string) {
     effectiveStatus as (typeof PUBLICLY_VISIBLE_STATUSES)[number]
   );
   return isVisible ? listing : null;
+}
+
+/** Mismo criterio de visibilidad que `getActiveListingsByUser` — usado para el contador de la tarjeta de concesionaria. */
+export async function getVisibleListingCountByUser(userId: string) {
+  return prisma.listing.count({ where: { userId, ...visibleStatusWhere() } });
 }
 
 export async function getActiveListingsByUser(userId: string) {

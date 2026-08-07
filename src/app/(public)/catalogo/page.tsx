@@ -3,7 +3,7 @@ import { CatalogFilters } from "@/components/vehicles/CatalogFilters";
 import { CatalogFiltersDrawer } from "@/components/vehicles/CatalogFiltersDrawer";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import { getCatalogResults } from "@/server/data/listings";
-import type { Currency, VehicleCondition, VehicleType } from "@/generated/prisma/client";
+import type { AccountType, Currency, VehicleCondition, VehicleType } from "@/generated/prisma/client";
 
 export const metadata: Metadata = { title: "Catálogo" };
 
@@ -32,6 +32,7 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
     maxPrice: paramNumber(sp, "precioMax"),
     minKm: paramNumber(sp, "kmMin"),
     maxKm: paramNumber(sp, "kmMax"),
+    sellerAccountType: param(sp, "vendedor") as AccountType | undefined,
   };
 
   const { featured, rest } = await getCatalogResults(filters);

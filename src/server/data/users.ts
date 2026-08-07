@@ -44,7 +44,16 @@ export async function getFullProfile(id: string) {
       activationCount: true,
       isVerified: true,
       agencyProfile: {
-        select: { businessName: true, city: true, province: true, description: true, cuit: true },
+        select: {
+          businessName: true,
+          city: true,
+          province: true,
+          description: true,
+          cuit: true,
+          logoUrl: true,
+          address: true,
+          website: true,
+        },
       },
     },
   });
@@ -113,7 +122,16 @@ export async function createBusinessUser(data: {
 export async function updateProfile(
   id: string,
   data: Partial<Pick<User, "fullName" | "dni" | "phone" | "avatarUrl" | "accountType">> & {
-    agencyProfile?: { businessName?: string; cuit?: string; city?: string; province?: string; description?: string };
+    agencyProfile?: {
+      businessName?: string;
+      cuit?: string;
+      city?: string;
+      province?: string;
+      description?: string;
+      logoUrl?: string;
+      address?: string;
+      website?: string;
+    };
   }
 ) {
   const { agencyProfile, ...userData } = data;
@@ -141,15 +159,18 @@ export async function convertToBusinessAccount(
     city?: string;
     province?: string;
     description?: string;
+    logoUrl?: string;
+    address?: string;
+    website?: string;
   }
 ) {
-  const { businessName, cuit, city, province, description, ...userData } = data;
+  const { businessName, cuit, city, province, description, logoUrl, address, website, ...userData } = data;
   const user = await prisma.user.update({
     where: { id },
     data: {
       ...userData,
       accountType,
-      agencyProfile: { create: { businessName, cuit, city, province, description } },
+      agencyProfile: { create: { businessName, cuit, city, province, description, logoUrl, address, website } },
     },
   });
   return toSafeUser(user);

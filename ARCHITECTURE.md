@@ -55,7 +55,7 @@ src/
   lib/
     auth.ts              Config de Auth.js (incluye trustHost: true para producción)
     prisma.ts            Singleton de PrismaClient (con adapter-pg, usa DATABASE_URL)
-    supabase-storage.ts  Subida a Supabase Storage (server-only): fotos de publicaciones (bucket público "listing-images"), avatares (bucket público "avatars") y DNI de verificación (bucket privado "verifications")
+    supabase-storage.ts  Subida a Supabase Storage (server-only): fotos de publicaciones (bucket público "listing-images"), avatares (bucket público "avatars"), fotos de portada de agencia/concesionaria (bucket público "agency-logos") y DNI de verificación (bucket privado "verifications")
     image-validation.ts  Whitelist de tipos MIME y validación de tamaño, compartida entre publicaciones y avatar
     rate-limit.ts        Limitador in-memory (ver limitaciones en ERRORES.md)
     constants.ts         VEHICLE_TYPES, CONDITION_OPTIONS, TRANSMISSION_OPTIONS, ACCOUNT_TYPE_LABELS, NAV_LINKS, SITE_NAME
