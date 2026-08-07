@@ -265,6 +265,11 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales: ancho/grilla de `/concesionarias`, destacadas correctas en `tipo=CONCESIONARIA`/`tipo=AGENCIA`, `/dashboard/publicaciones` sin error de servidor (redirige a login sin sesión, esperado) — todo sin 500
 - [ ] Prueba manual en navegador (imprescindible, es mayormente visual/interactivo y depende de `useSession()`): menú hamburguesa mobile logueado, panel "Mi cuenta" abriendo desde ahí, y el nuevo selector de pestañas de Mis publicaciones en mobile
 
+## Fase 25 — "Publicar vehículo" y "Comprar publicaciones" con el mismo ancho (solicitado por el usuario)
+- [x] Ambos botones comparten el mismo ancho (columna común `w-full`) y el mismo tamaño
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [ ] Prueba manual en navegador (visual)
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

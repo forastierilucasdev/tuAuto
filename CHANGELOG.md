@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-07, noche) — Mis publicaciones: "Publicar vehículo" y "Comprar publicaciones" con el mismo ancho
+- Quedaban con distinto ancho (tamaños de botón distintos + "Comprar publicaciones" con más texto). Ahora los dos viven en una columna de ancho fijo compartido (`w-full` dentro de un contenedor común) y usan el mismo tamaño de botón.
+
 ### Changed (2026-08-07, noche) — Ajustes de Concesionarias/Agencias, menú mobile y Mis publicaciones
 - **Concesionarias/Agencias — mismo ancho que el catálogo**: el contenedor pasa de `max-w-6xl` a `max-w-7xl` y la grilla de tarjetas de `lg:grid-cols-4` a `sm:grid-cols-2 xl:grid-cols-3`, igual que los resultados de vehículos.
 - **Destacadas siguen al filtro de tipo, no a los de texto**: antes cualquier filtro (incluidos provincia/localidad) ocultaba las dos secciones de destacadas. Ahora "Concesionarias destacadas" se sigue mostrando si el filtro "Tipo" es Concesionaria (o está vacío), y "Agencias destacadas" si es Agencia (o vacío) — independiente de si hay provincia/localidad cargadas.

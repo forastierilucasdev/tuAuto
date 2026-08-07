@@ -9,6 +9,7 @@ import { PublicacionesTabs } from "@/components/dashboard/PublicacionesTabs";
 import { buttonVariants } from "@/components/ui/Button";
 import { BackButton } from "@/components/ui/BackButton";
 import { PUBLICACIONES_TABS, type PublicacionesTabKey } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Mis publicaciones" };
 
@@ -51,15 +52,17 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
       <h1 className="mt-2 text-2xl font-bold text-navy">Mis publicaciones</h1>
 
       <div className="mt-4 flex flex-col items-start gap-3">
-        <Link href="/dashboard/publicaciones/nueva" className={buttonVariants({ variant: "primary" })}>
-          Publicar vehículo
-        </Link>
-        <Link
-          href="/dashboard/pago#comprar-publicaciones"
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          Comprar publicaciones
-        </Link>
+        <div className="flex w-full max-w-xs flex-col gap-3">
+          <Link href="/dashboard/publicaciones/nueva" className={cn(buttonVariants({ variant: "primary" }), "w-full")}>
+            Publicar vehículo
+          </Link>
+          <Link
+            href="/dashboard/pago#comprar-publicaciones"
+            className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+          >
+            Comprar publicaciones
+          </Link>
+        </div>
         {profile && (
           <div className="text-xs text-muted-foreground">
             <p>
