@@ -199,6 +199,15 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado contra la base real: los 4 campos se guardan y se leen correctamente
 - [ ] Prueba manual en navegador: completar el modal de venta con y sin los campos opcionales, confirmar que no se puede vender por accidente
 
+## Fase 18 — Corrección del contador de publicaciones y botones centralizados (solicitado por el usuario)
+- [x] Separados `activationCount` ("realizadas", una vez por publicación) y `quotaConsumed` (cupo real, suma también al reactivar una vencida)
+- [x] Reactivar desde Reservada/Pausada es gratis (no consume cupo, no pide cupo disponible); desde Vencida sí consume cupo pero no vuelve a contar como "realizada"
+- [x] Recalculados ambos contadores para las cuentas existentes (estaban inflados por el bug)
+- [x] Variantes centralizadas `outline-primary`/`outline-success`/`outline-danger` en `buttonVariants`, aplicadas al diálogo de reactivar (Sí editar=azul, No publicar=verde, Cancelar=rojo, los tres con borde)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado contra la base real: Reservada/Pausada→Reactivar no cambia ningún contador; Vencida→Reactivar suma +1 solo a `quotaConsumed`
+- [ ] Prueba manual en navegador: confirmar que "Publicaciones realizadas"/"disponibles" ya no suben con cada pausar/reactivar, y que los 3 botones del diálogo se ven con los colores correctos
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

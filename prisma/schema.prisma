@@ -71,13 +71,20 @@ model User {
   isActive     Boolean     @default(true)
   lastLoginAt  DateTime?
 
-  // Se incrementa cada vez que una publicación del usuario pasa a estado
-  // ACTIVE (alta o reactivación). Junto con `purchasedPublications` define el
-  // cupo disponible: FREE_PUBLICATION_QUOTA + purchasedPublications -
-  // activationCount (ver `server/data/listings.ts`).
-  activationCount        Int     @default(0)
-  purchasedPublications  Int     @default(0)
-  isVerified             Boolean @default(false)
+  // "Publicaciones realizadas": suma 1 una única vez por publicación, la
+  // primera vez que se publica de verdad (alta directa o borrador→publicar)
+  // — reactivar la MISMA publicación (reservada/pausada/vencida) nunca la
+  // vuelve a sumar.
+  activationCount Int @default(0)
+
+  // Cupo real consumido: además del primer publish de cada aviso, también
+  // suma cuando una publicación vencida se reactiva (empieza un ciclo
+  // nuevo) — a diferencia de reactivar desde reservada/pausada, que es
+  // gratis. "Publicaciones disponibles" = FREE_PUBLICATION_QUOTA +
+  // purchasedPublications - quotaConsumed (ver `server/data/listings.ts`).
+  quotaConsumed         Int     @default(0)
+  purchasedPublications Int     @default(0)
+  isVerified            Boolean @default(false)
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt

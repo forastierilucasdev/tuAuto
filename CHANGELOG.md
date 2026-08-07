@@ -5,6 +5,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-07) — Contador de publicaciones y colores de botones centralizados
+- **Bug**: "Publicaciones realizadas" y "Publicaciones disponibles" cambiaban cada vez que se reactivaba una publicación (incluso desde Reservada/Pausada), como si fuera una publicación nueva cada vez. Ahora se separan dos conceptos:
+  - `activationCount` ("Publicaciones realizadas") suma **una única vez por publicación**, la primera vez que se publica de verdad — reactivar la misma publicación nunca la vuelve a sumar.
+  - `quotaConsumed` (nuevo campo, define "Publicaciones disponibles") suma en ese mismo primer publish, y **además** cuando una publicación **vencida** se reactiva (arranca un ciclo nuevo, consume cupo) — pero reactivar desde Reservada o Pausada sigue siendo gratis (mismo ciclo en curso, no consume cupo ni pide cupo disponible).
+  - Se recalcularon ambos contadores para todas las cuentas existentes, contando publicaciones distintas realmente publicadas (`publishedAt` no nulo), ya que habían quedado inflados por el bug.
+- **Botones del diálogo de reactivar**: se centralizaron 3 variantes nuevas en `buttonVariants` (`outline-primary`, `outline-success`, `outline-danger` — borde + texto de color, mismo lenguaje visual reutilizable en cualquier diálogo futuro) y se aplicaron: "Sí, editar" azul, "No, publicar" verde, "Cancelar" rojo — los tres con borde visible (antes "Cancelar" usaba `ghost`, sin borde).
+
 ### Added (2026-08-07) — Modal de confirmación al marcar como vendida, con datos opcionales
 - "Marcar vendido" ya no cambia el estado con un solo click: ahora abre un modal de confirmación (evita marcar como vendida por error) con campos **opcionales** para el registro del vendedor — nunca se muestran en el catálogo público: fecha de venta (precargada con la de hoy, editable), datos del comprador, precio real de venta y condiciones. Se guardan en `Listing.buyerInfo`/`realSalePrice`/`saleConditions` (nuevos campos). Si cargaste un precio real de venta, la tarjeta lo muestra junto a "Vendida el ...".
 

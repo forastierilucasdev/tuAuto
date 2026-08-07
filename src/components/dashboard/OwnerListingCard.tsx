@@ -263,15 +263,21 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
           </p>
           {reactivateError && <p className="text-danger">{reactivateError}</p>}
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="ghost" size="sm" onClick={() => setReactivateOpen(false)}>
+            <Button type="button" variant="outline-danger" size="sm" onClick={() => setReactivateOpen(false)}>
               Cancelar
             </Button>
-            <Button type="button" variant="outline" size="sm" disabled={reactivating} onClick={handlePublishNow}>
+            <Button
+              type="button"
+              variant="outline-success"
+              size="sm"
+              disabled={reactivating}
+              onClick={handlePublishNow}
+            >
               {reactivating ? "Publicando..." : "No, publicar"}
             </Button>
             <Link
               href={`/dashboard/publicaciones/${listing.id}/editar`}
-              className={buttonVariants({ size: "sm" })}
+              className={buttonVariants({ variant: "outline-primary", size: "sm" })}
             >
               Sí, editar
             </Link>

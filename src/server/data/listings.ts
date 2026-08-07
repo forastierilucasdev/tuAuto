@@ -235,7 +235,7 @@ export async function getOwnerListingGroups(userId: string) {
 const LISTING_DURATION_DAYS = 30;
 
 // Cupo gratuito de publicaciones por cuenta. El disponible es
-// FREE_PUBLICATION_QUOTA + purchasedPublications - activationCount (ver
+// FREE_PUBLICATION_QUOTA + purchasedPublications - quotaConsumed (ver
 // modelo User en schema.prisma). Comprar un pack suma a `purchasedPublications`.
 export const FREE_PUBLICATION_QUOTA = 10;
 
@@ -249,14 +249,30 @@ export class QuotaExceededError extends Error {
 export async function getAvailablePublications(userId: string) {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { activationCount: true, purchasedPublications: true },
+    select: { quotaConsumed: true, purchasedPublications: true },
   });
-  return Math.max(0, FREE_PUBLICATION_QUOTA + user.purchasedPublications - user.activationCount);
+  return Math.max(0, FREE_PUBLICATION_QUOTA + user.purchasedPublications - user.quotaConsumed);
 }
 
 async function assertHasAvailablePublications(userId: string) {
   const available = await getAvailablePublications(userId);
   if (available <= 0) throw new QuotaExceededError();
+}
+
+/**
+ * Qué implica reactivar desde cada estado:
+ * - Reservada/Pausada: sigue el mismo ciclo de publicación en curso, es
+ *   gratis (no consume cupo) y no cuenta como una publicación nueva.
+ * - Vencida: el plazo ya corrió — reactivarla arranca un ciclo nuevo, así
+ *   que sí consume cupo, pero sigue siendo la MISMA publicación (no suma a
+ *   "publicaciones realizadas" otra vez).
+ * - Borrador: nunca se publicó — es la primera publicación de verdad, así
+ *   que consume cupo Y cuenta como una publicación nueva.
+ */
+function getReactivationCost(status: ListingStatus): { countsAsNewListing: boolean; consumesQuota: boolean } {
+  if (status === "DRAFT") return { countsAsNewListing: true, consumesQuota: true };
+  if (status === "EXPIRED") return { countsAsNewListing: false, consumesQuota: true };
+  return { countsAsNewListing: false, consumesQuota: false }; // RESERVADA / PAUSADA
 }
 
 export async function createListing(input: {
@@ -328,13 +344,19 @@ export async function createListing(input: {
         }),
   };
 
-  // Un borrador no "pasó por activa" todavía, así que no suma al contador
-  // de activaciones hasta que se publique de verdad.
+  // Un borrador no "pasó por activa" todavía, así que no suma ni al contador
+  // de publicaciones realizadas ni al cupo consumido hasta que se publique
+  // de verdad.
   const [listing] = await prisma.$transaction([
     prisma.listing.create({ data: listingData }),
     ...(input.asDraft
       ? []
-      : [prisma.user.update({ where: { id: input.userId }, data: { activationCount: { increment: 1 } } })]),
+      : [
+          prisma.user.update({
+            where: { id: input.userId },
+            data: { activationCount: { increment: 1 }, quotaConsumed: { increment: 1 } },
+          }),
+        ]),
   ]);
   return listing;
 }
@@ -402,9 +424,9 @@ export async function updateOwnedListing(
   // la UI, o "publicar" para un borrador). Una vendida nunca se reactiva
   // sola por edición.
   const reactivating = REACTIVATABLE_STATUSES.includes(current.status);
-  const wasDraft = current.status === "DRAFT";
+  const cost = reactivating ? getReactivationCost(current.status) : null;
 
-  if (reactivating) await assertHasAvailablePublications(userId);
+  if (cost?.consumesQuota) await assertHasAvailablePublications(userId);
 
   const [listing] = await prisma.$transaction([
     prisma.listing.update({
@@ -416,13 +438,21 @@ export async function updateOwnedListing(
               status: "ACTIVE" as const,
               soldAt: null,
               expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
-              ...(wasDraft ? { publishedAt: new Date() } : {}),
+              ...(cost?.countsAsNewListing ? { publishedAt: new Date() } : {}),
             }
           : {}),
       },
     }),
-    ...(reactivating
-      ? [prisma.user.update({ where: { id: userId }, data: { activationCount: { increment: 1 } } })]
+    ...(cost?.consumesQuota
+      ? [
+          prisma.user.update({
+            where: { id: userId },
+            data: {
+              quotaConsumed: { increment: 1 },
+              ...(cost.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
+            },
+          }),
+        ]
       : []),
   ]);
   return { listing, reactivated: reactivating };
@@ -438,8 +468,8 @@ export async function reactivateListing(listingId: string, userId: string) {
   if (!REACTIVATABLE_STATUSES.includes(current.status)) {
     throw new Error("Esta publicación no se puede reactivar.");
   }
-  await assertHasAvailablePublications(userId);
-  const wasDraft = current.status === "DRAFT";
+  const cost = getReactivationCost(current.status);
+  if (cost.consumesQuota) await assertHasAvailablePublications(userId);
 
   const [listing] = await prisma.$transaction([
     prisma.listing.update({
@@ -448,10 +478,20 @@ export async function reactivateListing(listingId: string, userId: string) {
         status: "ACTIVE",
         soldAt: null,
         expiresAt: new Date(Date.now() + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
-        ...(wasDraft ? { publishedAt: new Date() } : {}),
+        ...(cost.countsAsNewListing ? { publishedAt: new Date() } : {}),
       },
     }),
-    prisma.user.update({ where: { id: userId }, data: { activationCount: { increment: 1 } } }),
+    ...(cost.consumesQuota
+      ? [
+          prisma.user.update({
+            where: { id: userId },
+            data: {
+              quotaConsumed: { increment: 1 },
+              ...(cost.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
+            },
+          }),
+        ]
+      : []),
   ]);
   return listing;
 }

@@ -12,6 +12,13 @@ export const buttonVariants = cva(
         outline: "border border-border bg-transparent text-foreground hover:bg-surface-muted",
         ghost: "bg-transparent text-foreground hover:bg-surface-muted",
         destructive: "bg-danger text-white hover:bg-danger/90",
+        // Trío semántico con borde visible, para diálogos de confirmación
+        // con más de una acción positiva (ej. "Sí, editar" / "No, publicar"
+        // / "Cancelar"): mismo lenguaje visual en toda la app, un solo lugar
+        // para ajustar el color si hace falta más adelante.
+        "outline-primary": "border border-primary bg-transparent text-primary hover:bg-primary/10",
+        "outline-success": "border border-success bg-transparent text-success hover:bg-success/10",
+        "outline-danger": "border border-danger bg-transparent text-danger hover:bg-danger/10",
       },
       size: {
         sm: "h-9 px-3",
