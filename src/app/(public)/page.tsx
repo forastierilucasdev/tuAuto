@@ -26,9 +26,14 @@ export default async function HomePage() {
             fill
             priority
             sizes="100vw"
-            className="object-cover"
+            // El auto de la foto está sobre el lado derecho — con el recorte
+            // centrado por default, en pantallas angostas quedaba afuera.
+            // Ancla el recorte a la derecha para que siga viéndose en mobile.
+            className="object-cover object-right"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/60 to-navy/10 lg:bg-gradient-to-r lg:from-navy/95 lg:via-navy/70 lg:to-navy/10" />
+          {/* Degradado más liviano en mobile (antes tapaba casi toda la
+              foto) — solo lo necesario para que el texto blanco se lea. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/35 to-navy/5 lg:bg-gradient-to-r lg:from-navy/95 lg:via-navy/70 lg:to-navy/10" />
 
           <div className="relative px-4 pb-6 pt-24 sm:px-6 lg:max-w-2xl lg:px-8 lg:py-20">
             <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">

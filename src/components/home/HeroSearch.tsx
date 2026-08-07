@@ -34,11 +34,11 @@ export function HeroSearch() {
   return (
     <form
       onSubmit={handleSubmit}
-      // Mobile: fondo traslúcido + blur ("vidrio esmerilado") para que la
-      // foto de fondo se siga viendo alrededor de cada campo — los campos en
-      // sí (Select/Input) ya son blancos sólidos, eso no cambia. Desktop
-      // sigue con la tarjeta blanca opaca de siempre.
-      className="flex flex-col gap-3 rounded-2xl border border-white/25 bg-white/15 p-4 shadow-card backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-end lg:border-0 lg:bg-surface lg:backdrop-blur-none"
+      // Mobile: fondo bien traslúcido (poco blur, para que se note la foto
+      // de fondo alrededor de cada campo, no solo un blanco lechoso) — los
+      // campos en sí (Select/Input) ya son blancos sólidos, eso no cambia.
+      // Desktop sigue con la tarjeta blanca opaca de siempre.
+      className="flex flex-col gap-3 rounded-2xl border border-white/15 bg-white/8 p-4 shadow-card backdrop-blur-sm sm:flex-row sm:flex-wrap sm:items-end lg:border-0 lg:bg-surface lg:backdrop-blur-none"
     >
       <div className="sm:flex-1 sm:min-w-36">
         <label htmlFor="hero-tipo" className="mb-1.5 block text-xs font-medium text-white lg:text-muted-foreground">

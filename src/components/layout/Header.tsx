@@ -36,9 +36,11 @@ export function Header() {
             porque "Publicar anuncio" + avatar pesan más que el logo solo). */}
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <div className="flex shrink-0 items-center gap-3">
-            <Link href="/" className="hidden h-10 md:block">
-              {/* eslint-disable-next-line @next/next/no-img-element -- SVG: next/image bloquea SVG salvo dangerouslyAllowSVG, y un vector no gana nada de la optimización */}
-              <img src="/logo.svg" alt={SITE_NAME} className="h-full w-auto object-contain" />
+            <Link href="/" className="hidden md:block">
+              {/* eslint-disable-next-line @next/next/no-img-element -- SVG: next/image bloquea SVG salvo dangerouslyAllowSVG, y un vector no gana nada de la optimización.
+                  Altura fija directo en el <img> (no en un wrapper con h-full): el preflight de Tailwind pone "height: auto" en <img>, y con h-full en un
+                  contenedor sin ancho propio terminaba usando el tamaño intrínseco del SVG (740x220) en vez de achicarse — se veía enorme. */}
+              <img src="/logo.svg" alt={SITE_NAME} className="h-8 w-auto" />
             </Link>
             <div className="md:hidden">
               <AccountMenu ref={accountMenuRef} />
@@ -46,9 +48,9 @@ export function Header() {
           </div>
 
           <div className="flex items-center justify-center">
-            <Link href="/" className="h-9 md:hidden">
+            <Link href="/" className="md:hidden">
               {/* eslint-disable-next-line @next/next/no-img-element -- ver comentario arriba */}
-              <img src="/logo.svg" alt={SITE_NAME} className="h-full w-auto object-contain" />
+              <img src="/logo.svg" alt={SITE_NAME} className="h-7 w-auto" />
             </Link>
             <nav className="hidden items-center gap-1 md:flex">
               {NAV_LINKS.map((link) => {

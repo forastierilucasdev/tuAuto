@@ -308,7 +308,12 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Home: "Explorá por categoría" pasa a estar antes que "Publicaciones destacadas"
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
 - [x] Verificado con requests reales: `logo.svg`/`hero-bg.jpg` responden 200, la clase de centrado del header y el nuevo orden de secciones de la home aparecen en el HTML
-- [ ] Prueba manual en navegador (visual, imprescindible: centrado del nav con/sin sesión, tarjeta traslúcida en mobile, tamaño del logo)
+- [x] Fix: logo gigante (wrapper `h-full` sobre `<img>` caía al tamaño intrínseco del SVG por el preflight de Tailwind) — altura fija directo en el `<img>`
+- [x] Fix: foto de fondo recortada centrada no mostraba el auto en mobile (el auto está a la derecha de la foto) — `object-right`
+- [x] Fix: tarjeta de filtros mobile poco transparente — baja a `bg-white/8` + degradado de la foto más claro en mobile
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios otra vez
+- [x] Verificado con requests reales que las clases nuevas (`h-8 w-auto`, `h-7 w-auto`, `object-right`, `bg-white/8`) aparecen en el HTML
+- [ ] Prueba manual en navegador (visual, imprescindible: centrado del nav con/sin sesión, tarjeta traslúcida en mobile, tamaño del logo, que el auto se vea en mobile)
 
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
