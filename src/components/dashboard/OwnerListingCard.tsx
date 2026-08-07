@@ -3,6 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Star, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -45,6 +46,7 @@ const REACTIVATABLE: OwnerListingData["status"][] = ["RESERVADA", "PAUSADA", "EX
 const dateFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
+  const router = useRouter();
   const [pauseOpen, setPauseOpen] = React.useState(false);
   const [reactivateOpen, setReactivateOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
@@ -64,9 +66,14 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
     setReactivating(true);
     setReactivateError(undefined);
     const result = await reactivateListingAction(listing.id);
-    // Si no hubo error, la acción ya redirigió — este código no sigue.
     setReactivating(false);
-    if (result?.error) setReactivateError(result.error);
+    if (result?.error) {
+      setReactivateError(result.error);
+      return;
+    }
+    if (result?.slug) {
+      router.push(`/dashboard/publicaciones?published=${result.slug}`);
+    }
   }
 
   async function handleMarkSoldSubmit(event: React.FormEvent<HTMLFormElement>) {

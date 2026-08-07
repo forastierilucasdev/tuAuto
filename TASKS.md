@@ -226,6 +226,13 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales: detalle de lancha muestra "Horas de uso", detalle de moto no muestra ni Km ni Horas ni Transmisión, detalle de auto muestra "Km"
 - [ ] Prueba manual en navegador (imprescindible, depende de `useSession()` client-side): posición del avatar y lado del panel en desktop, contenido del menú mobile logueado, y que "Volver" en Mis publicaciones salga de la pantalla en un solo toque
 
+## Fase 21 — Botón "Publicar" trabado en "Publicando..." al reactivar (solicitado por el usuario)
+- [x] Diagnóstico: `redirect()` server-side dentro de una Server Action invocada directo desde el cliente (no `<form action>`) no resuelve la promesa del lado del cliente
+- [x] `reactivateListingAction` devuelve `{ slug }` en vez de redirigir
+- [x] `OwnerListingCard` navega con `router.push()` tras recibir el `slug` (mismo patrón que `PublishedListingModal`)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [ ] Prueba manual en navegador (imprescindible, es un bug de navegación client-side): reactivar una publicación pausada/reservada y confirmar que "Publicar" navega a Mis publicaciones sin quedar trabado
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

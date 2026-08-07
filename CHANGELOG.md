@@ -5,6 +5,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-07, noche) — Botón "Publicar" del diálogo de reactivar quedaba trabado en "Publicando..."
+- `reactivateListingAction` se invoca directo desde el cliente (no como `<form action>`), y un `redirect()` server-side dentro de una Server Action invocada así no resuelve la promesa del lado del cliente — el botón quedaba en estado de carga para siempre y nunca navegaba. Se cambió la acción para que devuelva `{ slug }` en vez de redirigir, y `OwnerListingCard` navega con `router.push()` (mismo patrón ya usado en `PublishedListingModal`).
+
 ### Added (2026-08-07, noche) — Campos del wizard adaptados por tipo de vehículo
 - El paso "Datos principales" del wizard (alta y edición), el catálogo (detalle, tarjetas, filtros) y "Mis publicaciones" ahora se adaptan según el tipo de vehículo elegido, centralizado en `mileageUnitFor()`/`usesTransmission()` (`lib/constants.ts`):
   - **Kilometraje**: solo Auto, Camioneta y Monopatín.

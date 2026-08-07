@@ -194,7 +194,7 @@ export async function pauseListingAction(formData: FormData) {
   revalidatePath("/catalogo");
 }
 
-export type ReactivateListingState = { error?: string } | undefined;
+export type ReactivateListingState = { error?: string; slug?: string } | undefined;
 
 /** "No, publicar" al reactivar — sin pasar por el formulario de edición. */
 export async function reactivateListingAction(listingId: string): Promise<ReactivateListingState> {
@@ -211,7 +211,7 @@ export async function reactivateListingAction(listingId: string): Promise<Reacti
 
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
-  redirect(`/dashboard/publicaciones?published=${listing.slug}`);
+  return { slug: listing.slug };
 }
 
 export type DeleteImageState = { error?: string } | undefined;
