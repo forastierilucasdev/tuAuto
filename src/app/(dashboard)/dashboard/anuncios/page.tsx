@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { AnunciosSubNav } from "@/components/dashboard/AnunciosSubNav";
 import { BackButton } from "@/components/ui/BackButton";
@@ -11,13 +12,26 @@ export const metadata: Metadata = { title: "Administrador de anuncios" };
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-function StatCard({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
+function StatCard({
+  label,
+  value,
+  hint,
+  href,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  href: string;
+}) {
   return (
     <Card>
-      <CardContent className="pt-5">
+      <CardContent className="flex flex-col gap-1 pt-5">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className="mt-1 text-2xl font-extrabold text-navy">{value}</p>
-        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+        <p className="text-2xl font-extrabold text-navy">{value}</p>
+        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+        <Link href={href} className="mt-2 text-xs font-medium text-primary hover:underline">
+          Ver
+        </Link>
       </CardContent>
     </Card>
   );
@@ -46,10 +60,30 @@ export default async function AdministradorAnunciosPage() {
       <AnunciosSubNav />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Publicaciones disponibles" value={available} />
-        <StatCard label="Publicaciones realizadas" value={profile?.activationCount ?? 0} />
-        <StatCard label="Publicaciones destacadas" value={groups.destacadas.length} />
-        <StatCard label="Destacados disponibles" value={pendingVouchers} hint="Créditos de destacado sin usar" />
+        <StatCard label="Publicaciones disponibles" value={available} href="/dashboard/compra" />
+        <StatCard
+          label="Publicaciones realizadas"
+          value={profile?.activationCount ?? 0}
+          href="/dashboard/publicaciones?tab=todas"
+        />
+        <StatCard
+          label="Publicaciones destacadas"
+          value={groups.destacadas.length}
+          href="/dashboard/publicaciones?tab=destacadas"
+        />
+        <StatCard
+          label="Destacados disponibles"
+          value={pendingVouchers}
+          hint="Créditos de destacado sin usar"
+          href="/dashboard/compra"
+        />
+        <StatCard
+          label="Reservadas"
+          value={groups.reservadas.length}
+          href="/dashboard/publicaciones?tab=reservadas"
+        />
+        <StatCard label="Inactivas" value={groups.inactivas.length} href="/dashboard/publicaciones?tab=inactivas" />
+        <StatCard label="Vendidas" value={groups.vendidas.length} href="/dashboard/publicaciones?tab=vendidas" />
         <StatCard
           label="Suscripción"
           value={subscription.active ? `${subscription.quota} publicaciones` : "Sin suscripción activa"}
@@ -58,10 +92,8 @@ export default async function AdministradorAnunciosPage() {
               ? `Vence el ${dateFormatter.format(subscription.expiresAt)}`
               : undefined
           }
+          href="/dashboard/compra"
         />
-        <StatCard label="Reservadas" value={groups.reservadas.length} />
-        <StatCard label="Inactivas" value={groups.inactivas.length} />
-        <StatCard label="Vendidas" value={groups.vendidas.length} />
       </div>
     </div>
   );

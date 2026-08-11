@@ -315,6 +315,16 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales que las clases nuevas (`h-8 w-auto`, `h-7 w-auto`, `object-right`, `bg-white/8`) aparecen en el HTML
 - [ ] Prueba manual en navegador (visual, imprescindible: centrado del nav con/sin sesión, tarjeta traslúcida en mobile, tamaño del logo, que el auto se vea en mobile)
 
+## Fase 29 — Administrador de anuncios: links, colores por sección, Mis compras reordenado, logo (solicitado por el usuario)
+- [x] Logo recortado: el `viewBox` anterior no contemplaba la máscara/gradiente de trama que se extendía más abajo — recorte con margen más generoso
+- [x] Header: logo con tamaño fluido (`clamp()`) + padding propio en los 4 lados
+- [x] Resumen: cada tarjeta suma un link "Ver"; "Suscripción" pasa a ser la última
+- [x] Sub-nav (Resumen/Mis publicaciones/Mis compras): color distinto por sección cuando está seleccionada
+- [x] Mis compras: se saca el selector de modo, Pago individual + Suscripciones se muestran juntas al lado de Historial de pagos en 3 columnas simétricas con fondo distinto; mobile apila con Suscripciones al final; se sacan los contadores y "Anuncios destacados" (ya están en Resumen)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: clases fluidas del logo en el HTML, rutas del dashboard sin 500
+- [ ] Prueba manual en navegador (visual, imprescindible: que el logo no se corte a ningún ancho, colores del sub-nav, layout de 3 columnas de Mis compras y su orden en mobile)
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

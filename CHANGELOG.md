@@ -5,6 +5,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-07, noche) — Logo recortado (el ícono del auto quedaba cortado)
+- El recorte del `viewBox` del logo de la ronda anterior fue demasiado ajustado — no contemplaba una máscara/gradiente de trama (imagen embebida, transformada con `matrix(...)`) que se extiende más abajo que el resto del contenido, así que el ícono del auto quedaba cortado por debajo. Se volvió a recortar con un margen bastante más generoso (`public/logo.svg`).
+- **Header**: el logo pasa a tener un tamaño fluido con `clamp()` (crece/achica junto con el ancho de la ventana en vez de saltar entre 2-3 tamaños fijos por breakpoint) y un padding propio en los 4 lados, separándolo del borde del header.
+
+### Changed (2026-08-07, noche) — Administrador de anuncios: links "Ver", colores por sección y Mis compras reordenado
+- **Resumen**: cada tarjeta (Publicaciones disponibles/realizadas/destacadas, Destacados disponibles, Reservadas, Inactivas, Vendidas, Suscripción) suma un link "Ver" a la sección correspondiente (Mis publicaciones filtrada por pestaña, o Mis compras). "Suscripción" pasa a ser la última tarjeta.
+- **Sub-nav de Administrador de anuncios**: Resumen/Mis publicaciones/Mis compras tienen cada una su propio color cuando están seleccionadas (azul/verde/naranja, como fichas de carpeta) en vez de las 3 con el mismo azul — más fácil ubicarse de un vistazo.
+- **Mis compras**: se saca el selector "Pago individual"/"Suscripciones" (antes solo se veía uno a la vez) — ahora las dos secciones se muestran juntas, al lado de "Historial de pagos", en 3 columnas simétricas con fondo distinto cada una (blanca, celeste, gris). En mobile se apilan con "Suscripciones" al final. Se sacan los contadores de publicaciones y "Anuncios destacados" de esta pantalla (ya están en Resumen).
+
 ### Changed (2026-08-07, noche) — Logo real, imagen de fondo del buscador y ajustes visuales
 - **Logo**: el texto "Motoresya" del header se reemplaza por el logo (`public/logo.svg`), en mobile y desktop. Se usa `<img>` en vez de `next/image` a propósito: Next.js bloquea SVG en `next/image` salvo que se habilite `dangerouslyAllowSVG` (riesgo de XSS si el SVG trae script embebido), y un vector no gana nada de esa optimización de todos modos — cargado vía `<img>` el navegador tampoco ejecuta scripts embebidos en el SVG (a diferencia de inlinearlo en el DOM), así que es la opción simple y seguirá siendo segura. El archivo original tenía el logo ocupando menos del 15% del canvas (mucho espacio en blanco alrededor) — se recortó el `viewBox` del SVG para que el logo llene su caja en vez de verse diminuto.
 - **Buscador principal**: la foto de fondo con el buscador embebido encima (antes solo en mobile) pasa a ser el mismo patrón en desktop — antes ahí la foto se mostraba aparte, al costado del texto/buscador. Nueva foto (`public/hero-bg.jpg`, la de fondo negro con el auto) reemplaza el placeholder de picsum.photos.
