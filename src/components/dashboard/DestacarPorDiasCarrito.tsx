@@ -66,6 +66,15 @@ export function DestacarPorDiasCarrito({
     setCart((c) => c.filter((i) => i.listingId !== listingId));
   }
 
+  // Si la publicación elegida ya está en el carrito, tocar +/- también
+  // actualiza esa línea en vivo — si no, el total quedaba desincronizado del
+  // contador hasta volver a tocar "Agregar elemento".
+  function updateDays(nextDays: number) {
+    const clamped = Math.max(1, Math.min(maxDays, nextDays));
+    setDays(clamped);
+    setCart((c) => c.map((i) => (i.listingId === selectedId ? { ...i, days: clamped } : i)));
+  }
+
   const total = cart.reduce((sum, i) => sum + i.days * pricePerDay, 0);
 
   async function confirmPurchase() {
@@ -99,7 +108,7 @@ export function DestacarPorDiasCarrito({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setDays(Math.max(1, clampedDays - 1))}
+            onClick={() => updateDays(clampedDays - 1)}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-surface-muted"
           >
             <Minus className="h-4 w-4" />
@@ -107,7 +116,7 @@ export function DestacarPorDiasCarrito({
           <span className="w-8 text-center font-semibold">{clampedDays}</span>
           <button
             type="button"
-            onClick={() => setDays(Math.min(maxDays, clampedDays + 1))}
+            onClick={() => updateDays(clampedDays + 1)}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-surface-muted"
           >
             <Plus className="h-4 w-4" />

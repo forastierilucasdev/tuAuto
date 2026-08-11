@@ -334,6 +334,12 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales: `logo-v2.svg` 200, `logo.svg` viejo 404, rutas nuevas de Mis compras/historial sin 500
 - [ ] Prueba manual en navegador (visual, imprescindible: que el logo se vea completo esta vez, y el sub-nav de Mis compras)
 
+## Fase 31 — Bugs de Mis compras: total del carrito y ancho de botones mobile (solicitado por el usuario)
+- [x] `DestacarPorDiasCarrito`: +/- ahora actualiza en vivo la línea ya agregada al carrito (antes el Total no reflejaba el cambio hasta sacar y re-agregar el elemento)
+- [x] Botones mobile de `AnunciosSubNav`/`ComprasTabs` con el mismo ancho (`w-full` en vez de `inline-flex`)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [ ] Prueba manual en navegador: cambiar la cantidad de días de un elemento ya agregado al carrito y confirmar que el Total sube/baja, y que los dos botones mobile miden igual
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

@@ -5,6 +5,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-11) — Total del carrito de "Destacar por día" desincronizado, y ancho de los botones mobile de sub-nav
+- **`DestacarPorDiasCarrito`**: si la publicación seleccionada ya estaba agregada al carrito, tocar +/- en el contador de días cambiaba el precio de la vista previa pero no la línea ya cargada — había que sacarla y volver a "Agregar elemento" para que el Total reflejara el cambio. Ahora, si la publicación elegida ya está en el carrito, +/- actualiza esa línea (y el Total) en vivo.
+- **`AnunciosSubNav`/`ComprasTabs` (botón mobile)**: los dos botones que abren cada sub-nav ("Mis compras", "Pago individual") medían distinto porque se ajustaban al largo del texto (`inline-flex`). Pasan a `w-full` para que ambos ocupen el mismo ancho.
+
 ### Fixed (2026-08-07, noche) — Logo definitivamente cortado (esta vez con la medida real)
 - Los dos recortes anteriores del `viewBox` se basaban en una detección incompleta del contenido (solo 2 `clipPath`, no los `<path>` con relleno que dibujan el ícono). Se midió el bounding box real de los 5 `<path>` que dibujan el logo (`x: 268–977`, `y: 568–881`) y se recortó con margen sobre esa medida exacta. El archivo se renombra a `public/logo-v2.svg` (de paso, fuerza a que el navegador/CDN no sirvan una copia vieja en caché con el mismo nombre).
 
