@@ -33,6 +33,7 @@ export async function addPaymentMethodAction(
 function revalidateAfterPurchase() {
   revalidatePath("/dashboard/anuncios");
   revalidatePath("/dashboard/compra");
+  revalidatePath("/dashboard/compra/historial");
   revalidatePath("/dashboard/publicaciones");
   revalidatePath("/catalogo");
 }

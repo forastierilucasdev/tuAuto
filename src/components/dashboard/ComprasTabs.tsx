@@ -2,41 +2,42 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { SlidersHorizontal } from "lucide-react";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { cn } from "@/lib/utils";
 
-// 3 rutas distintas (no una sola página con tabs internos) para no romper los
-// `revalidatePath` que ya apuntan a `/dashboard/publicaciones` en todo
-// `listing.actions.ts`/`payment.actions.ts`.
-const SECTIONS = [
-  { href: "/dashboard/anuncios", label: "Resumen" },
-  { href: "/dashboard/publicaciones", label: "Mis publicaciones" },
-  { href: "/dashboard/compra", label: "Mis compras" },
-] as const;
+export type ComprasTabKey = "individual" | "suscripcion" | "historial";
 
-/** Sub-nav de "Administrador de anuncios" — mismo lenguaje visual que `PublicacionesTabs`. */
-export function AnunciosSubNav() {
-  const pathname = usePathname();
+// "Pago individual" y "Suscripciones" son pestañas en la misma página
+// (`?vista=`); "Historial de pagos" en cambio navega a una página aparte,
+// bien simple, con su propio botón Volver — por eso es un href distinto en
+// vez de un query param más.
+const TABS: { key: ComprasTabKey; label: string; href: string }[] = [
+  { key: "individual", label: "Pago individual", href: "/dashboard/compra?vista=individual" },
+  { key: "suscripcion", label: "Suscripciones", href: "/dashboard/compra?vista=suscripcion" },
+  { key: "historial", label: "Historial de pagos", href: "/dashboard/compra/historial" },
+];
+
+/** Sub-nav de "Mis compras" — mismo lenguaje visual que `AnunciosSubNav`/`PublicacionesTabs`. */
+export function ComprasTabs({ active }: { active: ComprasTabKey }) {
   const [open, setOpen] = React.useState(false);
-  const active = SECTIONS.find((s) => s.href === pathname) ?? SECTIONS[0];
+  const activeLabel = TABS.find((t) => t.key === active)?.label ?? "";
 
   return (
     <div className="mb-6">
       <div className="hidden border-b border-border md:flex">
-        {SECTIONS.map((s) => (
+        {TABS.map((t) => (
           <Link
-            key={s.href}
-            href={s.href}
+            key={t.key}
+            href={t.href}
             className={cn(
               "flex-1 border-b-2 px-4 py-2 text-center text-sm font-medium transition-colors",
-              pathname === s.href
+              active === t.key
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
-            {s.label}
+            {t.label}
           </Link>
         ))}
       </div>
@@ -48,22 +49,22 @@ export function AnunciosSubNav() {
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground shadow-card"
         >
           <SlidersHorizontal className="h-4 w-4" />
-          {active.label}
+          {activeLabel}
         </button>
 
-        <SlideOverPanel open={open} onClose={() => setOpen(false)} side="left" title="Administrador de anuncios">
+        <SlideOverPanel open={open} onClose={() => setOpen(false)} side="left" title="Mis compras">
           <nav className="space-y-1">
-            {SECTIONS.map((s) => (
+            {TABS.map((t) => (
               <Link
-                key={s.href}
-                href={s.href}
+                key={t.key}
+                href={t.href}
                 onClick={() => setOpen(false)}
                 className={cn(
                   "block rounded-lg px-3 py-3 text-sm font-medium transition-colors",
-                  pathname === s.href ? "bg-primary/10 text-primary" : "text-foreground hover:bg-surface-muted"
+                  active === t.key ? "bg-primary/10 text-primary" : "text-foreground hover:bg-surface-muted"
                 )}
               >
-                {s.label}
+                {t.label}
               </Link>
             ))}
           </nav>

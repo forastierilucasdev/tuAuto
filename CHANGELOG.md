@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-07, noche) — Logo definitivamente cortado (esta vez con la medida real)
+- Los dos recortes anteriores del `viewBox` se basaban en una detección incompleta del contenido (solo 2 `clipPath`, no los `<path>` con relleno que dibujan el ícono). Se midió el bounding box real de los 5 `<path>` que dibujan el logo (`x: 268–977`, `y: 568–881`) y se recortó con margen sobre esa medida exacta. El archivo se renombra a `public/logo-v2.svg` (de paso, fuerza a que el navegador/CDN no sirvan una copia vieja en caché con el mismo nombre).
+
+### Changed (2026-08-07, noche) — Ajustes de Administrador de anuncios y Mis compras
+- Se revierten los colores por sección del sub-nav (Resumen/Mis publicaciones/Mis compras) — vuelven a un solo color, como estaban antes de la ronda anterior.
+- **Resumen**: "Publicaciones disponibles", "Destacados disponibles" y "Suscripción" cambian su link de "Ver" a "Comprar" (van a Mis compras); el resto sigue con "Ver" hacia la pestaña correspondiente de Mis publicaciones.
+- **Mis compras**: se saca el layout de 3 columnas simultáneas de la ronda anterior. Ahora tiene su propio sub-nav horizontal (`ComprasTabs`, mismo lenguaje visual que el resto) con 3 opciones: "Pago individual" y "Suscripciones" son pestañas en la misma página (cada una ocupa todo el ancho al elegirla, igual que "Resumen"); "Historial de pagos" pasa a ser una página aparte y más simple (`/dashboard/compra/historial`, con su propio botón Volver) en vez de una sección más dentro de Mis compras.
+
 ### Fixed (2026-08-07, noche) — Logo recortado (el ícono del auto quedaba cortado)
 - El recorte del `viewBox` del logo de la ronda anterior fue demasiado ajustado — no contemplaba una máscara/gradiente de trama (imagen embebida, transformada con `matrix(...)`) que se extiende más abajo que el resto del contenido, así que el ícono del auto quedaba cortado por debajo. Se volvió a recortar con un margen bastante más generoso (`public/logo.svg`).
 - **Header**: el logo pasa a tener un tamaño fluido con `clamp()` (crece/achica junto con el ancho de la ventana en vez de saltar entre 2-3 tamaños fijos por breakpoint) y un padding propio en los 4 lados, separándolo del borde del header.

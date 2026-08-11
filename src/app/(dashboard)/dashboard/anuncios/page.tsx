@@ -17,11 +17,13 @@ function StatCard({
   value,
   hint,
   href,
+  linkLabel = "Ver",
 }: {
   label: string;
   value: React.ReactNode;
   hint?: string;
   href: string;
+  linkLabel?: "Ver" | "Comprar";
 }) {
   return (
     <Card>
@@ -30,7 +32,7 @@ function StatCard({
         <p className="text-2xl font-extrabold text-navy">{value}</p>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
         <Link href={href} className="mt-2 text-xs font-medium text-primary hover:underline">
-          Ver
+          {linkLabel}
         </Link>
       </CardContent>
     </Card>
@@ -60,7 +62,12 @@ export default async function AdministradorAnunciosPage() {
       <AnunciosSubNav />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Publicaciones disponibles" value={available} href="/dashboard/compra" />
+        <StatCard
+          label="Publicaciones disponibles"
+          value={available}
+          href="/dashboard/compra?vista=individual"
+          linkLabel="Comprar"
+        />
         <StatCard
           label="Publicaciones realizadas"
           value={profile?.activationCount ?? 0}
@@ -75,7 +82,8 @@ export default async function AdministradorAnunciosPage() {
           label="Destacados disponibles"
           value={pendingVouchers}
           hint="Créditos de destacado sin usar"
-          href="/dashboard/compra"
+          href="/dashboard/compra?vista=individual"
+          linkLabel="Comprar"
         />
         <StatCard
           label="Reservadas"
@@ -92,7 +100,8 @@ export default async function AdministradorAnunciosPage() {
               ? `Vence el ${dateFormatter.format(subscription.expiresAt)}`
               : undefined
           }
-          href="/dashboard/compra"
+          href="/dashboard/compra?vista=suscripcion"
+          linkLabel="Comprar"
         />
       </div>
     </div>

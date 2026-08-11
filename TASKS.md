@@ -325,6 +325,15 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado con requests reales: clases fluidas del logo en el HTML, rutas del dashboard sin 500
 - [ ] Prueba manual en navegador (visual, imprescindible: que el logo no se corte a ningún ancho, colores del sub-nav, layout de 3 columnas de Mis compras y su orden en mobile)
 
+## Fase 30 — Logo (medida real esta vez), y Mis compras con sub-nav propio (solicitado por el usuario)
+- [x] Logo: bounding box real medido desde los 5 `<path>` de relleno (no solo los `clipPath`) — recorte definitivo, archivo renombrado a `logo-v2.svg` (evita servir una copia vieja en caché)
+- [x] Colores por sección del sub-nav revertidos a uno solo
+- [x] Resumen: "Publicaciones disponibles"/"Destacados disponibles"/"Suscripción" con link "Comprar" en vez de "Ver"
+- [x] Mis compras: sub-nav propio (`ComprasTabs`) con Pago individual/Suscripciones (pestañas en la misma página, full width) e Historial de pagos (página aparte, `/dashboard/compra/historial`, con botón Volver)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: `logo-v2.svg` 200, `logo.svg` viejo 404, rutas nuevas de Mis compras/historial sin 500
+- [ ] Prueba manual en navegador (visual, imprescindible: que el logo se vea completo esta vez, y el sub-nav de Mis compras)
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
