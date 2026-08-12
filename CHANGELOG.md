@@ -5,6 +5,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-12) — "Tipo de cuenta" se muda a su propia pantalla, "Cambiar contraseña" arriba de "Cerrar sesión"
+- El selector de tipo de cuenta (Particular/Agencia/Concesionaria) sale de "Mi perfil" y pasa a `/dashboard/perfil/tipo-cuenta` (nueva página, mismo patrón que "Cambiar contraseña"), con su propio componente `AccountTypeForm` — reusa `updateProfileAction` sin tocar su lógica, mandando como campos ocultos lo que no se edita en esa pantalla (nombre/DNI/teléfono y, si ya era negocio, ciudad/provincia/descripción/dirección/sitio web) para no perderlos.
+- Panel "Mi cuenta": nuevo ítem "Tipo de cuenta" (con el valor actual — Particular/Agencia/Concesionaria — pintado en azul debajo del label) justo arriba de "Cambiar contraseña", que a su vez queda inmediatamente arriba de "Cerrar sesión".
+- `tsc --noEmit`, `eslint`, `npm run build` limpios (nueva ruta `/dashboard/perfil/tipo-cuenta` registrada).
+- Verificado con requests reales: `/dashboard/perfil`, `/dashboard/perfil/tipo-cuenta`, `/dashboard/perfil/password` sin errores de servidor.
+
 ### Removed (2026-08-12) — "Método de pago" (ya no tiene función con Mercado Pago real)
 - La pantalla `/dashboard/pago` solo guardaba un alias de texto libre, sin conexión real a nada — con Checkout Pro el medio de pago se elige siempre dentro del checkout de Mercado Pago. Se saca por completo: la página, el link en el panel "Mi cuenta" y en la barra lateral del dashboard, el formulario (`AddPaymentMethodForm`), la Server Action (`addPaymentMethodAction`) y las funciones de datos (`getPaymentMethods`/`addPaymentMethod`).
 - **Se borra también la tabla `PaymentMethod`** de la base (estaba vacía — confirmado antes de migrar) — migración `DROP TABLE`, no solo se deja de usar.

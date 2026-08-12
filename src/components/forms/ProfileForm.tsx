@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
-import { ACCOUNT_TYPE_OPTIONS, isBusinessAccountType, type AccountTypeValue } from "@/lib/constants";
-import { cn, getInitials } from "@/lib/utils";
+import { isBusinessAccountType, type AccountTypeValue } from "@/lib/constants";
+import { getInitials } from "@/lib/utils";
 
 const initialState: ProfileActionState = undefined;
 
@@ -36,7 +36,7 @@ type ProfileFormProps = {
 };
 
 export function ProfileForm({
-  accountType: initialAccountType,
+  accountType,
   email,
   dni,
   fullName,
@@ -46,7 +46,9 @@ export function ProfileForm({
   onSaved,
 }: ProfileFormProps) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
-  const [accountType, setAccountType] = React.useState<AccountTypeValue>(initialAccountType);
+  // El tipo de cuenta ya no se cambia desde acá — tiene su propia pantalla
+  // (link "Tipo de cuenta" en el panel "Mi cuenta"), así que siempre se
+  // manda el valor actual sin cambios.
   const isBusiness = isBusinessAccountType(accountType);
 
   const [preview, setPreview] = React.useState<string | null>(avatarUrl);
@@ -119,33 +121,6 @@ export function ProfileForm({
         <p className="mt-1 text-xs text-muted-foreground">
           El email no se puede modificar desde acá. Escribinos a soporte si necesitás corregirlo.
         </p>
-      </div>
-
-      <div>
-        <Label>Tipo de cuenta</Label>
-        <div className="grid grid-cols-3 gap-1 rounded-lg bg-surface-muted p-1 text-sm font-medium">
-          {ACCOUNT_TYPE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setAccountType(option.value)}
-              className={cn(
-                "rounded-md px-2 py-2 text-center transition-colors",
-                accountType === option.value
-                  ? "bg-surface text-primary shadow-card"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        {isBusinessAccountType(initialAccountType) && accountType === "PARTICULAR" && (
-          <p className="mt-2 text-xs text-warning">
-            Al pasar a Particular se elimina el perfil de{" "}
-            {initialAccountType === "AGENCIA" ? "agencia" : "concesionaria"} (razón social, CUIT, ubicación).
-          </p>
-        )}
       </div>
 
       {isBusiness && (

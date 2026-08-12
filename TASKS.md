@@ -391,6 +391,14 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 39 — "Tipo de cuenta" a su propia pantalla, orden del panel "Mi cuenta" (solicitado por el usuario)
+- [x] Nueva página `/dashboard/perfil/tipo-cuenta` (`AccountTypeForm`) — reusa `updateProfileAction` sin tocar su lógica
+- [x] Sacado el selector de tipo de cuenta de "Mi perfil" (`ProfileForm` ahora recibe el tipo fijo, ya no se cambia ahí)
+- [x] Panel "Mi cuenta": ítem "Tipo de cuenta" con el valor actual en azul, arriba de "Cambiar contraseña" (que queda justo arriba de "Cerrar sesión")
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales sin errores de servidor
+- [ ] Prueba manual en navegador (imprescindible): cambiar el tipo de cuenta desde la pantalla nueva (Particular→Agencia y viceversa) y confirmar que no se pierden ciudad/provincia/descripción/dirección/sitio web al ir y volver
+
 ## Fase 38 — Se elimina "Método de pago" (solicitado por el usuario)
 - [x] Página `/dashboard/pago`, link en "Mi cuenta" y en la barra lateral, formulario, Server Action y funciones de datos eliminadas
 - [x] Tabla `PaymentMethod` borrada de la base (estaba vacía) — migración aplicada

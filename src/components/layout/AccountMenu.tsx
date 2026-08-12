@@ -3,10 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
-import { KeyRound, LayoutDashboard, LogOut, PlusCircle, Repeat, ShoppingBag, User as UserIcon } from "lucide-react";
+import { IdCard, KeyRound, LayoutDashboard, LogOut, PlusCircle, Repeat, ShoppingBag, User as UserIcon } from "lucide-react";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { getMyProfileAction } from "@/server/actions/profile.actions";
+import { accountTypeLabel } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type Profile = Awaited<ReturnType<typeof getMyProfileAction>>;
@@ -126,6 +127,16 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
               {item.label}
             </Link>
           ))}
+
+          {profile?.accountType && (
+            <Link href="/dashboard/perfil/tipo-cuenta" onClick={() => setOpen(false)} className={itemClasses}>
+              <IdCard className="h-5 w-5 text-muted-foreground" />
+              <span className="flex flex-col">
+                <span>Tipo de cuenta</span>
+                <span className="text-xs font-semibold text-primary">{accountTypeLabel(profile.accountType)}</span>
+              </span>
+            </Link>
+          )}
 
           {BOTTOM_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
