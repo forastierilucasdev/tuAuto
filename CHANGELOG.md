@@ -5,6 +5,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-12) — Accesos directos a comprar en "Mi cuenta" y Mis compras más visible en mobile
+- **Panel "Mi cuenta"**: nueva sección "Anuncios" (con separador y etiqueta) debajo de "Administrador de anuncios", con 3 accesos directos: "Compra individual" (`/dashboard/compra?vista=individual`), "Compra suscripción" (`/dashboard/compra?vista=suscripcion`) y "Método de pago" (se mueve acá abajo, antes estaba suelto en la lista) — evita tener que entrar primero a "Administrador de anuncios" para llegar a comprar.
+- **`ComprasTabs` (Pago individual/Suscripciones/Historial de pagos) en mobile**: las 3 opciones pasan a estar siempre visibles, apiladas y del mismo ancho, con un indicador tipo radio button de cuál está activa — antes había que tocar un botón para abrir un panel de filtros aparte y recién ahí ver las opciones. El componente ya no necesita estado de cliente (`"use client"` sacado, queda como Server Component).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+- Verificado con requests reales: `/dashboard/compra` y `/dashboard/compra?vista=suscripcion` sin errores de servidor.
+
 ### Added (2026-08-12) — Integración real de Mercado Pago (Checkout Pro)
 Reemplaza la aprobación de pagos instantánea/simulada por el flujo real de Mercado Pago, en los 4 tipos de compra (pack de publicación, suscripción, destacar por día, combo).
 - **Flujo de dos fases**: iniciar la compra (`purchaseX()` en `payments.ts`) ahora solo valida (lo mismo que antes, sin relajar nada), crea el `Payment` en `PENDING` y una preferencia de Checkout Pro, y redirige al comprador a Mercado Pago — nada se acredita todavía. La confirmación real llega por webhook (`POST /api/mercadopago/webhook`, nuevo Route Handler), que vuelve a pedirle el pago a la API de Mercado Pago por ID (nunca confía en el body de la notificación) y recién ahí aplica el efecto (`applyPaymentEffect`) — acreditar cupo, escribir la suscripción, destacar la publicación.

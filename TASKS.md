@@ -390,6 +390,13 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [ ] Prueba manual imprescindible (necesita un despliegue o un túnel — Mercado Pago no puede notificar a un `localhost`): completar un pago de punta a punta con un comprador de prueba de Mercado Pago y confirmar que el cupo/destacado se acredita después de volver del checkout
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba por las de producción
 
+## Fase 36 — Accesos directos a comprar y Mis compras más visible en mobile (solicitado por el usuario)
+- [x] Panel "Mi cuenta": sección "Anuncios" nueva con Compra individual / Compra suscripción / Método de pago
+- [x] `ComprasTabs` en mobile: 3 opciones siempre visibles y apiladas (antes escondidas en un panel de filtros), con indicador radio de la activa
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales sin errores de servidor
+- [ ] Prueba manual en navegador (visual, imprescindible): panel "Mi cuenta" con la sección nueva, y las 3 filas de Mis compras en mobile
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)

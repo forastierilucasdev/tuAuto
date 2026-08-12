@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
-import { CreditCard, KeyRound, LayoutDashboard, LogOut, PlusCircle, User as UserIcon } from "lucide-react";
+import { CreditCard, KeyRound, LayoutDashboard, LogOut, PlusCircle, Repeat, ShoppingBag, User as UserIcon } from "lucide-react";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { getMyProfileAction } from "@/server/actions/profile.actions";
@@ -13,12 +13,20 @@ type Profile = Awaited<ReturnType<typeof getMyProfileAction>>;
 
 // "Publicar anuncio" no vive acá — se renderiza aparte, justo debajo del
 // nombre, como acceso destacado (ver más abajo).
-const MENU_ITEMS = [
+const TOP_ITEMS = [
   { href: "/dashboard/perfil", label: "Mi perfil", icon: UserIcon },
   { href: "/dashboard/anuncios", label: "Administrador de anuncios", icon: LayoutDashboard },
-  { href: "/dashboard/pago", label: "Método de pago", icon: CreditCard },
-  { href: "/dashboard/perfil/password", label: "Cambiar contraseña", icon: KeyRound },
 ];
+
+// Accesos directos a comprar, para no tener que pasar por "Administrador de
+// anuncios" primero — van agrupados bajo su propia etiqueta.
+const ANUNCIOS_ITEMS = [
+  { href: "/dashboard/compra?vista=individual", label: "Compra individual", icon: ShoppingBag },
+  { href: "/dashboard/compra?vista=suscripcion", label: "Compra suscripción", icon: Repeat },
+  { href: "/dashboard/pago", label: "Método de pago", icon: CreditCard },
+];
+
+const BOTTOM_ITEMS = [{ href: "/dashboard/perfil/password", label: "Cambiar contraseña", icon: KeyRound }];
 
 const itemClasses =
   "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-surface-muted";
@@ -104,7 +112,23 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
           </>
         )}
         <nav className="space-y-1">
-          {MENU_ITEMS.map((item) => (
+          {TOP_ITEMS.map((item) => (
+            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              {item.label}
+            </Link>
+          ))}
+
+          <hr className="my-2 border-border" />
+          <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Anuncios</p>
+          {ANUNCIOS_ITEMS.map((item) => (
+            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              {item.label}
+            </Link>
+          ))}
+
+          {BOTTOM_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
               <item.icon className="h-5 w-5 text-muted-foreground" />
               {item.label}
