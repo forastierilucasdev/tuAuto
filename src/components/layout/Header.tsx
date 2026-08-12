@@ -42,7 +42,7 @@ export function Header() {
                   contenedor sin ancho propio terminaba usando el tamaño intrínseco del SVG en vez de achicarse — se veía enorme. Altura fluida (clamp): crece o
                   se achica con el ancho de la ventana en vez de saltar entre 2-3 tamaños fijos por breakpoint. El padding del Link le da un margen de aire
                   respecto al borde del header en los 4 lados. */}
-              <img src="/logo-v2.svg" alt={SITE_NAME} className="h-[clamp(1.75rem,3vw,2.25rem)] w-auto" />
+              <img src="/logo-v3.svg" alt={SITE_NAME} className="h-[clamp(1.75rem,3vw,2.25rem)] w-auto" />
             </Link>
             <div className="md:hidden">
               <AccountMenu ref={accountMenuRef} />
@@ -52,7 +52,7 @@ export function Header() {
           <div className="flex items-center justify-center">
             <Link href="/" className="flex items-center rounded-md p-1.5 md:hidden">
               {/* eslint-disable-next-line @next/next/no-img-element -- ver comentario arriba */}
-              <img src="/logo-v2.svg" alt={SITE_NAME} className="h-[clamp(1.5rem,6vw,2rem)] w-auto" />
+              <img src="/logo-v3.svg" alt={SITE_NAME} className="h-[clamp(1.5rem,6vw,2rem)] w-auto" />
             </Link>
             <nav className="hidden items-center gap-1 md:flex">
               {NAV_LINKS.map((link) => {

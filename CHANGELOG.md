@@ -5,6 +5,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-12) — Logo: recorte definitivo con detección automática del contenido
+- Los 3 recortes anteriores (basados en leer a mano las coordenadas de los `<path>` del SVG) seguían cortando el texto "Motores" por arriba. Método nuevo, mucho más confiable: se renderiza el SVG completo a una imagen grande (sin ningún recorte, viewBox de sobra) y se usa `sharp` (ya instalado, usado por Next.js para optimizar imágenes) para detectar automáticamente el recuadro real del contenido no-blanco (`trim()`), en vez de adivinar coordenadas leyendo el XML. El bounding box resultante se convierte de vuelta a unidades del `viewBox` y se aplica con un margen chico (3%/6%).
+- Confirmado visualmente esta vez (se generó y revisó una vista previa PNG antes de aplicar el cambio) — el logo completo "MotoresYA" con el ícono del auto se ve entero, sin cortes.
+- Archivo renombrado `logo-v2.svg` → `logo-v3.svg` (de nuevo, para evitar que quede una copia vieja cacheada en el navegador o el CDN).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+- Verificado con requests reales: `logo-v3.svg` → 200, `logo-v2.svg` viejo → 404, la home ya referencia el archivo nuevo.
+
 ### Changed (2026-08-12) — "Tipo de cuenta" se muda a su propia pantalla, "Cambiar contraseña" arriba de "Cerrar sesión"
 - El selector de tipo de cuenta (Particular/Agencia/Concesionaria) sale de "Mi perfil" y pasa a `/dashboard/perfil/tipo-cuenta` (nueva página, mismo patrón que "Cambiar contraseña"), con su propio componente `AccountTypeForm` — reusa `updateProfileAction` sin tocar su lógica, mandando como campos ocultos lo que no se edita en esa pantalla (nombre/DNI/teléfono y, si ya era negocio, ciudad/provincia/descripción/dirección/sitio web) para no perderlos.
 - Panel "Mi cuenta": nuevo ítem "Tipo de cuenta" (con el valor actual — Particular/Agencia/Concesionaria — pintado en azul debajo del label) justo arriba de "Cambiar contraseña", que a su vez queda inmediatamente arriba de "Cerrar sesión".
