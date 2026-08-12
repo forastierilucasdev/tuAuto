@@ -18,14 +18,6 @@ export async function getPlanByCode(code: string) {
   return prisma.plan.findUnique({ where: { code } });
 }
 
-export async function getPaymentMethods(userId: string) {
-  return prisma.paymentMethod.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
-}
-
-export async function addPaymentMethod(userId: string, label: string) {
-  return prisma.paymentMethod.create({ data: { userId, label } });
-}
-
 /** Usado solo por el webhook de Mercado Pago para resolver `external_reference` (= `Payment.id`). */
 export async function getPaymentById(id: string) {
   return prisma.payment.findUnique({ where: { id } });

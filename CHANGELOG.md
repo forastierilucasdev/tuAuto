@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Removed (2026-08-12) — "Método de pago" (ya no tiene función con Mercado Pago real)
+- La pantalla `/dashboard/pago` solo guardaba un alias de texto libre, sin conexión real a nada — con Checkout Pro el medio de pago se elige siempre dentro del checkout de Mercado Pago. Se saca por completo: la página, el link en el panel "Mi cuenta" y en la barra lateral del dashboard, el formulario (`AddPaymentMethodForm`), la Server Action (`addPaymentMethodAction`) y las funciones de datos (`getPaymentMethods`/`addPaymentMethod`).
+- **Se borra también la tabla `PaymentMethod`** de la base (estaba vacía — confirmado antes de migrar) — migración `DROP TABLE`, no solo se deja de usar.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios (`/dashboard/pago` ya no aparece en la lista de rutas).
+
 ### Added (2026-08-12) — Comprobante de pago en Historial de pagos
 - Cada pago **Aprobado** en Historial de pagos suma un link "Ver comprobante" que abre un resumen propio de Motoresya (no es una factura legal — para eso hace falta facturación electrónica AFIP, un proyecto aparte): operación, comprador (nombre y correo), tipo de anuncio (Publicación/Suscripción/Destacar por día/Combo, derivado del código de plan), la publicación relacionada si corresponde, descripción, fecha, hora, medio de pago, estado y monto. Pagos pendientes/rechazados no tienen comprobante (no hubo una transacción real que respaldar).
 - Nuevo componente `ComprobanteButton` (client), nueva consulta `getFullProfile` reusada en `historial/page.tsx` para el nombre/correo del comprador.

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
-import { CreditCard, KeyRound, LayoutDashboard, LogOut, PlusCircle, Repeat, ShoppingBag, User as UserIcon } from "lucide-react";
+import { KeyRound, LayoutDashboard, LogOut, PlusCircle, Repeat, ShoppingBag, User as UserIcon } from "lucide-react";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { getMyProfileAction } from "@/server/actions/profile.actions";
@@ -23,7 +23,6 @@ const TOP_ITEMS = [
 const ANUNCIOS_ITEMS = [
   { href: "/dashboard/compra?vista=individual", label: "Compra individual", icon: ShoppingBag },
   { href: "/dashboard/compra?vista=suscripcion", label: "Compra suscripción", icon: Repeat },
-  { href: "/dashboard/pago", label: "Método de pago", icon: CreditCard },
 ];
 
 const BOTTOM_ITEMS = [{ href: "/dashboard/perfil/password", label: "Cambiar contraseña", icon: KeyRound }];

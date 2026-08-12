@@ -9,7 +9,6 @@ const NAV = [
   // "Mis publicaciones" y "Mis compras" viven bajo esta sección (AnunciosSubNav
   // arriba de esas 2 páginas) — se resalta acá también, no son ítems propios.
   { href: "/dashboard/anuncios", label: "Administrador de anuncios", activePrefixes: ["/dashboard/anuncios", "/dashboard/publicaciones", "/dashboard/compra"] },
-  { href: "/dashboard/pago", label: "Método de pago" },
 ];
 
 /**

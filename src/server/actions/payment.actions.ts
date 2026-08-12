@@ -1,35 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
 import { requireSession } from "@/server/auth-helpers";
 import {
-  addPaymentMethod,
   purchaseFeatureByDays,
   purchaseFeatureCombo,
   purchasePublicationPack,
   purchaseSubscription,
 } from "@/server/data/payments";
-
-export type PaymentActionState = { error?: string; success?: boolean } | undefined;
-
-export async function addPaymentMethodAction(
-  _prevState: PaymentActionState,
-  formData: FormData
-): Promise<PaymentActionState> {
-  const session = await auth();
-  if (!session?.user) return { error: "Tenés que iniciar sesión." };
-
-  const label = String(formData.get("label") ?? "").trim();
-  if (label.length < 3) {
-    return { error: "Ingresá un alias válido (mínimo 3 caracteres)." };
-  }
-
-  await addPaymentMethod(session.user.id, label);
-  revalidatePath("/dashboard/pago");
-  return { success: true };
-}
 
 /** `<form action>`: crea el pago pendiente + la preferencia y redirige al checkout de Mercado Pago. */
 export async function purchaseSubscriptionAction(formData: FormData) {

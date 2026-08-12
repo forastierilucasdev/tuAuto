@@ -112,7 +112,6 @@ model User {
 
   agencyProfile        AgencyProfile?
   listings             Listing[]
-  paymentMethods       PaymentMethod[]
   payments             Payment[]
   verificationRequests VerificationRequest[]
 
@@ -273,15 +272,6 @@ model Plan {
   createdAt    DateTime @default(now())
 }
 
-model PaymentMethod {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider  String   @default("mercadopago")
-  label     String
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
 
 model Payment {
   id                String        @id @default(cuid())
