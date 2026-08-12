@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-12) — Comprobante de pago en Historial de pagos
+- Cada pago **Aprobado** en Historial de pagos suma un link "Ver comprobante" que abre un resumen propio de Motoresya (no es una factura legal — para eso hace falta facturación electrónica AFIP, un proyecto aparte): operación, comprador (nombre y correo), tipo de anuncio (Publicación/Suscripción/Destacar por día/Combo, derivado del código de plan), la publicación relacionada si corresponde, descripción, fecha, hora, medio de pago, estado y monto. Pagos pendientes/rechazados no tienen comprobante (no hubo una transacción real que respaldar).
+- Nuevo componente `ComprobanteButton` (client), nueva consulta `getFullProfile` reusada en `historial/page.tsx` para el nombre/correo del comprador.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Changed (2026-08-12) — Accesos directos a comprar en "Mi cuenta" y Mis compras más visible en mobile
 - **Panel "Mi cuenta"**: nueva sección "Anuncios" (con separador y etiqueta) debajo de "Administrador de anuncios", con 3 accesos directos: "Compra individual" (`/dashboard/compra?vista=individual`), "Compra suscripción" (`/dashboard/compra?vista=suscripcion`) y "Método de pago" (se mueve acá abajo, antes estaba suelto en la lista) — evita tener que entrar primero a "Administrador de anuncios" para llegar a comprar.
 - **`ComprasTabs` (Pago individual/Suscripciones/Historial de pagos) en mobile**: las 3 opciones pasan a estar siempre visibles, apiladas y del mismo ancho, con un indicador tipo radio button de cuál está activa — antes había que tocar un botón para abrir un panel de filtros aparte y recién ahí ver las opciones. El componente ya no necesita estado de cliente (`"use client"` sacado, queda como Server Component).
