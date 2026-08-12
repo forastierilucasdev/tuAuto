@@ -300,6 +300,12 @@ model Payment {
   // segundo `create()` va a fallar por esta constraint.
   providerPaymentId String?       @unique
   description       String
+  // Efecto a aplicar cuando el webhook confirme el pago (qué publicaciones/
+  // días destacar, o la elección del combo) — el pago se crea PENDING sin
+  // acreditar nada; `applyPaymentEffect` lee esto recién cuando Mercado Pago
+  // avisa que se aprobó. Los planes sin líneas (pack/suscripción) no la usan,
+  // el efecto sale de `Plan` por `planCode`.
+  metadata          Json?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 

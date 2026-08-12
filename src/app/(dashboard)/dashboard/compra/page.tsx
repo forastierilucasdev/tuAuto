@@ -35,10 +35,7 @@ export default async function MisComprasPage(props: PageProps<"/dashboard/compra
         <BackButton />
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Mis compras</h1>
-      <p className="mt-1 mb-6 text-muted-foreground">
-        Esta sección funciona con datos simulados — la integración real con Mercado Pago todavía está
-        pendiente (ver ARCHITECTURE.md).
-      </p>
+      <p className="mt-1 mb-6 text-muted-foreground">Pagás de forma segura con Mercado Pago.</p>
 
       <AnunciosSubNav />
       <ComprasTabs active={vista} />

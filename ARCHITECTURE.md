@@ -39,6 +39,7 @@ src/
     (dashboard)/dashboard/ perfil/, publicaciones/, publicaciones/nueva/,
                            publicaciones/[id]/editar/, pago/  (todas protegidas)
     api/auth/[...nextauth]/  Route Handler de Auth.js
+    api/mercadopago/webhook/  Route Handler que recibe las notificaciones de pago de Mercado Pago
   components/
     Providers.tsx        SessionProvider de Auth.js (client) que envuelve toda la app en el layout raíz
     ui/                  Button, Input, PasswordInput, Select, Textarea, Label, Card, Badge, FieldError,
@@ -57,7 +58,8 @@ src/
     prisma.ts            Singleton de PrismaClient (con adapter-pg, usa DATABASE_URL)
     supabase-storage.ts  Subida a Supabase Storage (server-only): fotos de publicaciones (bucket público "listing-images"), avatares (bucket público "avatars"), fotos de portada de agencia/concesionaria (bucket público "agency-logos") y DNI de verificación (bucket privado "verifications")
     image-validation.ts  Whitelist de tipos MIME y validación de tamaño, compartida entre publicaciones y avatar
-    rate-limit.ts        Limitador in-memory (ver limitaciones en ERRORES.md)
+    rate-limit.ts        Limitador (Redis/Upstash si hay credenciales, si no in-memory — ver ARCHITECTURE.md §6)
+    mercadopago.ts        Cliente de Mercado Pago (server-only): crea preferencias de Checkout Pro, pide pagos por ID, valida la firma del webhook
     constants.ts         VEHICLE_TYPES, CONDITION_OPTIONS, TRANSMISSION_OPTIONS, ACCOUNT_TYPE_LABELS, NAV_LINKS, SITE_NAME
     validations/         shared.ts (primitivas: email, password, dni, cuit, teléfono, nombre — única fuente de verdad),
                          auth.ts, profile.ts (incluye changePasswordSchema), listing.ts
@@ -65,6 +67,7 @@ src/
   server/
     data/                Único punto de acceso a Prisma: users, listings, taxonomy, agencies, payments
     actions/             Server Actions ("use server"): validan con Zod y delegan a /data
+    auth-helpers.ts       requireSession() — centraliza el chequeo de sesión repetido en las Server Actions
   generated/prisma/      Prisma Client generado (gitignored)
   proxy.ts               Protección de rutas /dashboard (reemplaza a "middleware.ts" en Next 16)
 prisma/
@@ -117,23 +120,40 @@ Año, Condición, Precio y Kilometraje son atributos de `Listing`, filtrados din
 - **Idempotencia de pagos**: `Payment.providerPaymentId` es `@unique` (nulos permitidos) — pensado para cuando el webhook real de Mercado Pago pueda reenviar la misma notificación más de una vez (entrega at-least-once): un segundo `create()` con el mismo ID de pago del proveedor va a fallar por esta constraint en vez de acreditar cupo/destacado dos veces. Hoy los pagos son mock e instantáneos (ver sección 7), así que esto es preparación, no protección de un flujo real todavía.
 - **Datos de pago**: no se solicita número de tarjeta ni CVV, ni siquiera simulado — solo un alias de método de pago.
 
-## 7. Pagos y monetización — estado actual (mock)
+## 7. Pagos y monetización — Mercado Pago real (Checkout Pro)
 
-Todo funciona end-to-end pero con **aprobación simulada e instantánea**, sin conexión real a la API de Mercado Pago. Reemplaza un modelo provisorio anterior (packs 1/5/10/20, "Destacar anuncio" a precio fijo, suscripción de concesionaria sin efecto real) por el definitivo, repartido en 3 secciones bajo **Administrador de anuncios** (panel "Mi cuenta" y barra lateral del dashboard):
+Los 4 tipos de compra (pack de publicación, suscripción, destacar por día, combo) usan **Checkout Pro** de verdad — nada se acredita hasta que Mercado Pago confirma el pago por webhook. Repartido en 3 secciones bajo **Administrador de anuncios** (panel "Mi cuenta" y barra lateral del dashboard):
 
-- **Resumen** (`/dashboard/anuncios`): agregación de solo lectura (publicaciones disponibles/realizadas/destacadas, destacados pendientes, estado de la suscripción, reservadas/inactivas/vendidas) — no agrega lógica nueva, reusa `getAvailablePublications`/`getOwnerListingGroups`/`getSubscriptionStatus`.
+- **Resumen** (`/dashboard/anuncios`): agregación de solo lectura (publicaciones disponibles/realizadas/destacadas, destacados pendientes, estado de la suscripción, reservadas/inactivas/vendidas) — reusa `getAvailablePublications`/`getOwnerListingGroups`/`getSubscriptionStatus`.
 - **Mis publicaciones** (`/dashboard/publicaciones`): sin cambios de fondo, ver sección 4.
-- **Mis compras** (`/dashboard/compra`, `?modo=individual|suscripcion`):
-  - **Pago individual**:
-    - `purchasePublicationPack()` (plan `PUBLICATIONS_PACK_1`, "Publicación 30 días", $4.999): suma 1 a `User.purchasedPublications` (permanente) — sin cambios respecto al mecanismo de packs original, solo se dejó un único tamaño.
-    - `purchaseFeatureCombo()` (plan `PUBLICATION_30D_FEATURED_7D`, $14.999): dos ramas, elegidas en un wizard cliente (`FeatureComboWizard`). Con `{ listingId }` aplica directo sobre una publicación propia activa: renueva su vencimiento (vía `loadActivationContext`, respeta una suscripción activa) y la destaca 7 días — no toca cupo, es un boost pago directo. Con `{ forNextListing: true }` suma 1 a `purchasedPublications` y 1 a `pendingFeaturedVouchers`, que se consumen solos en la próxima publicación/reactivación.
-    - `purchaseFeatureByDays()` (plan `FEATURE_PER_DAY`, precio **por día**): recibe un array de `{listingId, days}` (carrito, componente cliente `DestacarPorDiasCarrito` con botón "Agregar elemento"). Cada línea se valida server-side (propiedad, ACTIVE, no destacada ya) y `days` se recorta a `[1, días restantes de esa publicación]` — si una sola línea no es válida, se rechaza el lote completo en vez de cobrar parcial. El botón "Destacar anuncio" de cada card en "Mis publicaciones" linkea acá con `?destacar={listingId}` para preseleccionarla.
-    - También vive acá "Anuncios destacados" (vista previa de lo ya destacado) e "Historial de pagos" (antes en Método de pago).
-  - **Suscripciones**: `purchaseSubscription()` (planes `SUBSCRIPTION_5/10/30`, 5/10/30 publicaciones por 30 días) **escribe** (no suma) `User.subscriptionQuota`/`subscriptionExpiresAt` — contratar una suscripción nueva reemplaza la anterior, no se apilan. El cupo es temporal: se pierde solo si `subscriptionExpiresAt` pasa sin renovarse (ver `loadActivationContext`, sección 4).
-- **Método de pago** (`/dashboard/pago`): solo métodos guardados (`PaymentMethod`, alias visible, nunca datos de tarjeta).
-- Los `Plan` disponibles vienen del seed: `PUBLICATIONS_PACK_1`, `PUBLICATION_30D_FEATURED_7D`, `FEATURE_PER_DAY`, `SUBSCRIPTION_5/10/30`. Los códigos del modelo provisorio (`PUBLICATIONS_PACK_5/10/20`, `FEATURE_LISTING`, `FEATURE_15D`, `FEATURE_30D`, `AGENCY_MONTHLY`) quedan con `isActive: false` — no se borran porque el historial de pagos (`Payment.planCode`) sigue apuntando a esos códigos para compras ya hechas.
+- **Mis compras** (`/dashboard/compra`, `?vista=individual|suscripcion`): Pago individual (pack $4.999, combo $14.999, destacar por día $999/día con carrito) y Suscripciones (planes `SUBSCRIPTION_5/10/30`). "Historial de pagos" en `/dashboard/compra/historial`.
+- **Método de pago** (`/dashboard/pago`): solo un alias visible (`PaymentMethod`) — no está conectado a Mercado Pago, el pago en sí siempre pasa por el checkout al confirmar una compra.
 
-Para integrar Mercado Pago real: reemplazar las funciones de `server/data/payments.ts` por la creación de una preferencia de pago (Checkout Pro) y agregar un Route Handler `app/api/mercadopago/webhook/route.ts` que reciba la confirmación y recién ahí aplique el efecto (destacar/publicar/suscribir), en vez de aprobar instantáneamente. Variables ya reservadas en `.env.example`: `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`.
+### Flujo de dos fases
+
+1. **Iniciar la compra** (`src/server/data/payments.ts`, `purchasePublicationPack`/`purchaseSubscription`/`purchaseFeatureByDays`/`purchaseFeatureCombo`): corren las mismas validaciones de siempre (ownership, cupo, elegibilidad de la publicación, tope de 30 líneas en el carrito de destacar) y calculan el precio **siempre desde `Plan.price`** en la base, nunca desde el cliente. Crean un `Payment` en `PENDING` — si la compra tiene líneas (destacar por día) o una elección (combo), se guardan en `Payment.metadata` (`Json?`) para que el webhook sepa qué aplicar. Después crean una preferencia en Mercado Pago (`lib/mercadopago.ts`, `createMercadoPagoPreference`, SDK oficial `mercadopago`) con `external_reference = Payment.id` y devuelven la URL de checkout (`init_point`/`sandbox_init_point`). Nada se acredita todavía.
+2. **Confirmación** (`POST /api/mercadopago/webhook`, Route Handler): Mercado Pago notifica cuando el pago cambia de estado. El handler **nunca confía en el body de la notificación** — vuelve a pedirle el pago a la API de Mercado Pago por ID (`getMercadoPagoPayment`), valida la firma `x-signature` (HMAC-SHA256 con `MERCADOPAGO_WEBHOOK_SECRET`, `verifyMercadoPagoSignature`), busca el `Payment` local por `external_reference` y, si el estado real es `approved`, llama `applyPaymentEffect(paymentId, providerPaymentId)` — recién ahí se acredita cupo, se destaca la publicación, etc. Si es `rejected`/`cancelled`, `markPaymentRejected`. Si es `pending`/`in_process`, no hace nada (espera la próxima notificación). Siempre responde `200` rápido (Mercado Pago reintenta si no hay `2xx`), salvo firma inválida (`401`).
+
+### Redirección al checkout: dos patrones distintos
+
+- `purchasePublicationPackAction`/`purchaseSubscriptionAction` son `<form action={...}>` — `redirect(url)` de Next.js funciona ahí incluso hacia un dominio externo.
+- `purchaseFeatureByDaysAction`/`purchaseFeatureComboAction` se invocan directo desde el cliente (no `<form>`, necesitan mandar un array/objeto) — **no pueden usar `redirect()`** (mismo bug ya documentado en Fase 21/`ERRORES.md`: no resuelve la promesa del lado del cliente). Devuelven `{ redirectUrl }` y el componente cliente navega con `window.location.href`.
+
+### Idempotencia
+
+`Payment.providerPaymentId` es `@unique` (nulos permitidos) — si dos notificaciones del mismo pago llegan en paralelo, la segunda transacción falla por la constraint (capturado en el webhook como "ya procesado", no como error). Además, `applyPaymentEffect`/`markPaymentRejected` chequean `Payment.status === "PENDING"` antes de tocar nada, así que un reintento sobre un pago ya `APPROVED`/`REJECTED` no hace nada.
+
+### `applyPaymentEffect` — motor de efectos, despachado por `planCode`
+
+- Packs (`Plan.quantity` sin `durationDays`) → `purchasedPublications: {increment: quantity}`.
+- Suscripciones (`Plan.quantity` + `durationDays`) → escribe (no suma) `subscriptionQuota`/`subscriptionExpiresAt`.
+- `FEATURE_PER_DAY` → recorre `metadata.items` (carrito), aplica `featured`/`featuredUntil` por línea. Si una publicación dejó de ser elegible entre que se inició el pago y se confirmó (se vendió, venció), esa línea se saltea con un `console.warn` — **limitación conocida**: no hay reembolso automático, caso raro (ventana de minutos).
+- `PUBLICATION_30D_FEATURED_7D` (combo) → misma lógica de siempre (`forNextListing` vs `listingId`), leyendo la elección desde `metadata.choice`.
+
+### Otras limitaciones conocidas
+
+- **Notificaciones a `localhost`**: Mercado Pago no puede llamar al webhook de un servidor local — solo se puede probar en un despliegue real (Vercel) o con un túnel (ej. ngrok). En dev, `getBaseUrl()` (`lib/mercadopago.ts`) arma URLs `http://localhost`, así que además se omite `auto_return` en la preferencia (Mercado Pago rechaza `auto_return` sin un `back_url.success` https válido) — el comprador vuelve tocando el botón del checkout en vez de que redirija solo, pero el flujo de ida (crear preferencia, pagar) sí se puede probar en dev.
+- **`MERCADOPAGO_WEBHOOK_SECRET` opcional**: si no está configurado (falta crearlo en el panel de Mercado Pago), el webhook procesa las notificaciones igual pero sin validar la firma, con un `console.warn`.
 
 ## 8. Despliegue
 

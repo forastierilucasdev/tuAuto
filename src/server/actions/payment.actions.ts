@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { requireSession } from "@/server/auth-helpers";
@@ -30,40 +31,38 @@ export async function addPaymentMethodAction(
   return { success: true };
 }
 
-function revalidateAfterPurchase() {
-  revalidatePath("/dashboard/anuncios");
-  revalidatePath("/dashboard/compra");
-  revalidatePath("/dashboard/compra/historial");
-  revalidatePath("/dashboard/publicaciones");
-  revalidatePath("/catalogo");
-}
-
+/** `<form action>`: crea el pago pendiente + la preferencia y redirige al checkout de Mercado Pago. */
 export async function purchaseSubscriptionAction(formData: FormData) {
   const session = await requireSession();
 
   const planCode = String(formData.get("planCode") ?? "");
   if (!planCode) return;
 
-  await purchaseSubscription(session.user.id, planCode);
-  revalidateAfterPurchase();
+  const redirectUrl = await purchaseSubscription(session.user.id, planCode);
+  redirect(redirectUrl);
 }
 
+/** `<form action>`: crea el pago pendiente + la preferencia y redirige al checkout de Mercado Pago. */
 export async function purchasePublicationPackAction(formData: FormData) {
   const session = await requireSession();
 
   const planCode = String(formData.get("planCode") ?? "");
   if (!planCode) return;
 
-  await purchasePublicationPack(session.user.id, planCode);
-  revalidateAfterPurchase();
+  const redirectUrl = await purchasePublicationPack(session.user.id, planCode);
+  redirect(redirectUrl);
 }
 
-export type PurchaseFeatureState = { error?: string } | undefined;
+export type PurchaseFeatureState = { error: string } | { redirectUrl: string } | undefined;
 
 /**
  * "Destacar publicación por día" — invocada directo desde el cliente (no
  * `<form action>`) para poder mandar un array de líneas del carrito; por eso
- * devuelve estado en vez de redirigir (mismo motivo que `reactivateListingAction`).
+ * NO puede usar `redirect()` acá (mismo bug ya documentado y resuelto en
+ * Fase 21/ERRORES.md: `redirect()` dentro de una Server Action invocada
+ * directo desde el cliente no resuelve la promesa del lado del cliente).
+ * Devuelve la URL de Mercado Pago y el cliente navega con
+ * `window.location.href`.
  */
 export async function purchaseFeatureByDaysAction(
   items: { listingId: string; days: number }[]
@@ -71,29 +70,25 @@ export async function purchaseFeatureByDaysAction(
   const session = await requireSession();
 
   try {
-    await purchaseFeatureByDays(session.user.id, items);
+    const redirectUrl = await purchaseFeatureByDays(session.user.id, items);
+    return { redirectUrl };
   } catch (error) {
     if (error instanceof Error) return { error: error.message };
     throw error;
   }
-
-  revalidateAfterPurchase();
-  return undefined;
 }
 
-/** "Publicación 30 días + 7 días destacado" — wizard con 2 ramas, ver `purchaseFeatureCombo`. */
+/** "Publicación 30 días + 7 días destacado" — wizard con 2 ramas, ver `purchaseFeatureCombo`. Mismo motivo que arriba: no usa `redirect()`. */
 export async function purchaseFeatureComboAction(
   choice: { listingId: string } | { forNextListing: true }
 ): Promise<PurchaseFeatureState> {
   const session = await requireSession();
 
   try {
-    await purchaseFeatureCombo(session.user.id, choice);
+    const redirectUrl = await purchaseFeatureCombo(session.user.id, choice);
+    return { redirectUrl };
   } catch (error) {
     if (error instanceof Error) return { error: error.message };
     throw error;
   }
-
-  revalidateAfterPurchase();
-  return undefined;
 }

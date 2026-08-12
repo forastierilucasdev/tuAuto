@@ -17,8 +17,8 @@ export default async function PagoPage() {
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Método de pago</h1>
       <p className="mt-1 mb-6 text-muted-foreground">
-        Esta sección funciona con datos simulados — la integración real con Mercado Pago todavía está
-        pendiente (ver ARCHITECTURE.md).
+        Un alias para identificar cómo pagás — el pago en sí siempre se hace en el checkout de
+        Mercado Pago al confirmar una compra, no hace falta cargar datos de tarjeta acá.
       </p>
 
       <section>

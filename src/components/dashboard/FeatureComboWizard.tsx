@@ -20,26 +20,27 @@ export function FeatureComboWizard({ listings }: { listings: FeaturableListing[]
   const [selectedListingId, setSelectedListingId] = React.useState(listings[0]?.id ?? "");
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string>();
-  const [done, setDone] = React.useState(false);
 
   function openWizard() {
     setStep("choice");
     setSelectedListingId(listings[0]?.id ?? "");
     setError(undefined);
-    setDone(false);
     setOpen(true);
   }
 
+  // La confirmación real la aplica el webhook de Mercado Pago cuando el pago
+  // se apruebe — acá solo se redirige al checkout, no queda nada acreditado
+  // todavía.
   async function confirmForNext() {
     setSubmitting(true);
     setError(undefined);
     const result = await purchaseFeatureComboAction({ forNextListing: true });
-    setSubmitting(false);
-    if (result?.error) {
+    if (result && "error" in result) {
+      setSubmitting(false);
       setError(result.error);
       return;
     }
-    setDone(true);
+    if (result) window.location.href = result.redirectUrl;
   }
 
   async function confirmForExisting() {
@@ -47,12 +48,12 @@ export function FeatureComboWizard({ listings }: { listings: FeaturableListing[]
     setSubmitting(true);
     setError(undefined);
     const result = await purchaseFeatureComboAction({ listingId: selectedListingId });
-    setSubmitting(false);
-    if (result?.error) {
+    if (result && "error" in result) {
+      setSubmitting(false);
       setError(result.error);
       return;
     }
-    setDone(true);
+    if (result) window.location.href = result.redirectUrl;
   }
 
   return (
@@ -62,16 +63,7 @@ export function FeatureComboWizard({ listings }: { listings: FeaturableListing[]
       </Button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Publicación 30 días + 7 días destacado">
-        {done ? (
-          <div className="space-y-3 text-sm">
-            <p className="text-foreground">¡Listo! Se aplicó correctamente.</p>
-            <div className="flex justify-end">
-              <Button type="button" size="sm" onClick={() => setOpen(false)}>
-                Aceptar
-              </Button>
-            </div>
-          </div>
-        ) : step === "choice" ? (
+        {step === "choice" ? (
           <div className="space-y-3 text-sm">
             <p className="text-muted-foreground">¿Cómo querés usarlo?</p>
             <button
@@ -119,7 +111,7 @@ export function FeatureComboWizard({ listings }: { listings: FeaturableListing[]
                 Atrás
               </Button>
               <Button type="button" size="sm" disabled={submitting} onClick={confirmForExisting}>
-                {submitting ? "Procesando..." : "Confirmar"}
+                {submitting ? "Redirigiendo..." : "Confirmar"}
               </Button>
             </div>
           </div>

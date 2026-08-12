@@ -15,7 +15,8 @@ Al reportar un problema a soporte, incluir siempre:
 
 ## Limitaciones conocidas de esta etapa (prototipo)
 
-- **Pagos**: la sección "Método de pago" aprueba los pagos de forma instantánea y simulada. La integración real con Mercado Pago está pendiente (ver `ARCHITECTURE.md`, sección Pagos).
+- **Pagos con credenciales de prueba**: la integración con Mercado Pago (Checkout Pro) es real, pero hoy corre con credenciales de **prueba** (`MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY` de una cuenta de test) — falta cambiarlas por las credenciales de producción antes de cobrar de verdad. Además, `MERCADOPAGO_WEBHOOK_SECRET` todavía no está configurado (se consigue en el panel de Mercado Pago Developers al cargar la URL del webhook), así que las notificaciones se procesan sin validar la firma. Mercado Pago no puede notificar a un `localhost`, así que la confirmación real de un pago solo se puede probar en un despliegue (Vercel) o con un túnel (ver `ARCHITECTURE.md`, sección Pagos).
+- **Sin reembolso automático**: si una publicación deja de ser elegible para destacar (se vendió, venció) en la ventana entre que se inició el pago y Mercado Pago lo confirmó, esa línea del pago no se aplica pero el dinero ya se cobró — no hay reembolso automático, hay que resolverlo a mano si pasa.
 - **Blog**: contenido de ejemplo, no editorial real todavía.
 - **Rate limiting**: usa Redis (Upstash) si `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` están en el entorno; si no, cae a un límite en memoria que no es 100% preciso con múltiples instancias (ver `ARCHITECTURE.md`). En este proyecto todavía no se cargaron las credenciales de Upstash — falta crear la base en upstash.com y agregarlas a `.env`/Vercel.
 - **Sin rol de administrador**: agregar nuevas marcas/modelos al catálogo requiere una modificación manual de los datos semilla (`prisma/seed.ts`), no hay panel de administración todavía.

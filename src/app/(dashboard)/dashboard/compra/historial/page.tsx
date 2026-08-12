@@ -7,6 +7,12 @@ import { formatCurrency } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Historial de pagos" };
 
+const STATUS_LABEL: Record<string, string> = {
+  APPROVED: "Aprobado",
+  PENDING: "Pendiente",
+  REJECTED: "Rechazado",
+};
+
 export default async function HistorialDePagosPage() {
   const session = await auth();
   const history = await getPaymentHistory(session!.user.id);
@@ -17,10 +23,7 @@ export default async function HistorialDePagosPage() {
         <BackButton />
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Historial de pagos</h1>
-      <p className="mt-1 mb-6 text-muted-foreground">
-        Esta sección funciona con datos simulados — la integración real con Mercado Pago todavía está
-        pendiente (ver ARCHITECTURE.md).
-      </p>
+      <p className="mt-1 mb-6 text-muted-foreground">Pagos procesados con Mercado Pago.</p>
 
       {history.length === 0 ? (
         <p className="text-sm text-muted-foreground">Todavía no hiciste ningún pago.</p>
@@ -46,7 +49,7 @@ export default async function HistorialDePagosPage() {
                         payment.status === "APPROVED" ? "success" : payment.status === "REJECTED" ? "danger" : "default"
                       }
                     >
-                      {payment.status}
+                      {STATUS_LABEL[payment.status] ?? payment.status}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">{payment.createdAt.toLocaleDateString("es-AR")}</td>

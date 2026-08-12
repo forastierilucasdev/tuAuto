@@ -374,10 +374,26 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [ ] Cargar credenciales reales de Upstash Redis en producción (ver Fase 33)
 - [ ] Validar el contenido real (magic bytes) de las fotos subidas, no solo el `Content-Type` declarado por el cliente — queda para una ronda futura
 
+## Fase 35 — Integración real de Mercado Pago, Checkout Pro (solicitado por el usuario)
+- [x] Flujo de dos fases: `purchaseX()` valida y crea el `Payment` PENDING + preferencia de Checkout Pro; el webhook confirma y recién ahí aplica el efecto (`applyPaymentEffect`)
+- [x] `Payment.metadata` (`Json?`, nuevo) guarda las líneas del carrito/elección del combo para cuando el webhook confirme
+- [x] Un solo `Payment` por checkout en "destacar por día" (antes uno por línea)
+- [x] Webhook `POST /api/mercadopago/webhook`: nunca confía en el body, vuelve a pedirle el pago a la API por ID, valida `x-signature`, idempotente (`providerPaymentId` único + chequeo de `status`)
+- [x] Pantalla `/dashboard/compra/resultado` (vuelta del checkout)
+- [x] `DestacarPorDiasCarrito`/`FeatureComboWizard`: `window.location.href` en vez de `redirect()` (no funciona en Server Actions invocadas directo desde el cliente)
+- [x] Historial de pagos: traducidos los badges de estado
+- [x] Credenciales de prueba cargadas en `.env` (Access Token + Public Key)
+- [x] Migración `Payment.metadata` aplicada contra la base real
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado contra la base real (script desechable: los 4 tipos de plan, idempotencia, rechazo — revertido al terminar) y contra la API real de Mercado Pago (creación de preferencia, webhook con ID inexistente/tópico irrelevante/GET)
+- [ ] Falta cargar `MERCADOPAGO_WEBHOOK_SECRET` desde el panel de Mercado Pago Developers (Webhooks → configurar URL → firma secreta)
+- [ ] Prueba manual imprescindible (necesita un despliegue o un túnel — Mercado Pago no puede notificar a un `localhost`): completar un pago de punta a punta con un comprador de prueba de Mercado Pago y confirmar que el cupo/destacado se acredita después de volver del checkout
+- [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba por las de producción
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
-- [ ] Integración real de Mercado Pago (reemplaza la aprobación simulada)
+- [x] Integración real de Mercado Pago (Fase 35 — con credenciales de prueba; falta cambiar a producción y probar el webhook en un despliegue real)
 - [x] Content-Security-Policy (Fase 34 — sin nonces, `'unsafe-inline'`; ver limitación conocida en `ERRORES.md`)
 - [x] Rate limiting distribuido (Redis / Upstash) para despliegue multi-instancia (Fase 33 — código listo, faltan credenciales reales)
 - [x] Permitir borrar/reordenar fotos ya subidas al editar una publicación (Fase 32)

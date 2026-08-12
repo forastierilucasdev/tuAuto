@@ -5,7 +5,6 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Label } from "@/components/ui/Label";
-import { Modal } from "@/components/ui/Modal";
 import { purchaseFeatureByDaysAction } from "@/server/actions/payment.actions";
 import { formatCurrency } from "@/lib/utils";
 
@@ -38,7 +37,6 @@ export function DestacarPorDiasCarrito({
   const [cart, setCart] = React.useState<CartItem[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string>();
-  const [done, setDone] = React.useState(false);
 
   const selected = eligible.find((l) => l.id === selectedId);
   const maxDays = selected?.maxDays ?? 1;
@@ -81,13 +79,15 @@ export function DestacarPorDiasCarrito({
     setSubmitting(true);
     setError(undefined);
     const result = await purchaseFeatureByDaysAction(cart.map((i) => ({ listingId: i.listingId, days: i.days })));
-    setSubmitting(false);
-    if (result?.error) {
+    if (result && "error" in result) {
+      setSubmitting(false);
       setError(result.error);
       return;
     }
-    setCart([]);
-    setDone(true);
+    // La confirmación real la aplica el webhook de Mercado Pago cuando el
+    // pago se apruebe — acá solo se redirige al checkout, no queda nada
+    // acreditado todavía.
+    if (result) window.location.href = result.redirectUrl;
   }
 
   return (
@@ -160,19 +160,8 @@ export function DestacarPorDiasCarrito({
       {error && <p className="text-danger">{error}</p>}
 
       <Button type="button" className="w-full" disabled={cart.length === 0 || submitting} onClick={confirmPurchase}>
-        {submitting ? "Procesando..." : cart.length > 0 ? `Confirmar compra — Total ${formatCurrency(total)}` : "Confirmar compra"}
+        {submitting ? "Redirigiendo a Mercado Pago..." : cart.length > 0 ? `Confirmar compra — Total ${formatCurrency(total)}` : "Confirmar compra"}
       </Button>
-
-      <Modal open={done} onClose={() => setDone(false)} title="¡Listo!">
-        <div className="space-y-3">
-          <p className="text-foreground">Se destacaron tus publicaciones correctamente.</p>
-          <div className="flex justify-end">
-            <Button type="button" size="sm" onClick={() => setDone(false)}>
-              Aceptar
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
