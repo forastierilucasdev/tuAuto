@@ -13,11 +13,10 @@ import { cn } from "@/lib/utils";
 type Profile = Awaited<ReturnType<typeof getMyProfileAction>>;
 
 // "Publicar anuncio" no vive acá — se renderiza aparte, justo debajo del
-// nombre, como acceso destacado (ver más abajo).
-const TOP_ITEMS = [
-  { href: "/dashboard/perfil", label: "Mi perfil", icon: UserIcon },
-  { href: "/dashboard/anuncios", label: "Administrador de anuncios", icon: LayoutDashboard },
-];
+// nombre, como acceso destacado (ver más abajo). "Tipo de cuenta" va entre
+// "Mi perfil" y "Administrador de anuncios" (se renderiza aparte, más
+// abajo, porque necesita mostrar el valor actual).
+const ADMIN_ITEM = { href: "/dashboard/anuncios", label: "Administrador de anuncios", icon: LayoutDashboard };
 
 // Accesos directos a comprar, para no tener que pasar por "Administrador de
 // anuncios" primero — van agrupados bajo su propia etiqueta.
@@ -112,21 +111,10 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
           </>
         )}
         <nav className="space-y-1">
-          {TOP_ITEMS.map((item) => (
-            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
-              <item.icon className="h-5 w-5 text-muted-foreground" />
-              {item.label}
-            </Link>
-          ))}
-
-          <hr className="my-2 border-border" />
-          <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Anuncios</p>
-          {ANUNCIOS_ITEMS.map((item) => (
-            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
-              <item.icon className="h-5 w-5 text-muted-foreground" />
-              {item.label}
-            </Link>
-          ))}
+          <Link href="/dashboard/perfil" onClick={() => setOpen(false)} className={itemClasses}>
+            <UserIcon className="h-5 w-5 text-muted-foreground" />
+            Mi perfil
+          </Link>
 
           {profile?.accountType && (
             <Link href="/dashboard/perfil/tipo-cuenta" onClick={() => setOpen(false)} className={itemClasses}>
@@ -137,6 +125,20 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
               </span>
             </Link>
           )}
+
+          <Link href={ADMIN_ITEM.href} onClick={() => setOpen(false)} className={itemClasses}>
+            <ADMIN_ITEM.icon className="h-5 w-5 text-muted-foreground" />
+            {ADMIN_ITEM.label}
+          </Link>
+
+          <hr className="my-2 border-border" />
+          <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Anuncios</p>
+          {ANUNCIOS_ITEMS.map((item) => (
+            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              {item.label}
+            </Link>
+          ))}
 
           {BOTTOM_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
