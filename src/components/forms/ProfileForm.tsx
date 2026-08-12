@@ -2,15 +2,14 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Camera, ImagePlus } from "lucide-react";
+import { Camera } from "lucide-react";
 import { updateProfileAction, type ProfileActionState } from "@/server/actions/profile.actions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
-import { isBusinessAccountType, type AccountTypeValue } from "@/lib/constants";
 import { getInitials } from "@/lib/utils";
+import type { AccountTypeValue } from "@/lib/constants";
 
 const initialState: ProfileActionState = undefined;
 
@@ -21,13 +20,16 @@ type ProfileFormProps = {
   fullName: string;
   phone: string;
   avatarUrl: string | null;
+  // Los datos de negocio (razón social, CUIT, ciudad, etc.) ya no se editan
+  // acá — viven en la pantalla "Tipo de cuenta" — pero igual hay que
+  // reenviarlos sin cambios en cada guardado, porque `updateProfileAction`
+  // los pide completos para las cuentas de negocio.
   agency?: {
     businessName: string;
     cuit: string;
     city: string | null;
     province: string | null;
     description: string | null;
-    logoUrl: string | null;
     address: string | null;
     website: string | null;
   } | null;
@@ -46,16 +48,10 @@ export function ProfileForm({
   onSaved,
 }: ProfileFormProps) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
-  // El tipo de cuenta ya no se cambia desde acá — tiene su propia pantalla
-  // (link "Tipo de cuenta" en el panel "Mi cuenta"), así que siempre se
-  // manda el valor actual sin cambios.
-  const isBusiness = isBusinessAccountType(accountType);
 
   const [preview, setPreview] = React.useState<string | null>(avatarUrl);
   const [nameForInitials, setNameForInitials] = React.useState(fullName);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [logoPreview, setLogoPreview] = React.useState<string | null>(agency?.logoUrl ?? null);
-  const logoInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (state?.success) onSaved?.();
@@ -67,14 +63,20 @@ export function ProfileForm({
     if (file) setPreview(URL.createObjectURL(file));
   }
 
-  function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (file) setLogoPreview(URL.createObjectURL(file));
-  }
-
   return (
     <form action={formAction} className="max-w-xl space-y-5">
       <input type="hidden" name="accountType" value={accountType} />
+      {agency && (
+        <>
+          <input type="hidden" name="businessName" value={agency.businessName} />
+          <input type="hidden" name="cuit" value={agency.cuit} />
+          <input type="hidden" name="city" value={agency.city ?? ""} />
+          <input type="hidden" name="province" value={agency.province ?? ""} />
+          <input type="hidden" name="description" value={agency.description ?? ""} />
+          <input type="hidden" name="address" value={agency.address ?? ""} />
+          <input type="hidden" name="website" value={agency.website ?? ""} />
+        </>
+      )}
 
       <div>
         <Label>Foto de perfil</Label>
@@ -123,23 +125,6 @@ export function ProfileForm({
         </p>
       </div>
 
-      {isBusiness && (
-        <>
-          <div>
-            <Label htmlFor="businessName">
-              Nombre de la {accountType === "CONCESIONARIA" ? "concesionaria" : "agencia"}
-            </Label>
-            <Input id="businessName" name="businessName" defaultValue={agency?.businessName} required />
-            <FieldError messages={state?.fieldErrors?.businessName} />
-          </div>
-          <div>
-            <Label htmlFor="cuit">CUIT</Label>
-            <Input id="cuit" name="cuit" placeholder="30-71234567-1" defaultValue={agency?.cuit} required />
-            <FieldError messages={state?.fieldErrors?.cuit} />
-          </div>
-        </>
-      )}
-
       <div>
         <Label htmlFor="fullName">Apellido y nombre</Label>
         <Input
@@ -164,81 +149,6 @@ export function ProfileForm({
           <FieldError messages={state?.fieldErrors?.phone} />
         </div>
       </div>
-
-      {isBusiness && (
-        <>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="city">Ciudad</Label>
-              <Input id="city" name="city" defaultValue={agency?.city ?? ""} />
-            </div>
-            <div>
-              <Label htmlFor="province">Provincia</Label>
-              <Input id="province" name="province" defaultValue={agency?.province ?? ""} />
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea id="description" name="description" defaultValue={agency?.description ?? ""} />
-          </div>
-
-          <div className="space-y-5 rounded-2xl border border-border bg-surface-muted/40 p-4">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Datos comerciales</p>
-              <p className="text-xs text-muted-foreground">
-                Se muestran en tu página pública de {accountType === "CONCESIONARIA" ? "concesionaria" : "agencia"}.
-              </p>
-            </div>
-
-            <div>
-              <Label>Foto de portada</Label>
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  className="group relative h-20 w-32 shrink-0 overflow-hidden rounded-xl border border-border bg-surface"
-                >
-                  {logoPreview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={logoPreview}
-                      alt="Foto de portada"
-                      className="h-full w-full object-cover object-center"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-muted-foreground">
-                      <ImagePlus className="h-6 w-6" />
-                    </span>
-                  )}
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white">
-                    <Camera className="h-5 w-5" />
-                  </span>
-                </button>
-                <p className="text-xs text-muted-foreground">
-                  Se muestra en la tarjeta y en el encabezado de tu página pública.
-                </p>
-              </div>
-              <input
-                ref={logoInputRef}
-                type="file"
-                name="logo"
-                accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-                className="hidden"
-                onChange={handleLogoChange}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="address">Dirección</Label>
-              <Input id="address" name="address" defaultValue={agency?.address ?? ""} />
-            </div>
-            <div>
-              <Label htmlFor="website">Sitio web</Label>
-              <Input id="website" name="website" placeholder="https://" defaultValue={agency?.website ?? ""} />
-            </div>
-          </div>
-        </>
-      )}
 
       {state?.error && <p className="text-sm text-danger">{state.error}</p>}
       {state?.success && <p className="text-sm text-success">Perfil actualizado correctamente.</p>}

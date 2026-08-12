@@ -394,6 +394,7 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 ## Fase 39 — "Tipo de cuenta" a su propia pantalla, orden del panel "Mi cuenta" (solicitado por el usuario)
 - [x] Nueva página `/dashboard/perfil/tipo-cuenta` (`AccountTypeForm`) — reusa `updateProfileAction` sin tocar su lógica
 - [x] Sacado el selector de tipo de cuenta de "Mi perfil" (`ProfileForm` ahora recibe el tipo fijo, ya no se cambia ahí)
+- [x] Ajuste: todos los datos de negocio (nombre, CUIT, ciudad, provincia, descripción, foto de portada, dirección, sitio web) se mudan también a "Tipo de cuenta" — "Mi perfil" queda solo con lo personal
 - [x] Panel "Mi cuenta": ítem "Tipo de cuenta" con el valor actual en azul, arriba de "Cambiar contraseña" (que queda justo arriba de "Cerrar sesión")
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
 - [x] Verificado con requests reales sin errores de servidor
