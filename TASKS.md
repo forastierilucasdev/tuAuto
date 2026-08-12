@@ -386,9 +386,10 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Migración `Payment.metadata` aplicada contra la base real
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
 - [x] Verificado contra la base real (script desechable: los 4 tipos de plan, idempotencia, rechazo — revertido al terminar) y contra la API real de Mercado Pago (creación de preferencia, webhook con ID inexistente/tópico irrelevante/GET)
-- [ ] Falta cargar `MERCADOPAGO_WEBHOOK_SECRET` desde el panel de Mercado Pago Developers (Webhooks → configurar URL → firma secreta)
-- [ ] Prueba manual imprescindible (necesita un despliegue o un túnel — Mercado Pago no puede notificar a un `localhost`): completar un pago de punta a punta con un comprador de prueba de Mercado Pago y confirmar que el cupo/destacado se acredita después de volver del checkout
-- [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba por las de producción
+- [x] `MERCADOPAGO_WEBHOOK_SECRET` cargado (panel de Mercado Pago Developers → Webhooks → "Pagos (legacy)" → clave secreta)
+- [x] **Prueba manual de punta a punta contra el deploy real (`motores-ya-seven.vercel.app`)**: compra de "Publicación 30 días" ($4.999) con un comprador de prueba → aprobado en Mercado Pago → webhook recibido y validado → `Payment` pasó a `APPROVED` en Historial de pagos → `purchasedPublications` se incrementó en 1 en Resumen. Flujo confirmado end-to-end.
+- [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
+- [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
 ## Fase 36 — Accesos directos a comprar y Mis compras más visible en mobile (solicitado por el usuario)
 - [x] Panel "Mi cuenta": sección "Anuncios" nueva con Compra individual / Compra suscripción / Método de pago
