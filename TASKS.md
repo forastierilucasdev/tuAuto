@@ -340,10 +340,18 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
 - [ ] Prueba manual en navegador: cambiar la cantidad de días de un elemento ya agregado al carrito y confirmar que el Total sube/baja, y que los dos botones mobile miden igual
 
+## Fase 32 — Reordenar fotos ya subidas al editar (solicitado por el usuario)
+- [x] `ListingForm`: flechas ◀ ▶ en cada foto ya subida para reordenar (se guarda al toque), primera foto marcada como portada con la misma estrella que las fotos nuevas
+- [x] Fix: `attachListingImages` ya no colisiona el `order` de fotos nuevas con el de las existentes al editar
+- [x] `reorderListingImages`/`reorderListingImagesAction`: valida ownership y que la lista coincide con las fotos actuales
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado contra la base real (script desechable, revertido al terminar) y con requests reales sin errores de servidor
+- [ ] Prueba manual en navegador: reordenar fotos al editar una publicación con varias fotos, confirmar que la portada cambia en el catálogo
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
 - [ ] Integración real de Mercado Pago (reemplaza la aprobación simulada)
 - [ ] Content-Security-Policy estricta
-- [ ] Rate limiting distribuido (Redis / Upstash) para despliegue multi-instancia
-- [ ] Permitir borrar/reordenar fotos ya subidas al editar una publicación (hoy solo se pueden agregar más)
+- [ ] Rate limiting distribuido (Redis / Upstash) para despliegue multi-instancia — en curso
+- [x] Permitir borrar/reordenar fotos ya subidas al editar una publicación (Fase 32)

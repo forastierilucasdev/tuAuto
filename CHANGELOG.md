@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-12) — Reordenar fotos ya subidas al editar una publicación
+- **`ListingForm`**, paso "Fotos" al editar: cada foto ya subida suma flechas (◀ ▶) para moverla de posición; la primera pasa a marcarse con la misma estrella "portada" que ya usaban las fotos nuevas del wizard. Se guarda al toque (server action), sin esperar a "Guardar cambios" — mismo criterio que ya tenía "Quitar foto".
+- **Fix relacionado**: `attachListingImages` asignaba `order` empezando siempre en 0 para las fotos nuevas — al editar y agregar más fotos, sus `order` chocaban con los de las que ya estaban (ambos arrancaban en 0). Ahora arranca después del `order` más alto existente.
+- Nuevo `reorderListingImages`/`reorderListingImagesAction`, valida ownership y que la lista recibida coincide exactamente con las fotos actuales antes de persistir.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+- Verificado con un script desechable contra la base real: `attachListingImages` ya no duplica `order` al agregar sobre fotos existentes, reordenar invierte y persiste correctamente, y una lista con un id inválido se rechaza sin tocar la base — revertido al terminar.
+- Verificado con requests reales: `/dashboard/publicaciones`, `/dashboard/publicaciones/nueva`, `/catalogo` sin errores de servidor.
+
 ### Fixed (2026-08-11) — Total del carrito de "Destacar por día" desincronizado, y ancho de los botones mobile de sub-nav
 - **`DestacarPorDiasCarrito`**: si la publicación seleccionada ya estaba agregada al carrito, tocar +/- en el contador de días cambiaba el precio de la vista previa pero no la línea ya cargada — había que sacarla y volver a "Agregar elemento" para que el Total reflejara el cambio. Ahora, si la publicación elegida ya está en el carrito, +/- actualiza esa línea (y el Total) en vivo.
 - **`AnunciosSubNav`/`ComprasTabs` (botón mobile)**: los dos botones que abren cada sub-nav ("Mis compras", "Pago individual") medían distinto porque se ajustaban al largo del texto (`inline-flex`). Pasan a `w-full` para que ambos ocupen el mismo ancho.

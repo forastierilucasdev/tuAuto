@@ -433,8 +433,13 @@ export async function createListing(input: {
 }
 
 export async function attachListingImages(listingId: string, urls: string[]) {
+  // Arranca después del `order` más alto ya existente — si no, al editar y
+  // agregar fotos nuevas, sus `order` (0,1,2…) chocaban con los de las fotos
+  // que ya estaban (que también empiezan en 0).
+  const { _max } = await prisma.image.aggregate({ where: { listingId }, _max: { order: true } });
+  const startOrder = (_max.order ?? -1) + 1;
   await prisma.image.createMany({
-    data: urls.map((url, order) => ({ listingId, url, order })),
+    data: urls.map((url, i) => ({ listingId, url, order: startOrder + i })),
   });
 }
 
@@ -454,6 +459,26 @@ export async function deleteListingImage(listingId: string, imageId: string, use
   const imageCount = await prisma.image.count({ where: { listingId } });
   if (imageCount <= 1) throw new LastImageError();
   await prisma.image.deleteMany({ where: { id: imageId, listingId } });
+}
+
+export class ImageMismatchError extends Error {
+  constructor() {
+    super("La lista de fotos no coincide con las fotos actuales — recargá la página e intentá de nuevo.");
+    this.name = "ImageMismatchError";
+  }
+}
+
+/** La portada es siempre la primera del array — `orderedImageIds` viene ya reordenado del cliente. */
+export async function reorderListingImages(listingId: string, orderedImageIds: string[], userId: string) {
+  await assertOwnership(listingId, userId);
+  const images = await prisma.image.findMany({ where: { listingId }, select: { id: true } });
+  const validIds = new Set(images.map((i) => i.id));
+  if (orderedImageIds.length !== images.length || !orderedImageIds.every((id) => validIds.has(id))) {
+    throw new ImageMismatchError();
+  }
+  await prisma.$transaction(
+    orderedImageIds.map((id, order) => prisma.image.update({ where: { id }, data: { order } }))
+  );
 }
 
 async function assertOwnership(listingId: string, userId: string) {

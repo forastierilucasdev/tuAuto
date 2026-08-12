@@ -11,10 +11,12 @@ import {
   createListing,
   deleteListingImage,
   deleteOwnedListing,
+  ImageMismatchError,
   LastImageError,
   markListingAsSold,
   QuotaExceededError,
   reactivateListing,
+  reorderListingImages,
   setListingPauseStatus,
   updateOwnedListing,
 } from "@/server/data/listings";
@@ -245,6 +247,27 @@ export async function deleteListingImageAction(listingId: string, imageId: strin
 
   revalidatePath("/dashboard/publicaciones");
   revalidatePath(`/dashboard/publicaciones/${listingId}/editar`);
+}
+
+export type ReorderImagesState = { error?: string } | undefined;
+
+export async function reorderListingImagesAction(
+  listingId: string,
+  orderedImageIds: string[]
+): Promise<ReorderImagesState> {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  try {
+    await reorderListingImages(listingId, orderedImageIds, session.user.id);
+  } catch (error) {
+    if (error instanceof ImageMismatchError) return { error: error.message };
+    throw error;
+  }
+
+  revalidatePath("/dashboard/publicaciones");
+  revalidatePath(`/dashboard/publicaciones/${listingId}/editar`);
+  revalidatePath("/catalogo");
 }
 
 export async function deleteListingAction(formData: FormData) {

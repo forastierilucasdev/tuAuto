@@ -4,7 +4,7 @@ import * as React from "react";
 import { useActionState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, ImagePlus, Star, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ImagePlus, Star, X } from "lucide-react";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -27,6 +27,7 @@ import { cn, formatCurrency, formatKm } from "@/lib/utils";
 import {
   createListingAction,
   deleteListingImageAction,
+  reorderListingImagesAction,
   updateListingAction,
   type ListingActionState,
 } from "@/server/actions/listing.actions";
@@ -135,6 +136,8 @@ export function ListingForm(props: ListingFormProps) {
   );
   const [deletingImageId, setDeletingImageId] = React.useState<string | null>(null);
   const [deleteImageError, setDeleteImageError] = React.useState<string>();
+  const [reordering, setReordering] = React.useState(false);
+  const [reorderError, setReorderError] = React.useState<string>();
   const [photos, setPhotos] = React.useState<{ file: File; preview: string }[]>([]);
   const remainingSlots = Math.max(0, MAX_IMAGES - existingImages.length - photos.length);
 
@@ -149,6 +152,26 @@ export function ListingForm(props: ListingFormProps) {
       return;
     }
     setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+  }
+
+  async function moveExistingImage(index: number, direction: -1 | 1) {
+    if (!isEdit || reordering) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= existingImages.length) return;
+
+    const reordered = [...existingImages];
+    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+
+    const previous = existingImages;
+    setExistingImages(reordered);
+    setReorderError(undefined);
+    setReordering(true);
+    const result = await reorderListingImagesAction(props.listingId, reordered.map((img) => img.id));
+    setReordering(false);
+    if (result?.error) {
+      setExistingImages(previous);
+      setReorderError(result.error);
+    }
   }
 
   // --- Observaciones ---
@@ -595,11 +618,24 @@ export function ListingForm(props: ListingFormProps) {
 
             {existingImages.length > 0 && (
               <div className="mb-3">
-                <p className="mb-2 text-xs text-muted-foreground">Fotos actuales</p>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Fotos actuales — la primera es la portada. Usá las flechas para reordenar.
+                </p>
                 <div className="flex flex-wrap gap-2">
-                  {existingImages.map((img) => (
-                    <div key={img.id} className="relative h-20 w-28 overflow-hidden rounded-lg border border-border">
+                  {existingImages.map((img, index) => (
+                    <div
+                      key={img.id}
+                      className={cn(
+                        "relative h-20 w-28 overflow-hidden rounded-lg border-2",
+                        index === 0 ? "border-primary" : "border-border"
+                      )}
+                    >
                       <Image src={img.url} alt="" fill sizes="112px" className="object-cover" />
+                      {index === 0 && (
+                        <span className="absolute left-1 top-1 rounded-full bg-primary p-1 text-primary-foreground">
+                          <Star className="h-3 w-3 fill-current" />
+                        </span>
+                      )}
                       <button
                         type="button"
                         onClick={() => removeExistingImage(img.id)}
@@ -609,10 +645,31 @@ export function ListingForm(props: ListingFormProps) {
                       >
                         <X className="h-3 w-3" />
                       </button>
+                      <div className="absolute bottom-1 left-1 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveExistingImage(index, -1)}
+                          disabled={index === 0 || reordering}
+                          title="Mover antes"
+                          className="rounded-full bg-black/50 p-1 text-white hover:bg-black/70 disabled:opacity-30"
+                        >
+                          <ChevronLeft className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveExistingImage(index, 1)}
+                          disabled={index === existingImages.length - 1 || reordering}
+                          title="Mover después"
+                          className="rounded-full bg-black/50 p-1 text-white hover:bg-black/70 disabled:opacity-30"
+                        >
+                          <ChevronRight className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
                 {deleteImageError && <p className="mt-2 text-xs text-danger">{deleteImageError}</p>}
+                {reorderError && <p className="mt-2 text-xs text-danger">{reorderError}</p>}
               </div>
             )}
 
