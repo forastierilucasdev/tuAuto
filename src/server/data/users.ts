@@ -29,6 +29,20 @@ export async function findUserForAuth(email: string) {
   return prisma.user.findUnique({ where: { email } });
 }
 
+/**
+ * Usado por el callback `jwt` de Auth.js en cada request para invalidar
+ * sesiones cuya `sessionVersion` quedó vieja (cambio de contraseña) o cuya
+ * cuenta se desactivó — `null` significa "sesión ya no válida".
+ */
+export async function getSessionVersion(userId: string): Promise<number | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { sessionVersion: true, isActive: true },
+  });
+  if (!user || !user.isActive) return null;
+  return user.sessionVersion;
+}
+
 export async function getFullProfile(id: string) {
   return prisma.user.findUnique({
     where: { id },
@@ -192,8 +206,9 @@ export async function convertToParticularAccount(
   return toSafeUser(user);
 }
 
+/** Incrementa `sessionVersion` junto con el hash — invalida cualquier sesión (JWT) emitida antes del cambio. */
 export async function updatePassword(id: string, passwordHash: string) {
-  await prisma.user.update({ where: { id }, data: { passwordHash } });
+  await prisma.user.update({ where: { id }, data: { passwordHash, sessionVersion: { increment: 1 } } });
 }
 
 export async function createVerificationRequest(input: {

@@ -357,10 +357,28 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [ ] Falta cargar credenciales reales de Upstash (crear la base en upstash.com) y agregarlas a `.env`/Vercel para que el rate limiting sea realmente distribuido en producción
 - [ ] Prueba manual en navegador: intentar loguearse mal más de 5 veces seguidas y confirmar el mensaje de "demasiados intentos"
 
+## Fase 34 — Auditoría de seguridad integral y correcciones, previo a Mercado Pago (solicitado por el usuario)
+- [x] Auditoría en 3 bloques paralelos: sesiones/auth/IDOR, inyección/uploads/DoS/headers, arquitectura de pagos/centralización — sin hallazgos en SQL injection, IDOR, manipulación de precio ni fuga de secrets
+- [x] `sessionVersion` en `User`: invalida sesiones JWT al cambiar contraseña (viaja en el token, se revalida contra la base en cada request)
+- [x] `ChangePasswordForm` cierra la sesión actual explícitamente tras un cambio exitoso
+- [x] `Payment.providerPaymentId` único (idempotencia, preparación para el webhook real de Mercado Pago)
+- [x] Límite de 30 líneas + deduplicado en el carrito de "Destacar por día" (`purchaseFeatureByDays`)
+- [x] Rate limiting por IP (además de por email) en login, registro y recuperar contraseña
+- [x] `/catalogo` paginado (24 por página) — antes traía todo sin límite, alcanzable sin sesión
+- [x] Content-Security-Policy + Strict-Transport-Security en producción (`next.config.ts`)
+- [x] `requireSession()` centralizado, reemplaza ~13 repeticiones manuales en Server Actions
+- [x] Migración aplicada contra la base real (`sessionVersion`, `Payment_providerPaymentId_key`)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` (modo producción) limpios
+- [x] Verificado contra la base real (script desechable, revertido al terminar) y con servidor en modo producción + curl (headers, paginación con casos límite)
+- [ ] Prueba manual en navegador (imprescindible): cambiar la contraseña y confirmar que cierra la sesión con el mensaje explicativo; navegar la paginación del catálogo; revisar la consola del navegador por errores de CSP en cualquier pantalla
+- [ ] Cargar credenciales reales de Upstash Redis en producción (ver Fase 33)
+- [ ] Validar el contenido real (magic bytes) de las fotos subidas, no solo el `Content-Type` declarado por el cliente — queda para una ronda futura
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
 - [ ] Integración real de Mercado Pago (reemplaza la aprobación simulada)
-- [ ] Content-Security-Policy estricta
+- [x] Content-Security-Policy (Fase 34 — sin nonces, `'unsafe-inline'`; ver limitación conocida en `ERRORES.md`)
 - [x] Rate limiting distribuido (Redis / Upstash) para despliegue multi-instancia (Fase 33 — código listo, faltan credenciales reales)
 - [x] Permitir borrar/reordenar fotos ya subidas al editar una publicación (Fase 32)
+- [ ] Validar el contenido real (magic bytes) de las fotos subidas (Fase 34)

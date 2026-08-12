@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CatalogFilters } from "@/components/vehicles/CatalogFilters";
 import { CatalogFiltersDrawer } from "@/components/vehicles/CatalogFiltersDrawer";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
@@ -35,8 +36,21 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
     sellerAccountType: param(sp, "vendedor") as AccountType | undefined,
   };
 
-  const { featured, rest } = await getCatalogResults(filters);
-  const total = featured.length + rest.length;
+  const page = paramNumber(sp, "pagina") ?? 1;
+  const { featured, rest, restTotal, totalPages } = await getCatalogResults(filters, page);
+  const total = featured.length + restTotal;
+
+  const pagerParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(sp)) {
+    if (key === "pagina" || value === undefined) continue;
+    pagerParams.set(key, Array.isArray(value) ? value[0] : value);
+  }
+  function pageHref(targetPage: number) {
+    const params = new URLSearchParams(pagerParams);
+    if (targetPage > 1) params.set("pagina", String(targetPage));
+    const query = params.toString();
+    return query ? `/catalogo?${query}` : "/catalogo";
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -78,6 +92,38 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
                   {rest.map((vehicle) => (
                     <VehicleCard key={vehicle.slug} vehicle={vehicle} />
                   ))}
+                </div>
+              )}
+
+              {totalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-3">
+                  {page > 1 ? (
+                    <Link
+                      href={pageHref(page - 1)}
+                      className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-muted"
+                    >
+                      Anterior
+                    </Link>
+                  ) : (
+                    <span className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground opacity-50">
+                      Anterior
+                    </span>
+                  )}
+                  <span className="text-sm text-muted-foreground">
+                    Página {page} de {totalPages}
+                  </span>
+                  {page < totalPages ? (
+                    <Link
+                      href={pageHref(page + 1)}
+                      className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-muted"
+                    >
+                      Siguiente
+                    </Link>
+                  ) : (
+                    <span className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground opacity-50">
+                      Siguiente
+                    </span>
+                  )}
                 </div>
               )}
             </section>

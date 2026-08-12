@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/server/auth-helpers";
 import { createListingSchema, markSoldSchema, updateListingSchema } from "@/lib/validations/listing";
 import { uploadListingImage } from "@/lib/supabase-storage";
 import { validateImageFile } from "@/lib/image-validation";
@@ -46,8 +46,7 @@ export async function createListingAction(
   _prevState: ListingActionState,
   formData: FormData
 ): Promise<ListingActionState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   const raw = Object.fromEntries(formData);
   const parsed = createListingSchema.safeParse({
@@ -102,8 +101,7 @@ export async function updateListingAction(
   _prevState: ListingActionState,
   formData: FormData
 ): Promise<ListingActionState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   const listingId = String(formData.get("listingId") ?? "");
   if (!listingId) return { error: "Publicación inválida." };
@@ -163,8 +161,7 @@ export type MarkSoldState = { error?: string; fieldErrors?: Record<string, strin
  * evita el mismo problema de carrera que tenía "Pausar" (ver ERRORES.md).
  */
 export async function markListingSoldAction(listingId: string, formData: FormData): Promise<MarkSoldState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
   if (!listingId) return { error: "Publicación inválida." };
 
   const raw = Object.fromEntries(formData);
@@ -194,8 +191,7 @@ export async function pauseListingAction(
   listingId: string,
   status: "RESERVADA" | "PAUSADA"
 ): Promise<PauseListingState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
   if (!listingId) return { error: "Publicación inválida." };
 
   try {
@@ -218,8 +214,7 @@ export type ReactivateListingState = { error?: string } | undefined;
  * falta volver a entrar a "Inactivas" después de cada una).
  */
 export async function reactivateListingAction(listingId: string): Promise<ReactivateListingState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   try {
     await reactivateListing(listingId, session.user.id);
@@ -235,8 +230,7 @@ export async function reactivateListingAction(listingId: string): Promise<Reacti
 export type DeleteImageState = { error?: string } | undefined;
 
 export async function deleteListingImageAction(listingId: string, imageId: string): Promise<DeleteImageState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   try {
     await deleteListingImage(listingId, imageId, session.user.id);
@@ -255,8 +249,7 @@ export async function reorderListingImagesAction(
   listingId: string,
   orderedImageIds: string[]
 ): Promise<ReorderImagesState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   try {
     await reorderListingImages(listingId, orderedImageIds, session.user.id);
@@ -271,8 +264,7 @@ export async function reorderListingImagesAction(
 }
 
 export async function deleteListingAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   const listingId = String(formData.get("listingId") ?? "");
   if (!listingId) return;

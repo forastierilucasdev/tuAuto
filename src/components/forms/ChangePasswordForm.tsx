@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { signOut } from "next-auth/react";
 import { changePasswordAction } from "@/server/actions/profile.actions";
 import type { ProfileActionState } from "@/server/actions/profile.actions";
 import { Label } from "@/components/ui/Label";
@@ -13,8 +14,22 @@ const initialState: ProfileActionState = undefined;
 export function ChangePasswordForm() {
   const [state, formAction, pending] = useActionState(changePasswordAction, initialState);
 
+  // Cambiar la contraseña invalida la sesión actual también (ver
+  // `updatePassword`/`sessionVersion`) — se cierra acá de forma explícita en
+  // vez de dejar que la próxima navegación falle sola sin explicación.
+  useEffect(() => {
+    if (!state?.success) return;
+    const timeout = setTimeout(() => signOut({ callbackUrl: "/login" }), 2500);
+    return () => clearTimeout(timeout);
+  }, [state?.success]);
+
   if (state?.success) {
-    return <p className="text-sm text-success">Tu contraseña se actualizó correctamente.</p>;
+    return (
+      <p className="text-sm text-success">
+        Tu contraseña se actualizó correctamente. Por seguridad, cerramos tu sesión — te
+        redirigimos para que inicies sesión de nuevo...
+      </p>
+    );
   }
 
   return (

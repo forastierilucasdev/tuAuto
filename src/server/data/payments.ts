@@ -106,6 +106,11 @@ export async function getPendingFeaturedVouchers(userId: string) {
 }
 
 const FEATURE_PER_DAY_PLAN_CODE = "FEATURE_PER_DAY";
+// Tope defensivo del carrito: nadie tiene, en la práctica, más publicaciones
+// que el máximo de una suscripción (30) — sin este límite, un array
+// arbitrariamente grande dispararía una query por línea más una transacción
+// gigante (DoS contra la base).
+const MAX_FEATURE_CART_ITEMS = 30;
 
 /**
  * "Destacar publicación por día": una compra puede cubrir varias
@@ -117,13 +122,19 @@ const FEATURE_PER_DAY_PLAN_CODE = "FEATURE_PER_DAY";
  */
 export async function purchaseFeatureByDays(userId: string, items: { listingId: string; days: number }[]) {
   if (items.length === 0) throw new Error("No seleccionaste ninguna publicación.");
+  if (items.length > MAX_FEATURE_CART_ITEMS) {
+    throw new Error(`Podés destacar como máximo ${MAX_FEATURE_CART_ITEMS} publicaciones por compra.`);
+  }
+  // Si el mismo aviso aparece más de una vez, se queda con la última línea
+  // en vez de cobrarlo/aplicarlo dos veces.
+  const dedupedItems = [...new Map(items.map((item) => [item.listingId, item])).values()];
 
   const plan = await prisma.plan.findUnique({ where: { code: FEATURE_PER_DAY_PLAN_CODE } });
   if (!plan) throw new Error("Plan inválido.");
   const pricePerDay = Number(plan.price);
 
   const resolved = await Promise.all(
-    items.map(async ({ listingId, days }) => {
+    dedupedItems.map(async ({ listingId, days }) => {
       const listing = await getListingForFeatureCheck(listingId, userId);
       if (!listing) throw new Error("Una de las publicaciones seleccionadas no existe o no te pertenece.");
       if (listing.status !== "ACTIVE") throw new Error(`"${listing.title}" no está activa.`);

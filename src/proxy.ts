@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
 // Server Action de mutación vuelve a verificar la sesión y la pertenencia
 // del recurso; no depender solo de este archivo (ver ARCHITECTURE.md).
 export default auth((req) => {
-  const isLoggedIn = Boolean(req.auth);
+  const isLoggedIn = Boolean(req.auth?.user);
   const { pathname, search } = req.nextUrl;
 
   if (!isLoggedIn) {

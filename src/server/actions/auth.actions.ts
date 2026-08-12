@@ -1,8 +1,9 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 import { forgotPasswordSchema, loginSchema, registerSchema } from "@/lib/validations/auth";
-import { rateLimit } from "@/lib/rate-limit";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import {
   createBusinessUser,
   createParticularUser,
@@ -36,8 +37,10 @@ export async function registerAction(
   }
   const data = parsed.data;
 
+  const ip = getClientIp(await headers());
   const limited = await rateLimit(`register:${data.email}`, { max: 5, windowMs: 15 * 60_000 });
-  if (!limited.success) {
+  const ipLimited = await rateLimit(`register-ip:${ip}`, { max: 20, windowMs: 15 * 60_000 });
+  if (!limited.success || !ipLimited.success) {
     return { error: "Demasiados intentos de registro. Probá de nuevo en unos minutos." };
   }
 
@@ -94,8 +97,10 @@ export async function loginAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
 
+  const ip = getClientIp(await headers());
   const limited = await rateLimit(`login-action:${parsed.data.email}`, { max: 8, windowMs: 5 * 60_000 });
-  if (!limited.success) {
+  const ipLimited = await rateLimit(`login-action-ip:${ip}`, { max: 30, windowMs: 5 * 60_000 });
+  if (!limited.success || !ipLimited.success) {
     return { error: "Demasiados intentos. Probá de nuevo en unos minutos." };
   }
 
@@ -122,8 +127,10 @@ export async function forgotPasswordAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
 
+  const ip = getClientIp(await headers());
   const limited = await rateLimit(`forgot-password:${parsed.data.email}`, { max: 5, windowMs: 15 * 60_000 });
-  if (!limited.success) {
+  const ipLimited = await rateLimit(`forgot-password-ip:${ip}`, { max: 20, windowMs: 15 * 60_000 });
+  if (!limited.success || !ipLimited.success) {
     return { error: "Demasiados intentos. Probá de nuevo en unos minutos." };
   }
 

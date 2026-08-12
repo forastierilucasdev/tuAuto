@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/server/auth-helpers";
 import { verificationRequestSchema } from "@/lib/validations/verification";
 import { validateImageFile } from "@/lib/image-validation";
 import { uploadVerificationDocument } from "@/lib/supabase-storage";
@@ -17,8 +16,7 @@ export async function submitVerificationAction(
   _prevState: VerificationActionState,
   formData: FormData
 ): Promise<VerificationActionState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   const parsed = verificationRequestSchema.safeParse({
     fullName: formData.get("fullName"),

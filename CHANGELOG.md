@@ -5,6 +5,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-12) — Auditoría de seguridad integral y correcciones (previo a integrar Mercado Pago)
+Auditoría completa del código (3 revisiones en paralelo: sesiones/auth/IDOR, inyección/uploads/DoS/headers, arquitectura de pagos/centralización) antes de sumar la integración real de Mercado Pago. Sin hallazgos en SQL injection (Prisma parametriza todo, sin `$queryRaw`), manipulación de precio desde el cliente (siempre se recalcula server-side desde `Plan`), IDOR (todas las mutaciones ya validaban ownership) ni fuga de secrets/logs. Correcciones aplicadas:
+- **Invalidación de sesión al cambiar contraseña**: nuevo `User.sessionVersion`, viaja en el JWT y se revalida contra la base en cada request (`lib/auth.ts`) — una cookie robada deja de servir apenas la víctima cambia su contraseña, en vez de seguir válida hasta que el JWT expire solo (30 días). `ChangePasswordForm` cierra la sesión actual explícitamente después de un cambio exitoso, porque también queda invalidada.
+- **Idempotencia de pagos**: `Payment.providerPaymentId` pasa a ser `@unique` (nulos permitidos) — prepara el terreno para cuando el webhook real de Mercado Pago pueda reenviar la misma notificación más de una vez.
+- **Límite en el carrito de "Destacar por día"**: `purchaseFeatureByDays` rechaza lotes de más de 30 líneas y deduplica por publicación — antes aceptaba un array de cualquier tamaño desde el cliente.
+- **Rate limiting por IP además de por email**: login, registro y recuperar contraseña ahora también limitan por IP (`getClientIp`, vía `x-forwarded-for`) — el límite por email solo no alcanzaba para evitar enumerar cuentas probando un email distinto en cada request.
+- **Catálogo público paginado**: `/catalogo` traía TODAS las publicaciones activas sin límite en cada visita/filtro (alcanzable sin sesión, vector de DoS de solo lectura). Ahora pagina "resto del catálogo" (24 por página, con "Anterior"/"Siguiente") y capa "destacados" a 12.
+- **Content-Security-Policy + HSTS**: se agregan en producción (`next.config.ts`) — CSP sin nonces (`'unsafe-inline'` en script/style porque Next.js hidrata con inline scripts propios), no se aplican en desarrollo para no romper el Hot Module Reload de Turbopack.
+- **`requireSession()` centralizado** (`server/auth-helpers.ts`): reemplaza las ~13 repeticiones manuales de `const session = await auth(); if (!session?.user) redirect("/login")` en `listing.actions.ts`/`payment.actions.ts`/`verification.actions.ts`.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios (build de producción, para probar la CSP nueva).
+- Verificado contra la base real: `sessionVersion` se incrementa correctamente, `providerPaymentId` duplicado se rechaza (dos `null` sí conviven) — revertido al terminar. Servidor en modo producción + curl: headers CSP/HSTS presentes, `/catalogo` con `?pagina=2`/`pagina=999`/`pagina=abc` responde 200 sin error.
+- Pendiente (documentado, no bloqueante): cargar credenciales reales de Upstash; validar el contenido real (magic bytes) de las fotos subidas, no solo el `Content-Type` declarado.
+
 ### Added (2026-08-12) — Rate limiting distribuido (Upstash Redis)
 - `lib/rate-limit.ts`: si `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` están configuradas, el límite de intentos se aplica sobre Redis (`@upstash/ratelimit`, sliding window) — preciso con cualquier cantidad de instancias serverless. Sin esas variables, sigue cayendo al Map in-memory de antes (mismo comportamiento que había, ahora como fallback explícito).
 - `rateLimit()` pasa a ser async (antes era síncrona, porque el limitador in-memory no necesitaba esperar nada) — se actualizaron sus 5 usos (`auth.ts` login, `auth.actions.ts` registro/login/recuperar contraseña, `profile.actions.ts` cambiar contraseña) para hacer `await`.

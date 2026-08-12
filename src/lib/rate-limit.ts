@@ -73,6 +73,21 @@ function rateLimitInMemory(key: string, max: number, windowMs: number) {
   return { success: true, remaining: max - bucket.count };
 }
 
+/**
+ * El rate limit de login/registro/recuperar contraseña es por email — a
+ * propósito, para no trabar a alguien detrás de un NAT/IP compartida. Pero
+ * eso solo deja enumerar cuentas probando un email distinto por request sin
+ * disparar nunca ese límite. Este segundo límite, por IP, lo tapa (umbral
+ * más alto porque una oficina/4G puede compartir IP entre varios usuarios
+ * legítimos). `x-forwarded-for` lo pone la plataforma (Vercel) — no es
+ * spoofeable por el cliente en ese entorno.
+ */
+export function getClientIp(headers: Headers): string {
+  const forwardedFor = headers.get("x-forwarded-for");
+  const first = forwardedFor?.split(",")[0]?.trim();
+  return first || headers.get("x-real-ip") || "unknown";
+}
+
 export async function rateLimit(
   key: string,
   { max = 5, windowMs = 5 * 60_000 }: { max?: number; windowMs?: number } = {}

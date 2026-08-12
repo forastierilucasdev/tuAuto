@@ -1,8 +1,8 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { requireSession } from "@/server/auth-helpers";
 import {
   addPaymentMethod,
   purchaseFeatureByDays,
@@ -39,8 +39,7 @@ function revalidateAfterPurchase() {
 }
 
 export async function purchaseSubscriptionAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   const planCode = String(formData.get("planCode") ?? "");
   if (!planCode) return;
@@ -50,8 +49,7 @@ export async function purchaseSubscriptionAction(formData: FormData) {
 }
 
 export async function purchasePublicationPackAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   const planCode = String(formData.get("planCode") ?? "");
   if (!planCode) return;
@@ -70,8 +68,7 @@ export type PurchaseFeatureState = { error?: string } | undefined;
 export async function purchaseFeatureByDaysAction(
   items: { listingId: string; days: number }[]
 ): Promise<PurchaseFeatureState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   try {
     await purchaseFeatureByDays(session.user.id, items);
@@ -88,8 +85,7 @@ export async function purchaseFeatureByDaysAction(
 export async function purchaseFeatureComboAction(
   choice: { listingId: string } | { forNextListing: true }
 ): Promise<PurchaseFeatureState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const session = await requireSession();
 
   try {
     await purchaseFeatureCombo(session.user.id, choice);

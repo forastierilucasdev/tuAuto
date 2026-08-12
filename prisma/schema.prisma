@@ -101,6 +101,12 @@ model User {
   // en la próxima publicación/reactivación (ver `loadActivationContext`).
   pendingFeaturedVouchers Int @default(0)
 
+  // Se incrementa al cambiar la contraseña — el JWT de sesión guarda el
+  // valor vigente al loguearse, así que un cambio de contraseña invalida
+  // cualquier sesión previa (robada o no) en el próximo request, sin
+  // necesitar una tabla de sesiones server-side. Ver `lib/auth.ts`.
+  sessionVersion Int @default(0)
+
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -288,7 +294,11 @@ model Payment {
   currency          Currency      @default(ARS)
   status            PaymentStatus @default(PENDING)
   provider          String        @default("mercadopago")
-  providerPaymentId String?
+  // Único (nulos permitidos, Postgres no los considera duplicados): base para
+  // la idempotencia del webhook real de Mercado Pago — un reintento con el
+  // mismo ID de pago del proveedor no puede acreditar cupo dos veces, el
+  // segundo `create()` va a fallar por esta constraint.
+  providerPaymentId String?       @unique
   description       String
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt

@@ -121,25 +121,43 @@ function buildWhere(filters: CatalogFilters): Prisma.ListingWhereInput {
   return where;
 }
 
-export async function getCatalogResults(filters: CatalogFilters) {
-  const baseWhere = buildWhere(filters);
+// Destacados: cupo pago, en la práctica siempre son pocos — se muestran
+// todos de una (capados igual, por las dudas) sin paginar aparte.
+const FEATURED_CATALOG_LIMIT = 12;
+// "Resto del catálogo" sí crece sin límite con el uso real de la app — es
+// además la única query del catálogo alcanzable sin sesión, así que sin
+// paginar era un vector de DoS de solo lectura (trae todos los resultados
+// completos, con joins, en cada visita/filtro).
+const CATALOG_PAGE_SIZE = 24;
 
-  const [featured, rest] = await Promise.all([
+export async function getCatalogResults(filters: CatalogFilters, page = 1) {
+  const baseWhere = buildWhere(filters);
+  const safePage = Math.max(1, Math.trunc(page) || 1);
+  const restWhere = { ...baseWhere, ...effectivelyFeaturedWhere(false) };
+
+  const [featured, rest, restTotal] = await Promise.all([
     prisma.listing.findMany({
       where: { ...baseWhere, ...effectivelyFeaturedWhere(true) },
       orderBy: { createdAt: "desc" },
+      take: FEATURED_CATALOG_LIMIT,
       include: CARD_INCLUDE,
     }),
     prisma.listing.findMany({
-      where: { ...baseWhere, ...effectivelyFeaturedWhere(false) },
+      where: restWhere,
       orderBy: { createdAt: "desc" },
+      skip: (safePage - 1) * CATALOG_PAGE_SIZE,
+      take: CATALOG_PAGE_SIZE,
       include: CARD_INCLUDE,
     }),
+    prisma.listing.count({ where: restWhere }),
   ]);
 
   return {
     featured: featured.map(toVehicleCardData),
     rest: rest.map(toVehicleCardData),
+    restTotal,
+    page: safePage,
+    totalPages: Math.max(1, Math.ceil(restTotal / CATALOG_PAGE_SIZE)),
   };
 }
 
