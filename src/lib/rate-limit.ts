@@ -1,31 +1,67 @@
 import "server-only";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
-// Limitador in-memory por clave (ej. "login:email@dominio.com"). Sirve para
-// el prototipo en un único proceso Node.js, pero NO es preciso con múltiples
-// instancias serverless (cada instancia tiene su propio Map). Para producción,
-// reemplazar por @upstash/ratelimit + Redis. Ver ARCHITECTURE.md / ERRORES.md.
+// Si hay credenciales de Upstash en el entorno, el límite se aplica sobre
+// Redis (preciso con cualquier cantidad de instancias serverless). Si no,
+// cae a un Map in-memory por proceso — sirve para desarrollo local, pero en
+// producción con más de una instancia cada una tendría su propio contador.
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+    : null;
+
+if (!redis && process.env.NODE_ENV === "production") {
+  console.warn(
+    "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN no configurados — usando el limitador in-memory, " +
+      "que no es preciso con más de una instancia. Ver ARCHITECTURE.md."
+  );
+}
+
+type Duration = `${number} ms` | `${number} s` | `${number} m` | `${number} h` | `${number} d`;
+
+function msToDuration(ms: number): Duration {
+  if (ms % 60_000 === 0) return `${ms / 60_000} m`;
+  if (ms % 1_000 === 0) return `${ms / 1_000} s`;
+  return `${ms} ms`;
+}
+
+// Un `Ratelimit` fija su ventana/máximo al construirse, pero acá se llama
+// con distintas combinaciones (login, registro, cambio de contraseña...) —
+// se cachea una instancia por combinación en vez de crear una por request.
+const upstashLimiters = new Map<string, Ratelimit>();
+
+function getUpstashLimiter(max: number, windowMs: number): Ratelimit {
+  const cacheKey = `${max}:${windowMs}`;
+  let limiter = upstashLimiters.get(cacheKey);
+  if (!limiter) {
+    limiter = new Ratelimit({
+      redis: redis!,
+      limiter: Ratelimit.slidingWindow(max, msToDuration(windowMs)),
+      prefix: "motoresya-ratelimit",
+    });
+    upstashLimiters.set(cacheKey, limiter);
+  }
+  return limiter;
+}
 
 type Bucket = { count: number; resetAt: number };
-
-const buckets = new Map<string, Bucket>();
+const inMemoryBuckets = new Map<string, Bucket>();
 
 function pruneExpired(now: number) {
-  if (buckets.size < 5000) return;
-  for (const [key, bucket] of buckets) {
-    if (bucket.resetAt < now) buckets.delete(key);
+  if (inMemoryBuckets.size < 5000) return;
+  for (const [key, bucket] of inMemoryBuckets) {
+    if (bucket.resetAt < now) inMemoryBuckets.delete(key);
   }
 }
 
-export function rateLimit(
-  key: string,
-  { max = 5, windowMs = 5 * 60_000 }: { max?: number; windowMs?: number } = {}
-) {
+function rateLimitInMemory(key: string, max: number, windowMs: number) {
   const now = Date.now();
   pruneExpired(now);
 
-  const bucket = buckets.get(key);
+  const bucket = inMemoryBuckets.get(key);
   if (!bucket || bucket.resetAt < now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
+    inMemoryBuckets.set(key, { count: 1, resetAt: now + windowMs });
     return { success: true, remaining: max - 1 };
   }
 
@@ -35,4 +71,19 @@ export function rateLimit(
 
   bucket.count += 1;
   return { success: true, remaining: max - bucket.count };
+}
+
+export async function rateLimit(
+  key: string,
+  { max = 5, windowMs = 5 * 60_000 }: { max?: number; windowMs?: number } = {}
+): Promise<{ success: boolean; remaining: number; retryAfterMs?: number }> {
+  if (redis) {
+    const result = await getUpstashLimiter(max, windowMs).limit(key);
+    return {
+      success: result.success,
+      remaining: result.remaining,
+      retryAfterMs: result.success ? undefined : Math.max(0, result.reset - Date.now()),
+    };
+  }
+  return rateLimitInMemory(key, max, windowMs);
 }

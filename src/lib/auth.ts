@@ -23,7 +23,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!parsed.success) return null;
         const { email, password } = parsed.data;
 
-        const limited = rateLimit(`login:${email}`, { max: 5, windowMs: 5 * 60_000 });
+        const limited = await rateLimit(`login:${email}`, { max: 5, windowMs: 5 * 60_000 });
         if (!limited.success) return null;
 
         const user = await findUserForAuth(email);

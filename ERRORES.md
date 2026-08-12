@@ -17,7 +17,7 @@ Al reportar un problema a soporte, incluir siempre:
 
 - **Pagos**: la sección "Método de pago" aprueba los pagos de forma instantánea y simulada. La integración real con Mercado Pago está pendiente (ver `ARCHITECTURE.md`, sección Pagos).
 - **Blog**: contenido de ejemplo, no editorial real todavía.
-- **Rate limiting**: el límite de intentos de login/registro es en memoria; en un despliegue con múltiples instancias no es 100% preciso (ver `ARCHITECTURE.md`).
+- **Rate limiting**: usa Redis (Upstash) si `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` están en el entorno; si no, cae a un límite en memoria que no es 100% preciso con múltiples instancias (ver `ARCHITECTURE.md`). En este proyecto todavía no se cargaron las credenciales de Upstash — falta crear la base en upstash.com y agregarlas a `.env`/Vercel.
 - **Sin rol de administrador**: agregar nuevas marcas/modelos al catálogo requiere una modificación manual de los datos semilla (`prisma/seed.ts`), no hay panel de administración todavía.
 - **Filtro de precio por una sola moneda a la vez**: no se puede filtrar "ARS y USD combinados" en un mismo rango porque no hay una tasa de conversión real integrada.
 - **Edición de publicaciones**: no se puede cambiar el tipo de vehículo, marca, modelo o año después de publicado (si el vendedor se equivocó, tiene que dar de baja y crear una publicación nueva) — el resto de los campos (versión, transmisión, condición, kilometraje, precio, ubicación, contacto, observaciones) sí son editables. Las fotos ya subidas se pueden eliminar (mínimo una), pero todavía no se pueden reordenar ni cambiar cuál es la "foto destacada" (portada) desde el formulario de edición — esa selección solo aplica a publicaciones nuevas.

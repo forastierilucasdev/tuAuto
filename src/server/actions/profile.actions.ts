@@ -145,7 +145,7 @@ export async function changePasswordAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
 
-  const limited = rateLimit(`change-password:${session.user.id}`, { max: 5, windowMs: 15 * 60_000 });
+  const limited = await rateLimit(`change-password:${session.user.id}`, { max: 5, windowMs: 15 * 60_000 });
   if (!limited.success) {
     return { error: "Demasiados intentos. Probá de nuevo en unos minutos." };
   }

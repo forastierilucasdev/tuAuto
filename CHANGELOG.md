@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-12) — Rate limiting distribuido (Upstash Redis)
+- `lib/rate-limit.ts`: si `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` están configuradas, el límite de intentos se aplica sobre Redis (`@upstash/ratelimit`, sliding window) — preciso con cualquier cantidad de instancias serverless. Sin esas variables, sigue cayendo al Map in-memory de antes (mismo comportamiento que había, ahora como fallback explícito).
+- `rateLimit()` pasa a ser async (antes era síncrona, porque el limitador in-memory no necesitaba esperar nada) — se actualizaron sus 5 usos (`auth.ts` login, `auth.actions.ts` registro/login/recuperar contraseña, `profile.actions.ts` cambiar contraseña) para hacer `await`.
+- Warning en consola al arrancar si en producción no hay credenciales de Upstash configuradas (para notar el fallback in-memory antes de que sea un problema real en un despliegue con más de una instancia).
+- Todavía no se cargaron credenciales reales de Upstash en este proyecto — queda listo para cuando se cree la base en upstash.com (documentado en `.env.example`).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+- Verificado: script desechable confirma que el fallback in-memory sigue permitiendo exactamente `max` intentos y bloqueando el siguiente con `retryAfterMs`, y que la conversión de `windowMs` al formato de duración de Upstash da el resultado esperado (revertido al terminar); requests reales confirmaron que las páginas de login/registro/recuperar siguen respondiendo 200.
+
 ### Added (2026-08-12) — Reordenar fotos ya subidas al editar una publicación
 - **`ListingForm`**, paso "Fotos" al editar: cada foto ya subida suma flechas (◀ ▶) para moverla de posición; la primera pasa a marcarse con la misma estrella "portada" que ya usaban las fotos nuevas del wizard. Se guarda al toque (server action), sin esperar a "Guardar cambios" — mismo criterio que ya tenía "Quitar foto".
 - **Fix relacionado**: `attachListingImages` asignaba `order` empezando siempre en 0 para las fotos nuevas — al editar y agregar más fotos, sus `order` chocaban con los de las que ya estaban (ambos arrancaban en 0). Ahora arranca después del `order` más alto existente.

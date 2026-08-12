@@ -348,10 +348,19 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Verificado contra la base real (script desechable, revertido al terminar) y con requests reales sin errores de servidor
 - [ ] Prueba manual en navegador: reordenar fotos al editar una publicación con varias fotos, confirmar que la portada cambia en el catálogo
 
+## Fase 33 — Rate limiting distribuido con Upstash Redis (solicitado por el usuario)
+- [x] `lib/rate-limit.ts`: usa `@upstash/ratelimit` + `@upstash/redis` (sliding window) si hay credenciales en el entorno; si no, cae al Map in-memory de antes
+- [x] `rateLimit()` pasa a async; actualizados los 5 usos (login vía Auth.js, login/registro/recuperar contraseña como Server Actions, cambiar contraseña)
+- [x] `.env.example` documenta `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` como opcionales
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado: script desechable confirma el fallback in-memory y la conversión de duración (revertido al terminar); requests reales sin errores de servidor
+- [ ] Falta cargar credenciales reales de Upstash (crear la base en upstash.com) y agregarlas a `.env`/Vercel para que el rate limiting sea realmente distribuido en producción
+- [ ] Prueba manual en navegador: intentar loguearse mal más de 5 veces seguidas y confirmar el mensaje de "demasiados intentos"
+
 ## Pendiente para pasar de "prototipo" a "listo para producción"
 - [ ] Probar manualmente en el navegador: registro, login, publicar con fotos, destacar, editar, marcar vendido
 - [ ] Deploy a Vercel (cargar las mismas variables de `.env` como Environment Variables del proyecto)
 - [ ] Integración real de Mercado Pago (reemplaza la aprobación simulada)
 - [ ] Content-Security-Policy estricta
-- [ ] Rate limiting distribuido (Redis / Upstash) para despliegue multi-instancia — en curso
+- [x] Rate limiting distribuido (Redis / Upstash) para despliegue multi-instancia (Fase 33 — código listo, faltan credenciales reales)
 - [x] Permitir borrar/reordenar fotos ya subidas al editar una publicación (Fase 32)

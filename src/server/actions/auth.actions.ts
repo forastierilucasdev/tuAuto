@@ -36,7 +36,7 @@ export async function registerAction(
   }
   const data = parsed.data;
 
-  const limited = rateLimit(`register:${data.email}`, { max: 5, windowMs: 15 * 60_000 });
+  const limited = await rateLimit(`register:${data.email}`, { max: 5, windowMs: 15 * 60_000 });
   if (!limited.success) {
     return { error: "Demasiados intentos de registro. Probá de nuevo en unos minutos." };
   }
@@ -94,7 +94,7 @@ export async function loginAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
 
-  const limited = rateLimit(`login-action:${parsed.data.email}`, { max: 8, windowMs: 5 * 60_000 });
+  const limited = await rateLimit(`login-action:${parsed.data.email}`, { max: 8, windowMs: 5 * 60_000 });
   if (!limited.success) {
     return { error: "Demasiados intentos. Probá de nuevo en unos minutos." };
   }
@@ -122,7 +122,7 @@ export async function forgotPasswordAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
 
-  const limited = rateLimit(`forgot-password:${parsed.data.email}`, { max: 5, windowMs: 15 * 60_000 });
+  const limited = await rateLimit(`forgot-password:${parsed.data.email}`, { max: 5, windowMs: 15 * 60_000 });
   if (!limited.success) {
     return { error: "Demasiados intentos. Probá de nuevo en unos minutos." };
   }
