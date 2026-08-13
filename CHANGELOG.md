@@ -67,6 +67,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - Se agrega un botón "Volver" con el texto "Inicio" (a `/`) arriba del título — `BackButton` gana un prop `label` opcional (default `"Volver"`) en vez de tenerlo fijo, para poder personalizarlo acá sin tocar el resto de los usos existentes.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Added (2026-08-13) — "Concesionarias | Agencias destacadas" en el inicio
+- Nueva sección en el inicio, arriba de "Publicaciones destacadas": combina las concesionarias y agencias con más publicaciones activas (`getFeaturedAgencies`, ya usada en `/concesionarias`), mostrando su foto de portada (`logoUrl`) en un carrusel horizontal con scroll (`overflow-x-auto`, sin autoplay) que arranca alineado a la izquierda — mismo patrón que ya usa la galería de fotos de una publicación para sus miniaturas.
+- Nuevo componente `FeaturedAgenciesCarousel` (`src/components/home/`), cada tarjeta enlaza a `/concesionarias/[userId]`. Link "Ver todas" a `/concesionarias`.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios; verificado con el servidor de desarrollo (`/`, `/concesionarias` responden 200).
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.

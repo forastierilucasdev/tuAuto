@@ -391,6 +391,13 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 55 — "Concesionarias | Agencias destacadas" en el inicio (solicitado por el usuario)
+- [x] Nueva sección arriba de "Publicaciones destacadas", combina concesionarias y agencias destacadas (`getFeaturedAgencies`)
+- [x] Carrusel horizontal con scroll (sin autoplay), foto de portada (`logoUrl`) de cada tarjeta, alineado a la izquierda
+- [x] Link "Ver todas" a `/concesionarias`
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios; verificado con servidor de desarrollo (`/`, `/concesionarias` → 200)
+- [ ] Prueba manual en navegador
+
 ## Fase 54 — Botón "Inicio" en Catálogo (solicitado por el usuario)
 - [x] `BackButton` gana un prop `label` opcional (default "Volver") sin romper los usos existentes
 - [x] Nuevo botón "Inicio" (a `/`) arriba del título en `/catalogo`

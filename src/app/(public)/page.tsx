@@ -1,18 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
 import { HeroSearch } from "@/components/home/HeroSearch";
+import { FeaturedAgenciesCarousel } from "@/components/home/FeaturedAgenciesCarousel";
 import { CategoryGrid } from "@/components/vehicles/CategoryGrid";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import { buttonVariants } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { getFeaturedListings } from "@/server/data/listings";
+import { getFeaturedAgencies } from "@/server/data/agencies";
 
 // Dinámico: muestra publicaciones destacadas reales en cada request, en vez
 // de congelarlas en el build (ver ARCHITECTURE.md, "Cache Components").
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const featured = await getFeaturedListings(6);
+  const [featured, featuredConcesionarias, featuredAgencias] = await Promise.all([
+    getFeaturedListings(6),
+    getFeaturedAgencies("CONCESIONARIA", 6),
+    getFeaturedAgencies("AGENCIA", 6),
+  ]);
+  const featuredBusinesses = [...featuredConcesionarias, ...featuredAgencias];
 
   return (
     <>
@@ -54,6 +61,18 @@ export default async function HomePage() {
         <h2 className="mb-6 text-xl font-bold text-navy sm:text-2xl">Explorá por categoría</h2>
         <CategoryGrid />
       </section>
+
+      {featuredBusinesses.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-navy sm:text-2xl">Concesionarias | Agencias destacadas</h2>
+            <Link href="/concesionarias" className="text-sm font-medium text-primary hover:underline">
+              Ver todas
+            </Link>
+          </div>
+          <FeaturedAgenciesCarousel agencies={featuredBusinesses} />
+        </section>
+      )}
 
       {featured.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
