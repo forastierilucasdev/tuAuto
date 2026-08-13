@@ -57,8 +57,8 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-navy sm:text-3xl">Catálogo</h1>
-      <p className="mt-1 text-muted-foreground">
+      <h1 className="text-center text-2xl font-bold text-navy sm:text-3xl lg:text-left">Catálogo</h1>
+      <p className="mt-1 text-center text-muted-foreground lg:text-left">
         {total} publicaci{total === 1 ? "ón encontrada" : "ones encontradas"}
       </p>
 
@@ -71,10 +71,10 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
         </div>
 
         <div>
-          <CatalogFiltersDrawer />
           <div className="mb-6 lg:hidden">
             <VehicleRequestCta />
           </div>
+          <CatalogFiltersDrawer />
 
           <div className="space-y-10">
             {featured.length > 0 && (

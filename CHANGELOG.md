@@ -58,6 +58,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - Título y bajada de la página quedan centrados; se agrega el botón "Volver" (a `/`), que faltaba.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Changed (2026-08-13) — Catálogo en mobile: CTA arriba de "Filtros" y título centrado
+- Solo en mobile, la caja "¿Buscás un auto en especial?" pasa a mostrarse arriba del botón "Filtros" (antes quedaba debajo).
+- El título "Catálogo" y el conteo de publicaciones quedan centrados en mobile (`lg:text-left` los devuelve a la izquierda en desktop, sin cambios ahí).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.
