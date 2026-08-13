@@ -47,6 +47,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - El mismo CTA, en versión compacta (`VehicleRequestCta`), se agrega también en `/catalogo`: debajo de los filtros (sidebar en desktop, arriba de los resultados en mobile) y en el estado de "sin resultados".
 - `tsc --noEmit`, `eslint`, `npm run build` limpios; verificado con el servidor de desarrollo (`/`, `/catalogo`, `/buscar-vehiculo` responden 200).
 
+### Changed (2026-08-13) — Separación entre los dos bloques navy del inicio + botón "Contactarme"
+- Los bloques "¿Tenés un vehículo para vender?" y "¿Buscás un auto en especial?" quedaban pegados (mismo `bg-navy`, sin separación) — se agrega una franja con el fondo de la página entre ambos.
+- El botón de "¿Buscás un auto en especial?" pasa de "Cargar datos" a "Contactarme" — mismo cambio en el CTA compacto del catálogo (`VehicleRequestCta`).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.

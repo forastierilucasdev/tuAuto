@@ -14,7 +14,7 @@ export function VehicleRequestCta() {
         href="/buscar-vehiculo"
         className={cn(buttonVariants({ variant: "primary", size: "sm" }), "mt-4")}
       >
-        Cargar datos
+        Contactarme
       </Link>
     </div>
   );

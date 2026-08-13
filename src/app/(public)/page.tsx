@@ -84,6 +84,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <div className="h-8 bg-background sm:h-12" />
+
       <section className="bg-navy py-14 text-white">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold sm:text-3xl">¿Buscás un auto en especial?</h2>
@@ -91,7 +93,7 @@ export default async function HomePage() {
             Dejanos tus datos de contacto y te avisaremos apenas se publique.
           </p>
           <Link href="/buscar-vehiculo" className={cn(buttonVariants({ variant: "primary", size: "lg" }))}>
-            Cargar datos
+            Contactarme
           </Link>
         </div>
       </section>
