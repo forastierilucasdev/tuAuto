@@ -52,6 +52,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - El botón de "¿Buscás un auto en especial?" pasa de "Cargar datos" a "Contactarme" — mismo cambio en el CTA compacto del catálogo (`VehicleRequestCta`).
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Changed (2026-08-13) — `/buscar-vehiculo`: todos los campos obligatorios, contenido centrado, botón "Volver"
+- Marca, modelo, año (desde/hasta) y km (desde/hasta) pasan de opcionales a obligatorios — se sacó "(opcional)" de las etiquetas y se agregó validación server-side (rango de año 1900–año actual+1, "hasta" ≥ "desde" en año y km).
+- Botón "Cargar datos" → "Guardar y enviar".
+- Título y bajada de la página quedan centrados; se agrega el botón "Volver" (a `/`), que faltaba.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.
