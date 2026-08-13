@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-12) — Logo en Login/Registro/Recuperar contraseña
+- El layout compartido de esas 3 pantallas (`(auth)/layout.tsx`) mostraba el texto "Motoresya" en vez del logo — ahora usa el mismo `<img>` que el header (`logo-v3.svg`, altura fluida con `clamp()`, sin `next/image`).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+- Verificado con requests reales: `/login` y `/registro` responden 200 y el HTML ya referencia `logo-v3.svg`.
+
 ### Fixed (2026-08-12) — Logo: recorte definitivo con detección automática del contenido
 - Los 3 recortes anteriores (basados en leer a mano las coordenadas de los `<path>` del SVG) seguían cortando el texto "Motores" por arriba. Método nuevo, mucho más confiable: se renderiza el SVG completo a una imagen grande (sin ningún recorte, viewBox de sobra) y se usa `sharp` (ya instalado, usado por Next.js para optimizar imágenes) para detectar automáticamente el recuadro real del contenido no-blanco (`trim()`), en vez de adivinar coordenadas leyendo el XML. El bounding box resultante se convierte de vuelta a unidades del `viewBox` y se aplica con un margen chico (3%/6%).
 - Confirmado visualmente esta vez (se generó y revisó una vista previa PNG antes de aplicar el cambio) — el logo completo "MotoresYA" con el ícono del auto se ve entero, sin cortes.
