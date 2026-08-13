@@ -72,6 +72,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - Nuevo componente `FeaturedAgenciesCarousel` (`src/components/home/`), cada tarjeta enlaza a `/concesionarias/[userId]`. Link "Ver todas" a `/concesionarias`.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios; verificado con el servidor de desarrollo (`/`, `/concesionarias` responden 200).
 
+### Changed (2026-08-13) — Carrusel del inicio con el mismo alto que "Publicaciones destacadas" + botón Volver
+- Las tarjetas del carrusel "Concesionarias | Agencias destacadas" eran mucho más chicas que las de "Publicaciones destacadas" (solo imagen chica + nombre) — se extrae `AgencyCard` (imagen, tipo, ubicación, cantidad de publicaciones, botón "Ver publicaciones") de `/concesionarias` a un componente compartido (`src/components/vehicles/AgencyCard.tsx`), usado ahora tanto en el listado de `/concesionarias` como en el carrusel del inicio — mismo alto y misma estructura que `VehicleCard`. Cada tarjeta del carrusel ocupa un ancho fijo (`w-64`/`sm:w-72`) dentro de la fila con scroll.
+- Se agrega el botón "Volver" (a `/`) en `/concesionarias`, que faltaba.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios; verificado con el servidor de desarrollo (`/`, `/concesionarias` responden 200).
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.
