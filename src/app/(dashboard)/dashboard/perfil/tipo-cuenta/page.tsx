@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { getFullProfile } from "@/server/data/users";
 import { AccountTypeForm } from "@/components/forms/AccountTypeForm";
+import { BackButton } from "@/components/ui/BackButton";
 
 export const metadata: Metadata = { title: "Tipo de cuenta" };
 
@@ -14,14 +13,10 @@ export default async function AccountTypePage() {
 
   return (
     <div>
-      <Link
-        href="/dashboard/perfil"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Volver a mi perfil
-      </Link>
-      <h1 className="text-2xl font-bold text-navy">Tipo de cuenta</h1>
+      <div className="flex justify-end">
+        <BackButton href="/dashboard/perfil" />
+      </div>
+      <h1 className="mt-2 text-2xl font-bold text-navy">Tipo de cuenta</h1>
       <p className="mt-1 mb-6 text-muted-foreground">Particular, agencia o concesionaria.</p>
       <AccountTypeForm
         accountType={profile.accountType}

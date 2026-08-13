@@ -17,6 +17,8 @@ export type CatalogFilters = {
   minKm?: number;
   maxKm?: number;
   sellerAccountType?: AccountType;
+  province?: string;
+  city?: string;
 };
 
 const CARD_INCLUDE = {
@@ -97,6 +99,11 @@ function buildWhere(filters: CatalogFilters): Prisma.ListingWhereInput {
   if (filters.year) where.year = filters.year;
   if (filters.condition) where.condition = filters.condition;
   if (filters.sellerAccountType) where.user = { accountType: filters.sellerAccountType };
+  if (filters.province) where.province = filters.province;
+  // Localidad: la escribe el usuario libremente (al publicar y al buscar),
+  // así que es "contains" sin distinguir mayúsculas — un match exacto
+  // fallaría por cualquier diferencia mínima de tipeo.
+  if (filters.city) where.city = { contains: filters.city, mode: "insensitive" };
 
   if (filters.minKm !== undefined || filters.maxKm !== undefined) {
     where.mileageKm = {

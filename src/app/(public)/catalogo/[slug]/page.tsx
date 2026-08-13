@@ -185,7 +185,7 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
       {/* Mismo orden en mobile y desktop: Volver arriba de todo, después el
           título, después las fotos. */}
       <div className="flex justify-end">
-        <BackButton />
+        <BackButton href="/catalogo" />
       </div>
 
       <h1 className="mt-2 text-2xl font-bold text-navy sm:text-3xl">{listing.title}</h1>

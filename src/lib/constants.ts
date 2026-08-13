@@ -15,7 +15,7 @@ import {
  * dato en sí; este archivo solo agrega metadata de presentación (label, ícono).
  */
 export const VEHICLE_TYPES = [
-  { value: "AUTO", label: "Auto", icon: Car },
+  { value: "AUTO", label: "Autos", icon: Car },
   { value: "CAMIONETA", label: "Camioneta", icon: Truck },
   { value: "MOTO", label: "Moto", icon: Motorbike },
   { value: "BICICLETA", label: "Bicicleta", icon: Bike },
@@ -29,6 +29,34 @@ export type VehicleTypeValue = (typeof VEHICLE_TYPES)[number]["value"];
 export function vehicleTypeLabel(value: string) {
   return VEHICLE_TYPES.find((t) => t.value === value)?.label ?? value;
 }
+
+/** Provincias argentinas — lista fija (la localidad la escribe el usuario libremente). */
+export const PROVINCIAS = [
+  "Buenos Aires",
+  "Ciudad Autónoma de Buenos Aires (CABA)",
+  "Catamarca",
+  "Chaco",
+  "Chubut",
+  "Córdoba",
+  "Corrientes",
+  "Entre Ríos",
+  "Formosa",
+  "Jujuy",
+  "La Pampa",
+  "La Rioja",
+  "Mendoza",
+  "Misiones",
+  "Neuquén",
+  "Río Negro",
+  "Salta",
+  "San Juan",
+  "San Luis",
+  "Santa Cruz",
+  "Santa Fe",
+  "Santiago del Estero",
+  "Tierra del Fuego",
+  "Tucumán",
+] as const;
 
 export function vehicleTypeIcon(value: string): LucideIcon {
   return VEHICLE_TYPES.find((t) => t.value === value)?.icon ?? Car;

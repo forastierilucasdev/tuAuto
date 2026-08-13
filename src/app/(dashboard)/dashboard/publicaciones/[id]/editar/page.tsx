@@ -23,7 +23,7 @@ export default async function EditarPublicacionPage(props: PageProps<"/dashboard
   return (
     <div>
       <div className="flex justify-end">
-        <BackButton />
+        <BackButton href="/dashboard/publicaciones" />
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Editar publicación</h1>
       <p className="mt-1 mb-6 text-muted-foreground">Actualizá los datos de tu publicación.</p>

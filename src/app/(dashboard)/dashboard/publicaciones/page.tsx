@@ -48,7 +48,7 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
       <PublishedListingModal slug={publishedSlug} />
 
       <div className="flex justify-end">
-        <BackButton />
+        <BackButton href="/dashboard/anuncios" />
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Mis publicaciones</h1>
 

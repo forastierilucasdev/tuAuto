@@ -90,7 +90,13 @@ export function Header() {
                 Publicar anuncio
               </Link>
             ) : (
-              <Link href="/login" className={buttonVariants({ variant: "primary", size: "sm" })}>
+              // En mobile, más chico que el "sm" de siempre — no puede quedar
+              // más alto que el logo (h-9 le ganaba a la altura fluida del
+              // logo en pantallas angostas). Desde md: vuelve al tamaño normal.
+              <Link
+                href="/login"
+                className={cn(buttonVariants({ variant: "primary", size: "sm" }), "h-7 px-2.5 text-xs md:h-9 md:px-3 md:text-sm")}
+              >
                 Vende tu Auto
               </Link>
             )}

@@ -6,7 +6,7 @@ import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
-import { VEHICLE_TYPES, CONDITION_OPTIONS, ACCOUNT_TYPE_OPTIONS, mileageUnitFor } from "@/lib/constants";
+import { VEHICLE_TYPES, CONDITION_OPTIONS, ACCOUNT_TYPE_OPTIONS, PROVINCIAS, mileageUnitFor } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
 import type { AccountType, VehicleType } from "@/generated/prisma/client";
@@ -26,6 +26,8 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
   const [vendedor, setVendedor] = React.useState<AccountType | "">(
     (searchParams.get("vendedor") as AccountType | null) ?? ""
   );
+  const [provincia, setProvincia] = React.useState(searchParams.get("provincia") ?? "");
+  const [localidad, setLocalidad] = React.useState(searchParams.get("localidad") ?? "");
   const [moneda, setMoneda] = React.useState(searchParams.get("moneda") ?? "ARS");
   const [precioMin, setPrecioMin] = React.useState(searchParams.get("precioMin") ?? "");
   const [precioMax, setPrecioMax] = React.useState(searchParams.get("precioMax") ?? "");
@@ -46,6 +48,8 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
     if (anio) params.set("anio", anio);
     if (condicion) params.set("condicion", condicion);
     if (vendedor) params.set("vendedor", vendedor);
+    if (provincia) params.set("provincia", provincia);
+    if (localidad) params.set("localidad", localidad);
     if (precioMin || precioMax) params.set("moneda", moneda);
     if (precioMin) params.set("precioMin", precioMin);
     if (precioMax) params.set("precioMax", precioMax);
@@ -62,6 +66,8 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
     setAnio("");
     setCondicion("");
     setVendedor("");
+    setProvincia("");
+    setLocalidad("");
     setMoneda("ARS");
     setPrecioMin("");
     setPrecioMax("");
@@ -176,6 +182,28 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
             </option>
           ))}
         </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="f-provincia">Provincia</Label>
+        <Select id="f-provincia" value={provincia} onChange={(e) => setProvincia(e.target.value)}>
+          <option value="">Todas las provincias</option>
+          {PROVINCIAS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="f-localidad">Localidad</Label>
+        <Input
+          id="f-localidad"
+          placeholder="Ej: Mar del Plata"
+          value={localidad}
+          onChange={(e) => setLocalidad(e.target.value)}
+        />
       </div>
 
       <hr className="border-border" />

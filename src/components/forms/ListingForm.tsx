@@ -15,6 +15,7 @@ import { Modal } from "@/components/ui/Modal";
 import {
   VEHICLE_TYPES,
   CONDITION_OPTIONS,
+  PROVINCIAS,
   TRANSMISSION_OPTIONS,
   conditionLabel,
   mileageUnitFor,
@@ -579,7 +580,14 @@ export function ListingForm(props: ListingFormProps) {
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <Label htmlFor="province">Provincia</Label>
-              <Input id="province" value={province} onChange={(e) => setProvince(e.target.value)} />
+              <Select id="province" value={province} onChange={(e) => setProvince(e.target.value)}>
+                <option value="">Elegí una provincia</option>
+                {PROVINCIAS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </Select>
             </div>
             <div>
               <Label htmlFor="city">Localidad</Label>

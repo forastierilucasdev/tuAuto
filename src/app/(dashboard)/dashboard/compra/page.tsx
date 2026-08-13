@@ -32,7 +32,7 @@ export default async function MisComprasPage(props: PageProps<"/dashboard/compra
   return (
     <div>
       <div className="flex justify-end">
-        <BackButton />
+        <BackButton href="/dashboard/anuncios" />
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Mis compras</h1>
       <p className="mt-1 mb-6 text-muted-foreground">Pagás de forma segura con Mercado Pago.</p>

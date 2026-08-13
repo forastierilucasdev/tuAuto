@@ -27,7 +27,7 @@ export default async function HistorialDePagosPage() {
   return (
     <div>
       <div className="flex justify-end">
-        <BackButton />
+        <BackButton href="/dashboard/compra" />
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Historial de pagos</h1>
       <p className="mt-1 mb-6 text-muted-foreground">Pagos procesados con Mercado Pago.</p>

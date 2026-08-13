@@ -5,6 +5,23 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-12) — "Volver" ya no entra en loops (siempre navega hacia Inicio)
+- `BackButton` usaba `router.back()` (el historial del navegador) — si entrabas a una pantalla hija por un camino distinto al esperado (ej. "Tipo de cuenta" desde el panel "Mi cuenta" estando en otra pantalla), "Volver" podía rebotarte entre dos pantallas en vez de salir. Pasa a recibir un `href` fijo por pantalla (ya no `"use client"`, es un Server Component simple) — cada pantalla tiene un padre determinístico en la jerarquía de la app, así que tocar "Volver" repetidas veces siempre termina en Inicio, sin loops. Actualizados los 13 usos (11 con `BackButton` + 2 que tenían su propio link ad-hoc, `password` y `tipo-cuenta`, ahora unificados al mismo componente y alineados a la derecha como el resto).
+- Jerarquía: `anuncios`/`perfil` → Inicio; `publicaciones`/`compra` → `anuncios`; `publicaciones/nueva`/`publicaciones/[id]/editar` → `publicaciones`; `compra/historial` → `compra`; `perfil/tipo-cuenta`/`perfil/password`/`perfil/verificar` → `perfil`; `catalogo/[slug]` → `catalogo`; `concesionarias/[id]` → `concesionarias`.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
+### Changed (2026-08-12) — Filtro de provincia y localidad
+- Nuevo filtro "Provincia" (`Select`, lista fija de las 23 provincias + CABA) y "Localidad" (texto libre, `contains` sin distinguir mayúsculas) en el catálogo — desktop y mobile (mismo componente `CatalogFilters`, sin cambios en `CatalogFiltersDrawer`).
+- El campo "Provincia" del wizard de publicar (`ListingForm`, paso Ubicación) pasa de texto libre a la misma lista fija — "Localidad" sigue siendo texto libre.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+- Verificado contra datos reales: `/catalogo?provincia=Buenos+Aires` baja el total de 38 a 18 publicaciones.
+
+### Changed (2026-08-12) — "Auto" pasa a "Autos" (tipo de vehículo)
+- Un solo cambio en `VEHICLE_TYPES` (única fuente de verdad) — se refleja en el filtro de tipo de vehículo, el wizard de publicar y "Explorá por categoría" a la vez.
+
+### Changed (2026-08-12) — Header mobile: botón "Vende tu Auto" más chico
+- En mobile quedaba más alto (`h-9` fijo) que la altura fluida del logo en pantallas angostas — pasa a `h-7`/texto más chico en mobile, vuelve al tamaño normal desde `md:`.
+
 ### Changed (2026-08-12) — Logo en Login/Registro/Recuperar contraseña
 - El layout compartido de esas 3 pantallas (`(auth)/layout.tsx`) mostraba el texto "Motoresya" en vez del logo — ahora usa el mismo `<img>` que el header (`logo-v3.svg`, altura fluida con `clamp()`, sin `next/image`).
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.

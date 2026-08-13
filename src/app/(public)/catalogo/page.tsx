@@ -34,6 +34,8 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
     minKm: paramNumber(sp, "kmMin"),
     maxKm: paramNumber(sp, "kmMax"),
     sellerAccountType: param(sp, "vendedor") as AccountType | undefined,
+    province: param(sp, "provincia"),
+    city: param(sp, "localidad"),
   };
 
   const page = paramNumber(sp, "pagina") ?? 1;

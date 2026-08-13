@@ -19,7 +19,7 @@ export default async function VerificarPerfilPage() {
   return (
     <div>
       <div className="flex justify-end">
-        <BackButton />
+        <BackButton href="/dashboard/perfil" />
       </div>
       <h1 className="mt-2 text-2xl font-bold text-navy">Verificar perfil</h1>
       <p className="mt-1 mb-6 text-muted-foreground">
