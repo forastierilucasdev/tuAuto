@@ -19,6 +19,11 @@
   --warning: #d97706;
   --danger: #dc2626;
 
+  /* Tarjetas de plan (Mis compras: Pago individual, Suscripciones) — un
+     solo lugar para cambiar el estilo de estas tarjetas en el futuro. */
+  --plan-card-bg: #888477;
+  --plan-card-ink: #010f40;
+
   /* Forma */
   --radius-card: 1rem;
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
@@ -41,6 +46,9 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+
+  --color-plan-card: var(--plan-card-bg);
+  --color-plan-card-ink: var(--plan-card-ink);
 
   --radius-card: var(--radius-card);
   --shadow-card: var(--shadow-card);

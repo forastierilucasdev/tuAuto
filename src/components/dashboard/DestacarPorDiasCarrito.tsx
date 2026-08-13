@@ -122,7 +122,7 @@ export function DestacarPorDiasCarrito({
             <Plus className="h-4 w-4" />
           </button>
         </div>
-        <p className="text-xs text-muted-foreground">Máx. {maxDays}</p>
+        <p className="text-xs text-plan-card-ink">Máx. {maxDays}</p>
         <p className="ml-auto font-semibold text-foreground">{formatCurrency(clampedDays * pricePerDay)}</p>
       </div>
 
@@ -131,7 +131,7 @@ export function DestacarPorDiasCarrito({
       </Button>
 
       {cart.length > 0 && (
-        <div className="space-y-2 rounded-lg border border-border p-3 text-[#010F40]">
+        <div className="space-y-2 rounded-lg border border-border p-3 text-plan-card-ink">
           {cart.map((item) => (
             <div key={item.listingId} className="flex items-center justify-between gap-2">
               <p className="truncate">
@@ -151,7 +151,7 @@ export function DestacarPorDiasCarrito({
             </div>
           ))}
           <div className="flex items-center justify-between border-t border-border pt-2 font-bold">
-            <span>Total</span>
+            <span>Total a pagar</span>
             <span>{formatCurrency(total)}</span>
           </div>
         </div>
@@ -161,11 +161,11 @@ export function DestacarPorDiasCarrito({
 
       <Button
         type="button"
-        className="w-full text-lg font-bold"
+        className="w-full text-lg font-bold text-plan-card-ink"
         disabled={cart.length === 0 || submitting}
         onClick={confirmPurchase}
       >
-        {submitting ? "Redirigiendo a Mercado Pago..." : cart.length > 0 ? `Confirmar compra — Total ${formatCurrency(total)}` : "Confirmar compra"}
+        {submitting ? "Redirigiendo a Mercado Pago..." : "Confirmar compra"}
       </Button>
     </div>
   );

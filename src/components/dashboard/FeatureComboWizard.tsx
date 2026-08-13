@@ -58,7 +58,7 @@ export function FeatureComboWizard({ listings }: { listings: FeaturableListing[]
 
   return (
     <>
-      <Button type="button" className="w-full" onClick={openWizard}>
+      <Button type="button" className="w-full text-lg font-bold text-plan-card-ink" onClick={openWizard}>
         Comprar
       </Button>
 

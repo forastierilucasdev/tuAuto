@@ -397,6 +397,9 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] Precio dos tamaños más grande (`text-2xl` → `text-4xl`)
 - [x] Botones "Comprar"/"Confirmar compra" dos tamaños más grande y en negrita (`text-sm` → `text-lg`, `font-bold`)
 - [x] Lista de elementos agregados en "Destacar por día" también en `#010F40`
+- [x] Los 3 botones "Comprar"/"Confirmar compra" con la misma tipografía y color `#010F40` (el del Combo, que abre un modal, no tenía ninguno de estos estilos)
+- [x] "Máx. {n}" en `#010F40`; fila "Total" → "Total a pagar"; botón de confirmar ya no repite el total en su texto
+- [x] Color de fondo/texto de estas tarjetas centralizado en `globals.css` (`bg-plan-card`/`text-plan-card-ink`) en vez de hex sueltos, para poder reutilizarlo en Suscripciones a futuro
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
 - [ ] Prueba manual en navegador: confirmar contraste y alineación sobre el fondo `#888477`
 

@@ -17,6 +17,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - En "Destacar por día", la lista que aparece después de "Agregar elemento" (nombre, días, precio, Total) también pasa a `#010F40`.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Changed (2026-08-13) — Botones parejos + "Total a pagar" + tokens de color centralizados
+- Los 3 botones "Comprar" (Publicación 30 días, Combo, Destacar por día) y "Confirmar compra" pasan a tener la misma tipografía: `text-lg font-bold`, color `#010F40` en vez de blanco (el botón del Combo abre un modal y no tenía ninguno de estos estilos todavía — se empareja).
+- En "Destacar por día": "Máx. {n}" también pasa a `#010F40`; la fila "Total" del carrito pasa a decir "Total a pagar"; el botón de confirmar deja de repetir el total en su texto (ahora dice simplemente "Confirmar compra", el total ya se ve arriba en "Total a pagar").
+- Se centraliza el color de fondo (`#888477`) y de texto (`#010F40`) de estas tarjetas en `globals.css` como tokens de Tailwind (`bg-plan-card` / `text-plan-card-ink`, vía `--plan-card-bg`/`--plan-card-ink`) en vez de hex sueltos repetidos por archivo — para cambiar el estilo de estas tarjetas (o reutilizarlo en Suscripciones a futuro) alcanza con editar `globals.css` una sola vez.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.

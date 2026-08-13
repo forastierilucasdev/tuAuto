@@ -67,15 +67,15 @@ async function PagoIndividual({ userId, destacarListingId }: { userId: string; d
   return (
     <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {singlePlan && (
-        <Card className="flex h-full flex-col bg-[#888477]">
+        <Card className="flex h-full flex-col bg-plan-card">
           <CardHeader className="flex flex-1 flex-col items-center justify-center text-center">
-            <CardTitle className="text-[#010F40]">{singlePlan.name}</CardTitle>
-            <p className="mt-1 text-4xl font-extrabold text-[#010F40]">{formatCurrency(Number(singlePlan.price))}</p>
+            <CardTitle className="text-plan-card-ink">{singlePlan.name}</CardTitle>
+            <p className="mt-1 text-4xl font-extrabold text-plan-card-ink">{formatCurrency(Number(singlePlan.price))}</p>
           </CardHeader>
           <CardContent>
             <form action={purchasePublicationPackAction}>
               <input type="hidden" name="planCode" value={singlePlan.code} />
-              <Button type="submit" className="w-full text-lg font-bold">
+              <Button type="submit" className="w-full text-lg font-bold text-plan-card-ink">
                 Comprar
               </Button>
             </form>
@@ -84,10 +84,10 @@ async function PagoIndividual({ userId, destacarListingId }: { userId: string; d
       )}
 
       {comboPlan && (
-        <Card className="flex h-full flex-col bg-[#888477]">
+        <Card className="flex h-full flex-col bg-plan-card">
           <CardHeader className="flex flex-1 flex-col items-center justify-center text-center">
-            <CardTitle className="text-[#010F40]">{comboPlan.name}</CardTitle>
-            <p className="mt-1 text-4xl font-extrabold text-[#010F40]">{formatCurrency(Number(comboPlan.price))}</p>
+            <CardTitle className="text-plan-card-ink">{comboPlan.name}</CardTitle>
+            <p className="mt-1 text-4xl font-extrabold text-plan-card-ink">{formatCurrency(Number(comboPlan.price))}</p>
           </CardHeader>
           <CardContent>
             <FeatureComboWizard listings={featurableListings.map((l) => ({ id: l.id, title: l.title }))} />
@@ -96,12 +96,12 @@ async function PagoIndividual({ userId, destacarListingId }: { userId: string; d
       )}
 
       {perDayPlan && (
-        <Card className="flex h-full flex-col bg-[#888477]">
+        <Card className="flex h-full flex-col bg-plan-card">
           <CardHeader className="flex flex-1 flex-col items-center justify-center text-center">
-            <CardTitle className="text-[#010F40]">{perDayPlan.name}</CardTitle>
-            <p className="mt-1 text-4xl font-extrabold text-[#010F40]">
+            <CardTitle className="text-plan-card-ink">{perDayPlan.name}</CardTitle>
+            <p className="mt-1 text-4xl font-extrabold text-plan-card-ink">
               {formatCurrency(Number(perDayPlan.price))}{" "}
-              <span className="text-lg font-medium text-[#010F40]">/ día</span>
+              <span className="text-lg font-medium text-plan-card-ink">/ día</span>
             </p>
           </CardHeader>
           <CardContent>
