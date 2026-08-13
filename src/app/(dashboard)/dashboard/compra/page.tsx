@@ -65,14 +65,14 @@ async function PagoIndividual({ userId, destacarListingId }: { userId: string; d
   }));
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {singlePlan && (
-        <Card>
-          <CardHeader>
+        <Card className="flex h-full flex-col bg-[#888477]">
+          <CardHeader className="text-center">
             <CardTitle>{singlePlan.name}</CardTitle>
             <p className="mt-1 text-2xl font-extrabold text-primary">{formatCurrency(Number(singlePlan.price))}</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="mt-auto">
             <form action={purchasePublicationPackAction}>
               <input type="hidden" name="planCode" value={singlePlan.code} />
               <Button type="submit" className="w-full">
@@ -84,27 +84,27 @@ async function PagoIndividual({ userId, destacarListingId }: { userId: string; d
       )}
 
       {comboPlan && (
-        <Card>
-          <CardHeader>
+        <Card className="flex h-full flex-col bg-[#888477]">
+          <CardHeader className="text-center">
             <CardTitle>{comboPlan.name}</CardTitle>
             <p className="mt-1 text-2xl font-extrabold text-primary">{formatCurrency(Number(comboPlan.price))}</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="mt-auto">
             <FeatureComboWizard listings={featurableListings.map((l) => ({ id: l.id, title: l.title }))} />
           </CardContent>
         </Card>
       )}
 
       {perDayPlan && (
-        <Card>
-          <CardHeader>
+        <Card className="flex h-full flex-col bg-[#888477]">
+          <CardHeader className="text-center">
             <CardTitle>{perDayPlan.name}</CardTitle>
             <p className="mt-1 text-2xl font-extrabold text-primary">
               {formatCurrency(Number(perDayPlan.price))}{" "}
               <span className="text-sm font-medium text-muted-foreground">/ día</span>
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="mt-auto">
             <DestacarPorDiasCarrito
               listings={featurableForCarrito}
               pricePerDay={Number(perDayPlan.price)}

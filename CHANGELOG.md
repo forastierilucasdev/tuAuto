@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Changed (2026-08-12) — Tarjetas de "Pago individual" parejas, con el botón abajo
+- Las 3 tarjetas (Publicación 30 días / Combo / Destacar por día) pasan a tener el mismo alto (ya se estiraban parejo por el grid, pero el botón "Comprar" quedaba pegado al precio con un hueco vacío debajo en las dos primeras) — ahora es `flex flex-col` + `mt-auto` en el contenido, así el botón/widget siempre queda pegado abajo del todo.
+- Fondo `#888477` en las 3 tarjetas; título y monto centrados.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.
