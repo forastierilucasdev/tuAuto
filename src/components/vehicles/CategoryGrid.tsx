@@ -8,7 +8,7 @@ export function CategoryGrid() {
         <Link
           key={value}
           href={`/catalogo?tipo=${value}`}
-          className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-5 text-center shadow-card transition-shadow hover:shadow-card-hover"
+          className="flex flex-col items-center gap-2 rounded-2xl border border-plan-card bg-surface px-4 py-5 text-center shadow-card transition-shadow hover:shadow-card-hover"
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Icon className="h-5 w-5" />

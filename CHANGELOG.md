@@ -32,6 +32,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - Nuevo: la insignia también se muestra en el detalle de la publicación (`/catalogo/[slug]`, al lado del título) — antes desaparecía al abrir la publicación, ahora se mantiene mientras la publicación siga destacada.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Changed (2026-08-13) — Borde #888477 en los botones de "Explorá por categoría"
+- Los botones de categoría en el inicio (`CategoryGrid`) pasan de `border-border` (gris) a un borde mínimo (1px) del mismo color `#888477` que ya usan las tarjetas de "Mis compras" — reutiliza el token `border-plan-card` de `globals.css`, sin agregar uno nuevo.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.
