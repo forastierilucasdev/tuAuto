@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CatalogFilters } from "@/components/vehicles/CatalogFilters";
 import { CatalogFiltersDrawer } from "@/components/vehicles/CatalogFiltersDrawer";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
+import { VehicleRequestCta } from "@/components/vehicles/VehicleRequestCta";
 import { getCatalogResults } from "@/server/data/listings";
 import type { AccountType, Currency, VehicleCondition, VehicleType } from "@/generated/prisma/client";
 
@@ -64,10 +65,16 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
       <div className="mt-6 lg:grid lg:grid-cols-[280px_1fr] lg:gap-8">
         <div className="hidden lg:block">
           <CatalogFilters />
+          <div className="mt-6">
+            <VehicleRequestCta />
+          </div>
         </div>
 
         <div>
           <CatalogFiltersDrawer />
+          <div className="mb-6 lg:hidden">
+            <VehicleRequestCta />
+          </div>
 
           <div className="space-y-10">
             {featured.length > 0 && (
@@ -86,9 +93,12 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
                 <h2 className="mb-4 text-lg font-bold text-navy">Resto del catálogo</h2>
               )}
               {total === 0 ? (
-                <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-                  No encontramos publicaciones con esos filtros. Probá ajustarlos.
-                </p>
+                <div className="space-y-6">
+                  <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
+                    No encontramos publicaciones con esos filtros. Probá ajustarlos.
+                  </p>
+                  <VehicleRequestCta />
+                </div>
               ) : (
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                   {rest.map((vehicle) => (

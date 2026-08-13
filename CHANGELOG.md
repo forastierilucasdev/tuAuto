@@ -40,6 +40,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - La insignia "Destacado" (variante `featured` de `Badge`) pasa a mostrar una estrella (`lucide-react`, rellena con el mismo color del texto) antes del texto — se agregó dentro del componente `Badge`, así aparece automáticamente en los 3 lugares que usan esta variante (catálogo, detalle de publicación, panel del usuario) sin tocar cada uno.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Added (2026-08-13) — "¿Buscás un auto en especial?": aviso por mail cuando se publique
+- Nuevo bloque en el inicio, mismo formato que "¿Tenés un vehículo para vender?" (fondo navy, texto centrado), con botón "Cargar datos" → `/buscar-vehiculo`. De paso se corrige el texto del bloque de venta para incluir "agencia" (antes solo decía "particular o como concesionaria").
+- Nueva página pública `/buscar-vehiculo`: formulario con apellido y nombre, correo, teléfono (obligatorios) y marca, modelo, año (desde/hasta), km (desde/hasta) (opcionales). Al enviar, muestra "¡Muchas gracias! Te contactaremos cuando tengamos novedades.".
+- El envío se manda por mail a `soporte@motoresya.com.ar` reutilizando `sendSupportEmail` (mismo mecanismo que "Soporte") — hasta que haya una bandeja propia para esto. Sin `RESEND_API_KEY` configurada, devuelve el mismo error explícito ya usado en Soporte.
+- El mismo CTA, en versión compacta (`VehicleRequestCta`), se agrega también en `/catalogo`: debajo de los filtros (sidebar en desktop, arriba de los resultados en mobile) y en el estado de "sin resultados".
+- `tsc --noEmit`, `eslint`, `npm run build` limpios; verificado con el servidor de desarrollo (`/`, `/catalogo`, `/buscar-vehiculo` responden 200).
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.

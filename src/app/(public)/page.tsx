@@ -75,11 +75,23 @@ export default async function HomePage() {
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold sm:text-3xl">¿Tenés un vehículo para vender?</h2>
           <p className="max-w-xl text-white/70">
-            Publicá tu anuncio en minutos, particular o como concesionaria, y llegá a miles de
-            compradores.
+            Publicá tu anuncio en minutos, particular, agencia o como concesionaria, y llegá a
+            miles de compradores.
           </p>
           <Link href="/login" className={cn(buttonVariants({ variant: "primary", size: "lg" }))}>
             Vende tu Auto
+          </Link>
+        </div>
+      </section>
+
+      <section className="bg-navy py-14 text-white">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold sm:text-3xl">¿Buscás un auto en especial?</h2>
+          <p className="max-w-xl text-white/70">
+            Dejanos tus datos de contacto y te avisaremos apenas se publique.
+          </p>
+          <Link href="/buscar-vehiculo" className={cn(buttonVariants({ variant: "primary", size: "lg" }))}>
+            Cargar datos
           </Link>
         </div>
       </section>

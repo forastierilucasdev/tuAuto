@@ -391,6 +391,17 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 50 — "¿Buscás un auto en especial?": aviso por mail (solicitado por el usuario)
+- [x] Bloque en el inicio, mismo formato que "¿Tenés un vehículo para vender?", botón "Cargar datos" → `/buscar-vehiculo`
+- [x] Corrección de paso: el texto de "Tenés un vehículo para vender" ahora incluye "agencia"
+- [x] Página `/buscar-vehiculo`: formulario (nombre, correo, teléfono obligatorios; marca, modelo, año desde/hasta, km desde/hasta opcionales)
+- [x] Envío por mail a `soporte@motoresya.com.ar` reutilizando `sendSupportEmail` — mismo criterio "sin RESEND_API_KEY, error explícito" que Soporte
+- [x] Mensaje de éxito: "¡Muchas gracias! Te contactaremos cuando tengamos novedades."
+- [x] Mismo CTA en formato compacto (`VehicleRequestCta`) debajo de los filtros de `/catalogo` (desktop y mobile) y en el estado sin resultados
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios; verificado con servidor de desarrollo (`/`, `/catalogo`, `/buscar-vehiculo` → 200)
+- [ ] Falta cargar `RESEND_API_KEY` y verificar el dominio en Resend para que el mail salga de verdad (mismo pendiente que Soporte, Fase 43)
+- [ ] Prueba manual en navegador
+
 ## Fase 49 — Estrella en la insignia "Destacado" (solicitado por el usuario)
 - [x] Estrella (`lucide-react`, rellena del color del texto) antes de "Destacado", agregada dentro de `Badge` para que aparezca en los 3 lugares que usan `variant="featured"` sin repetir código
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
