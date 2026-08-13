@@ -10,6 +10,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - Fondo `#888477` en las 3 tarjetas; título y monto centrados.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Changed (2026-08-12) — Ajuste fino de las tarjetas de "Pago individual"
+- Título, precio y (en "Destacar por día") el sufijo "/ día" pasan al color `#010F40` — antes el precio era azul (`text-primary`).
+- Título+precio quedan centrados verticalmente en el espacio de arriba de cada tarjeta (antes quedaban pegados arriba, con el hueco vacío abajo del precio en vez de arriba del botón).
+- Precio dos tamaños más grande (`text-2xl` → `text-4xl`); botones "Comprar"/"Confirmar compra" dos tamaños más grande y en negrita (`text-sm` → `text-lg`, `font-bold`).
+- En "Destacar por día", la lista que aparece después de "Agregar elemento" (nombre, días, precio, Total) también pasa a `#010F40`.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.

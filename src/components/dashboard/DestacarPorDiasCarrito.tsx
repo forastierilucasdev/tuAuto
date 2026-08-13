@@ -131,7 +131,7 @@ export function DestacarPorDiasCarrito({
       </Button>
 
       {cart.length > 0 && (
-        <div className="space-y-2 rounded-lg border border-border p-3">
+        <div className="space-y-2 rounded-lg border border-border p-3 text-[#010F40]">
           {cart.map((item) => (
             <div key={item.listingId} className="flex items-center justify-between gap-2">
               <p className="truncate">
@@ -150,7 +150,7 @@ export function DestacarPorDiasCarrito({
               </div>
             </div>
           ))}
-          <div className="flex items-center justify-between border-t border-border pt-2 font-bold text-navy">
+          <div className="flex items-center justify-between border-t border-border pt-2 font-bold">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>
           </div>
@@ -159,7 +159,12 @@ export function DestacarPorDiasCarrito({
 
       {error && <p className="text-danger">{error}</p>}
 
-      <Button type="button" className="w-full" disabled={cart.length === 0 || submitting} onClick={confirmPurchase}>
+      <Button
+        type="button"
+        className="w-full text-lg font-bold"
+        disabled={cart.length === 0 || submitting}
+        onClick={confirmPurchase}
+      >
         {submitting ? "Redirigiendo a Mercado Pago..." : cart.length > 0 ? `Confirmar compra — Total ${formatCurrency(total)}` : "Confirmar compra"}
       </Button>
     </div>

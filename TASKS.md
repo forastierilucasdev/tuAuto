@@ -391,6 +391,15 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 45 — Ajuste fino de las tarjetas de "Pago individual" (solicitado por el usuario)
+- [x] Título, precio y "/ día" en color `#010F40` (antes el precio era azul `text-primary`)
+- [x] Título+precio centrados verticalmente en el espacio de arriba de cada tarjeta
+- [x] Precio dos tamaños más grande (`text-2xl` → `text-4xl`)
+- [x] Botones "Comprar"/"Confirmar compra" dos tamaños más grande y en negrita (`text-sm` → `text-lg`, `font-bold`)
+- [x] Lista de elementos agregados en "Destacar por día" también en `#010F40`
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [ ] Prueba manual en navegador: confirmar contraste y alineación sobre el fondo `#888477`
+
 ## Fase 44 — Tarjetas de "Pago individual" parejas (solicitado por el usuario)
 - [x] Las 3 tarjetas del mismo alto con el botón/widget pegado abajo (`flex flex-col` + `mt-auto`)
 - [x] Fondo `#888477`, título y monto centrados
