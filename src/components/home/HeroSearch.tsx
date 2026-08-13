@@ -56,7 +56,7 @@ export function HeroSearch() {
           <option value="">Todos los tipos</option>
           {VEHICLE_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
-              {t.label}
+              {t.labelPlural}
             </option>
           ))}
         </Select>

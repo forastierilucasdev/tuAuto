@@ -396,7 +396,7 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] `password`/`tipo-cuenta`: unificados al mismo `BackButton` (antes tenían su propio link, mal alineado a la izquierda)
 - [x] Filtro "Provincia" (lista fija) + "Localidad" (texto libre) en el catálogo (desktop y mobile)
 - [x] "Provincia" del wizard de publicar pasa de texto libre a la misma lista fija
-- [x] "Auto" → "Autos" (`VEHICLE_TYPES`, se refleja en filtros/wizard/Explorá por categoría)
+- [x] Tipo de vehículo: `VEHICLE_TYPES` con `label` (singular, wizard) y `labelPlural` (filtros/buscador/Explorá por categoría)
 - [x] Header mobile: botón "Vende tu Auto" más chico (no más alto que el logo)
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
 - [x] Verificado con requests reales: las 13 rutas del árbol de "Volver" responden bien, filtro de provincia baja el total de 38 a 18 contra datos reales

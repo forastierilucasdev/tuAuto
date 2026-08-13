@@ -16,8 +16,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 - Verificado contra datos reales: `/catalogo?provincia=Buenos+Aires` baja el total de 38 a 18 publicaciones.
 
-### Changed (2026-08-12) — "Auto" pasa a "Autos" (tipo de vehículo)
-- Un solo cambio en `VEHICLE_TYPES` (única fuente de verdad) — se refleja en el filtro de tipo de vehículo, el wizard de publicar y "Explorá por categoría" a la vez.
+### Changed (2026-08-12) — Tipo de vehículo: plural en filtros, singular en el wizard
+- `VEHICLE_TYPES` pasa a tener `label` (singular: "Auto", "Camioneta"...) y `labelPlural` (plural: "Autos", "Camionetas"...) — filtros de catálogo, buscador principal y "Explorá por categoría" usan el plural; el wizard de publicar (elegís el tipo de UN vehículo puntual) sigue en singular.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+- Verificado con requests reales: los 7 tipos aparecen en plural en home y catálogo.
 
 ### Changed (2026-08-12) — Header mobile: botón "Vende tu Auto" más chico
 - En mobile quedaba más alto (`h-9` fijo) que la altura fluida del logo en pantallas angostas — pasa a `h-7`/texto más chico en mobile, vuelve al tamaño normal desde `md:`.

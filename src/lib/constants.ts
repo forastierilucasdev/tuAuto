@@ -14,15 +14,19 @@ import {
  * `VehicleType` de prisma/schema.prisma — única fuente de verdad para el
  * dato en sí; este archivo solo agrega metadata de presentación (label, ícono).
  */
+// `label` (singular) se usa en el wizard de publicar, donde elegís el tipo
+// de UN vehículo puntual ("Auto Toyota Corolla 2023"); `labelPlural` en los
+// filtros y "Explorá por categoría", donde se navega por categorías de
+// varios anuncios ("Autos", "Motos").
 export const VEHICLE_TYPES = [
-  { value: "AUTO", label: "Autos", icon: Car },
-  { value: "CAMIONETA", label: "Camioneta", icon: Truck },
-  { value: "MOTO", label: "Moto", icon: Motorbike },
-  { value: "BICICLETA", label: "Bicicleta", icon: Bike },
-  { value: "MONOPATIN", label: "Monopatín", icon: Scooter },
-  { value: "LANCHA", label: "Lancha", icon: Sailboat },
-  { value: "BARCO", label: "Barco", icon: Ship },
-] as const satisfies ReadonlyArray<{ value: string; label: string; icon: LucideIcon }>;
+  { value: "AUTO", label: "Auto", labelPlural: "Autos", icon: Car },
+  { value: "CAMIONETA", label: "Camioneta", labelPlural: "Camionetas", icon: Truck },
+  { value: "MOTO", label: "Moto", labelPlural: "Motos", icon: Motorbike },
+  { value: "BICICLETA", label: "Bicicleta", labelPlural: "Bicicletas", icon: Bike },
+  { value: "MONOPATIN", label: "Monopatín", labelPlural: "Monopatines", icon: Scooter },
+  { value: "LANCHA", label: "Lancha", labelPlural: "Lanchas", icon: Sailboat },
+  { value: "BARCO", label: "Barco", labelPlural: "Barcos", icon: Ship },
+] as const satisfies ReadonlyArray<{ value: string; label: string; labelPlural: string; icon: LucideIcon }>;
 
 export type VehicleTypeValue = (typeof VEHICLE_TYPES)[number]["value"];
 
