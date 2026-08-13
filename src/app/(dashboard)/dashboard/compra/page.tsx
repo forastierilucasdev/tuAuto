@@ -134,17 +134,17 @@ async function Suscripciones({ userId }: { userId: string }) {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {plans.map((plan) => (
-          <Card key={plan.id}>
-            <CardHeader>
-              <CardTitle>{plan.name}</CardTitle>
-              <p className="mt-1 text-2xl font-extrabold text-primary">{formatCurrency(Number(plan.price))}</p>
+          <Card key={plan.id} className="flex h-full flex-col bg-plan-card">
+            <CardHeader className="flex flex-1 flex-col items-center justify-center text-center">
+              <CardTitle className="text-plan-card-ink">{plan.name}</CardTitle>
+              <p className="mt-1 text-4xl font-extrabold text-plan-card-ink">{formatCurrency(Number(plan.price))}</p>
             </CardHeader>
             <CardContent>
               <form action={purchaseSubscriptionAction}>
                 <input type="hidden" name="planCode" value={plan.code} />
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full text-lg font-bold text-plan-card-ink">
                   Suscribirme
                 </Button>
               </form>
