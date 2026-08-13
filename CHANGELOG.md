@@ -27,6 +27,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - Las tarjetas de "Suscripciones" adoptan el mismo formato que "Pago individual": fondo `bg-plan-card`, mismo alto con el botón pegado abajo, título+precio centrados verticalmente, precio en `text-4xl` y botón "Suscribirme" en `text-lg font-bold`, todo en `text-plan-card-ink` — reusando los tokens agregados en la ronda anterior, sin repetir hex.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Changed (2026-08-13) — Insignia "Destacado" con fondo #010F40 y letra #FAB005
+- La insignia "Destacado" (variante `featured` de `Badge`) pasa de `bg-amber-100 text-amber-800` a fondo `#010F40` / letra `#FAB005`, centralizado en `globals.css` (`bg-featured`/`text-featured-ink`) — afecta a la vez a las tarjetas del catálogo (`VehicleCard`) y al panel del usuario (`OwnerListingCard`, que ya la mostraba mientras dura el período de destacado, calculado con `getEffectiveFeatured`).
+- Nuevo: la insignia también se muestra en el detalle de la publicación (`/catalogo/[slug]`, al lado del título) — antes desaparecía al abrir la publicación, ahora se mantiene mientras la publicación siga destacada.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.

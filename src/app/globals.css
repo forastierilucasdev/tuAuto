@@ -24,6 +24,10 @@
   --plan-card-bg: #888477;
   --plan-card-ink: #010f40;
 
+  /* Insignia "Destacado" (catálogo, panel del usuario, detalle de publicación). */
+  --featured-bg: #010f40;
+  --featured-ink: #fab005;
+
   /* Forma */
   --radius-card: 1rem;
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
@@ -49,6 +53,9 @@
 
   --color-plan-card: var(--plan-card-bg);
   --color-plan-card-ink: var(--plan-card-ink);
+
+  --color-featured: var(--featured-bg);
+  --color-featured-ink: var(--featured-ink);
 
   --radius-card: var(--radius-card);
   --shadow-card: var(--shadow-card);

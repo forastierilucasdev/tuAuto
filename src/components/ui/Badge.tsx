@@ -7,7 +7,7 @@ const badgeVariants = cva("inline-flex items-center rounded-full px-2.5 py-0.5 t
     variant: {
       default: "bg-surface-muted text-foreground",
       primary: "bg-primary/10 text-primary",
-      featured: "bg-amber-100 text-amber-800",
+      featured: "bg-featured text-featured-ink",
       success: "bg-green-100 text-green-800",
       danger: "bg-red-100 text-red-800",
       info: "bg-sky-100 text-sky-800",

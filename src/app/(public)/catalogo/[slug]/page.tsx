@@ -16,7 +16,7 @@ import { buttonVariants } from "@/components/ui/Button";
 import { BackButton } from "@/components/ui/BackButton";
 import { Badge } from "@/components/ui/Badge";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import { getListingBySlug } from "@/server/data/listings";
+import { getEffectiveFeatured, getListingBySlug } from "@/server/data/listings";
 import { auth } from "@/lib/auth";
 import { buildWhatsAppLink, cn, formatCurrency, formatKm } from "@/lib/utils";
 import {
@@ -48,6 +48,7 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
   const listing = await getListingBySlug(slug, session?.user?.id);
   if (!listing) notFound();
 
+  const isFeatured = getEffectiveFeatured(listing.featured, listing.featuredUntil);
   const isBusiness = isBusinessAccountType(listing.user.accountType);
   const businessName = listing.user.agencyProfile?.businessName;
   const contactAddress = listing.contactAddress ?? listing.user.agencyProfile?.address ?? null;
@@ -188,7 +189,10 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
         <BackButton href="/catalogo" />
       </div>
 
-      <h1 className="mt-2 text-2xl font-bold text-navy sm:text-3xl">{listing.title}</h1>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <h1 className="text-2xl font-bold text-navy sm:text-3xl">{listing.title}</h1>
+        {isFeatured && <Badge variant="featured">Destacado</Badge>}
+      </div>
 
       <div className="mt-4 sm:mt-6">
         <VehicleGallery images={listing.images} title={listing.title} />
