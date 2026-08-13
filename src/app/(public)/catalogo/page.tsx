@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import { CatalogFilters } from "@/components/vehicles/CatalogFilters";
 import { CatalogFiltersDrawer } from "@/components/vehicles/CatalogFiltersDrawer";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
@@ -57,7 +58,11 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-center text-2xl font-bold text-navy sm:text-3xl lg:text-left">Catálogo</h1>
+      <div className="flex justify-end">
+        <BackButton href="/" label="Inicio" />
+      </div>
+
+      <h1 className="mt-2 text-center text-2xl font-bold text-navy sm:text-3xl lg:text-left">Catálogo</h1>
       <p className="mt-1 text-center text-muted-foreground lg:text-left">
         {total} publicaci{total === 1 ? "ón encontrada" : "ones encontradas"}
       </p>

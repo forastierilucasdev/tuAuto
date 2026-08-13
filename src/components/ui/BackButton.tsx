@@ -10,14 +10,22 @@ import { ArrowLeft } from "lucide-react";
  * pantallas sin nunca salir). Con un `href` fijo por pantalla, tocar
  * "Volver" repetidas veces siempre termina en Inicio.
  */
-export function BackButton({ href, className }: { href: string; className?: string }) {
+export function BackButton({
+  href,
+  className,
+  label = "Volver",
+}: {
+  href: string;
+  className?: string;
+  label?: string;
+}) {
   return (
     <Link
       href={href}
       className={`inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground ${className ?? ""}`}
     >
       <ArrowLeft className="h-4 w-4" />
-      Volver
+      {label}
     </Link>
   );
 }
