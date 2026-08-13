@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-12) — "Soporte": reporte de errores por email
+- Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
+- El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.
+- Nueva integración: [Resend](https://resend.com) (`lib/resend.ts`, `RESEND_API_KEY`/`RESEND_FROM_EMAIL` en `.env`) — sin la API Key todavía no cargada, el formulario muestra un error explícito en vez de fallar en silencio.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios (nueva ruta `/dashboard/soporte` registrada).
+- Verificado con requests reales: `/dashboard/soporte` sin errores de servidor.
+- Pendiente: cargar `RESEND_API_KEY` (cuenta gratis en resend.com) y verificar el dominio `motoresya.com.ar` ahí para que el mail salga realmente a `soporte@motoresya.com.ar` (sin verificar, Resend solo deja mandar desde un remitente de prueba a la propia casilla de la cuenta de Resend).
+
 ### Fixed (2026-08-12) — "Volver" ya no entra en loops (siempre navega hacia Inicio)
 - `BackButton` usaba `router.back()` (el historial del navegador) — si entrabas a una pantalla hija por un camino distinto al esperado (ej. "Tipo de cuenta" desde el panel "Mi cuenta" estando en otra pantalla), "Volver" podía rebotarte entre dos pantallas en vez de salir. Pasa a recibir un `href` fijo por pantalla (ya no `"use client"`, es un Server Component simple) — cada pantalla tiene un padre determinístico en la jerarquía de la app, así que tocar "Volver" repetidas veces siempre termina en Inicio, sin loops. Actualizados los 13 usos (11 con `BackButton` + 2 que tenían su propio link ad-hoc, `password` y `tipo-cuenta`, ahora unificados al mismo componente y alineados a la derecha como el resto).
 - Jerarquía: `anuncios`/`perfil` → Inicio; `publicaciones`/`compra` → `anuncios`; `publicaciones/nueva`/`publicaciones/[id]/editar` → `publicaciones`; `compra/historial` → `compra`; `perfil/tipo-cuenta`/`perfil/password`/`perfil/verificar` → `perfil`; `catalogo/[slug]` → `catalogo`; `concesionarias/[id]` → `concesionarias`.

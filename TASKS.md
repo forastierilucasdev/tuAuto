@@ -391,6 +391,16 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 43 — "Soporte": reporte de errores por email (solicitado por el usuario)
+- [x] Nueva pantalla `/dashboard/soporte` — descripción del error + captura opcional
+- [x] El mail incluye nombre/correo/teléfono del usuario y fecha/hora, agregados del lado del servidor
+- [x] Integración con Resend (`lib/resend.ts`) — sin `RESEND_API_KEY`, error explícito en vez de fallo silencioso
+- [x] Panel "Mi cuenta": "Soporte" agregado debajo de "Cambiar contraseña", separado del grupo "Anuncios"
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con requests reales: `/dashboard/soporte` sin errores de servidor
+- [ ] Falta cargar `RESEND_API_KEY` y verificar el dominio `motoresya.com.ar` en Resend para que el mail salga de verdad
+- [ ] Prueba manual en navegador (imprescindible, una vez cargada la API Key): mandar un reporte con y sin captura, confirmar que llega el mail con los datos correctos
+
 ## Fase 42 — "Volver" sin loops, filtro de provincia/localidad, y ajustes chicos (solicitado por el usuario)
 - [x] `BackButton`: `href` fijo en vez de `router.back()` — elimina los loops entre pantallas; jerarquía completa hasta Inicio en los 13 usos de la app
 - [x] `password`/`tipo-cuenta`: unificados al mismo `BackButton` (antes tenían su propio link, mal alineado a la izquierda)

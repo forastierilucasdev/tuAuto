@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
-import { IdCard, KeyRound, LayoutDashboard, LogOut, PlusCircle, Repeat, ShoppingBag, User as UserIcon } from "lucide-react";
+import { HelpCircle, IdCard, KeyRound, LayoutDashboard, LogOut, PlusCircle, Repeat, ShoppingBag, User as UserIcon } from "lucide-react";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { getMyProfileAction } from "@/server/actions/profile.actions";
@@ -25,7 +25,10 @@ const ANUNCIOS_ITEMS = [
   { href: "/dashboard/compra?vista=suscripcion", label: "Compra suscripción", icon: Repeat },
 ];
 
-const BOTTOM_ITEMS = [{ href: "/dashboard/perfil/password", label: "Cambiar contraseña", icon: KeyRound }];
+const BOTTOM_ITEMS = [
+  { href: "/dashboard/perfil/password", label: "Cambiar contraseña", icon: KeyRound },
+  { href: "/dashboard/soporte", label: "Soporte", icon: HelpCircle },
+];
 
 const itemClasses =
   "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-surface-muted";
@@ -140,6 +143,7 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
             </Link>
           ))}
 
+          <hr className="my-2 border-border" />
           {BOTTOM_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={itemClasses}>
               <item.icon className="h-5 w-5 text-muted-foreground" />

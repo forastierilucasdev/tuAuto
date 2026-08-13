@@ -155,6 +155,13 @@ Los 4 tipos de compra (pack de publicación, suscripción, destacar por día, co
 - **`MERCADOPAGO_WEBHOOK_SECRET` opcional**: si no está configurado (falta crearlo en el panel de Mercado Pago), el webhook procesa las notificaciones igual pero sin validar la firma, con un `console.warn`.
 - **Credenciales de un vendedor de prueba**: para que un pago de sandbox se apruebe, el vendedor también tiene que ser una cuenta de prueba (no alcanza con que el comprador lo sea) — si no, Mercado Pago rechaza el pago con "una de las partes... es de prueba". Se resuelve creando un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), creando una app desde esa cuenta, y usando sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook se configura en esa misma app (la firma se valida contra la app dueña de las credenciales activas). Verificado de punta a punta así contra el deploy real.
 
+## 7.1. Soporte — reporte de errores por email
+
+`/dashboard/soporte` (`SupportForm` + `submitSupportReportAction`): el usuario logueado describe un error y opcionalmente adjunta una captura — el nombre, correo, teléfono y la fecha/hora se agregan del lado del servidor (no los pide el formulario), no hay que confiar en que el usuario los tipee bien. El mail se manda con [Resend](https://resend.com) (`lib/resend.ts`) a `soporte@motoresya.com.ar` (mismo destino que el Contacto público, que sigue siendo una maqueta sin envío real), con `replyTo` al correo del usuario para poder responderle directo.
+
+- **`RESEND_API_KEY` opcional pero necesaria para que funcione de verdad**: sin ella, `sendSupportEmail()` devuelve un error explícito ("El envío de reportes todavía no está configurado...") en vez de fallar en silencio o fingir éxito — a diferencia del patrón de Upstash/webhook secret (que caen a un fallback funcional), acá no hay una alternativa segura, o se manda el mail o no se manda.
+- **`RESEND_FROM_EMAIL`**: sin verificar el dominio `motoresya.com.ar` en Resend, solo se puede mandar desde `onboarding@resend.dev` (remitente de prueba de Resend) y solo a la casilla verificada de esa cuenta de Resend — no a `soporte@motoresya.com.ar` todavía. Verificar el dominio en Resend (Domains) antes de depender de esto en producción.
+
 ## 8. Despliegue
 
 - **Base de datos**: Supabase (Postgres).
