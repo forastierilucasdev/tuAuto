@@ -36,6 +36,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - Los botones de categoría en el inicio (`CategoryGrid`) pasan de `border-border` (gris) a un borde mínimo (1px) del mismo color `#888477` que ya usan las tarjetas de "Mis compras" — reutiliza el token `border-plan-card` de `globals.css`, sin agregar uno nuevo.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Changed (2026-08-13) — Estrella en la insignia "Destacado"
+- La insignia "Destacado" (variante `featured` de `Badge`) pasa a mostrar una estrella (`lucide-react`, rellena con el mismo color del texto) antes del texto — se agregó dentro del componente `Badge`, así aparece automáticamente en los 3 lugares que usan esta variante (catálogo, detalle de publicación, panel del usuario) sin tocar cada uno.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.
