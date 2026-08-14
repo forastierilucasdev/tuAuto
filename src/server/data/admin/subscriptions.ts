@@ -145,7 +145,7 @@ export async function grantSubscription(userId: string, planCode: string, adminI
     }),
     prisma.user.update({
       where: { id: userId },
-      data: { subscriptionQuota: plan.quantity, subscriptionExpiresAt },
+      data: { subscriptionQuota: plan.quantity, subscriptionExpiresAt, subscriptionPlanCode: plan.code },
     }),
   ]);
 
@@ -189,7 +189,13 @@ export async function adjustPurchasedPublications(userId: string, delta: number)
 
 export async function adjustFeaturedVouchers(userId: string, delta: number) {
   const updates: Prisma.PrismaPromise<unknown>[] = [
-    prisma.user.update({ where: { id: userId }, data: { pendingFeaturedVouchers: { increment: delta } } }),
+    prisma.user.update({
+      where: { id: userId },
+      data: {
+        pendingFeaturedVouchers: { increment: delta },
+        ...(delta > 0 ? { featuredVouchersGranted: { increment: delta } } : {}),
+      },
+    }),
   ];
   if (delta > 0) {
     updates.push(

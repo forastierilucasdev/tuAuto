@@ -3,7 +3,9 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Select } from "@/components/ui/Select";
+import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Label } from "@/components/ui/Label";
 import { AdminConfirmButton } from "@/components/admin/AdminConfirmButton";
 import {
   adjustFeaturedVouchersAction,
@@ -11,6 +13,66 @@ import {
   cancelSubscriptionAction,
   grantSubscriptionAction,
 } from "@/server/actions/admin/subscriptions.actions";
+
+type AdjustAction = (userId: string, delta: number) => Promise<{ error?: string } | undefined>;
+
+/** Campo "ajuste" + botón Guardar — reemplaza el viejo patrón de +1/-1 al toque: el admin escribe el ajuste que quiere aplicar (positivo suma, negativo resta) y confirma una sola vez. */
+function AdjustQuotaField({
+  label,
+  userId,
+  action,
+  canEdit,
+  onSaved,
+}: {
+  label: string;
+  userId: string;
+  action: AdjustAction;
+  canEdit: boolean;
+  onSaved: () => void;
+}) {
+  const [delta, setDelta] = React.useState("");
+  const [pending, setPending] = React.useState(false);
+  const [error, setError] = React.useState<string>();
+
+  async function save() {
+    const parsed = Number(delta);
+    if (!delta.trim() || !Number.isInteger(parsed) || parsed === 0) {
+      setError("Ingresá un ajuste distinto de cero (ej: 5 o -2).");
+      return;
+    }
+    setPending(true);
+    setError(undefined);
+    const result = await action(userId, parsed);
+    setPending(false);
+    if (result?.error) {
+      setError(result.error);
+      return;
+    }
+    setDelta("");
+    onSaved();
+  }
+
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <div>
+        <Label htmlFor={`adjust-${label}`}>{label}</Label>
+        <Input
+          id={`adjust-${label}`}
+          type="number"
+          placeholder="ej: 5 o -2"
+          value={delta}
+          onChange={(e) => setDelta(e.target.value)}
+          disabled={!canEdit}
+          className="w-28"
+        />
+      </div>
+      <Button type="button" variant="outline" size="sm" disabled={!canEdit || pending} onClick={save}>
+        {pending ? "Guardando..." : "Guardar"}
+      </Button>
+      {error && <p className="w-full text-xs text-danger">{error}</p>}
+    </div>
+  );
+}
 
 export function UserSubscriptionActions({
   userId,
@@ -39,15 +101,6 @@ export function UserSubscriptionActions({
       return;
     }
     router.refresh();
-  }
-
-  function adjust(action: (userId: string, delta: number) => Promise<{ error?: string } | undefined>, delta: number) {
-    return async () => {
-      const result = await action(userId, delta);
-      if (result?.error) return result;
-      router.refresh();
-      return { success: true };
-    };
   }
 
   return (
@@ -82,17 +135,21 @@ export function UserSubscriptionActions({
         />
       )}
 
-      <div className="flex flex-wrap gap-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm text-muted-foreground">Publicaciones compradas:</span>
-          <Button type="button" variant="outline" size="sm" disabled={!canEdit} onClick={() => adjust(adjustPurchasedPublicationsAction, 1)()}>+1</Button>
-          <Button type="button" variant="outline" size="sm" disabled={!canEdit} onClick={() => adjust(adjustPurchasedPublicationsAction, -1)()}>-1</Button>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm text-muted-foreground">Vouchers de destacado:</span>
-          <Button type="button" variant="outline" size="sm" disabled={!canEdit} onClick={() => adjust(adjustFeaturedVouchersAction, 1)()}>+1</Button>
-          <Button type="button" variant="outline" size="sm" disabled={!canEdit} onClick={() => adjust(adjustFeaturedVouchersAction, -1)()}>-1</Button>
-        </div>
+      <div className="space-y-3 rounded-lg border border-border p-3">
+        <AdjustQuotaField
+          label="Publicaciones compradas"
+          userId={userId}
+          action={adjustPurchasedPublicationsAction}
+          canEdit={canEdit}
+          onSaved={() => router.refresh()}
+        />
+        <AdjustQuotaField
+          label="Vouchers de destacado"
+          userId={userId}
+          action={adjustFeaturedVouchersAction}
+          canEdit={canEdit}
+          onSaved={() => router.refresh()}
+        />
       </div>
     </div>
   );

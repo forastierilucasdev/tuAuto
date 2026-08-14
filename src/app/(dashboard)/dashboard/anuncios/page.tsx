@@ -63,8 +63,8 @@ export default async function AdministradorAnunciosPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Publicaciones disponibles"
-          value={available}
+          label="Publicaciones compradas"
+          value={profile?.purchasedPublications ?? 0}
           href="/dashboard/compra?vista=individual"
           linkLabel="Comprar"
         />
@@ -74,12 +74,29 @@ export default async function AdministradorAnunciosPage() {
           href="/dashboard/publicaciones?tab=todas"
         />
         <StatCard
+          label="Publicaciones disponibles"
+          value={available}
+          href="/dashboard/compra?vista=individual"
+          linkLabel="Comprar"
+        />
+        <StatCard
           label="Publicaciones destacadas"
           value={groups.destacadas.length}
           href="/dashboard/publicaciones?tab=destacadas"
         />
         <StatCard
-          label="Destacados disponibles"
+          label="Vouchers de destacado comprados"
+          value={profile?.featuredVouchersGranted ?? 0}
+          href="/dashboard/compra?vista=individual"
+          linkLabel="Comprar"
+        />
+        <StatCard
+          label="Vouchers de destacado utilizados"
+          value={profile?.featuredVouchersUsed ?? 0}
+          href="/dashboard/publicaciones?tab=destacadas"
+        />
+        <StatCard
+          label="Vouchers de destacado disponibles"
           value={pendingVouchers}
           hint="Créditos de destacado sin usar"
           href="/dashboard/compra?vista=individual"
@@ -94,7 +111,7 @@ export default async function AdministradorAnunciosPage() {
         <StatCard label="Vendidas" value={groups.vendidas.length} href="/dashboard/publicaciones?tab=vendidas" />
         <StatCard
           label="Suscripción"
-          value={subscription.active ? `${subscription.quota} publicaciones` : "Sin suscripción activa"}
+          value={subscription.active ? (subscription.planName ?? "Plan activo") : "Sin suscripción activa"}
           hint={
             subscription.active && subscription.expiresAt
               ? `Vence el ${dateFormatter.format(subscription.expiresAt)}`

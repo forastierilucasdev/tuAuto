@@ -129,9 +129,36 @@ export function isListingSuspended(suspendedUntil: Date | null): boolean {
 
 // --- Destacados (mismo archivo: son el mismo modelo `Listing`) ---
 
-export async function listFeaturedListingsForAdmin(page = 1) {
+export type AdminFeaturedFilters = {
+  userSearch?: string;
+  createdFrom?: Date;
+  createdTo?: Date;
+};
+
+export async function listFeaturedListingsForAdmin(filters: AdminFeaturedFilters = {}, page = 1) {
   const safePage = Math.max(1, Math.trunc(page) || 1);
-  const where: Prisma.ListingWhereInput = { featured: true, deletedAt: null };
+  const where: Prisma.ListingWhereInput = {
+    featured: true,
+    deletedAt: null,
+    ...(filters.userSearch
+      ? {
+          user: {
+            OR: [
+              { email: { contains: filters.userSearch, mode: "insensitive" } },
+              { fullName: { contains: filters.userSearch, mode: "insensitive" } },
+            ],
+          },
+        }
+      : {}),
+    ...(filters.createdFrom || filters.createdTo
+      ? {
+          createdAt: {
+            ...(filters.createdFrom ? { gte: filters.createdFrom } : {}),
+            ...(filters.createdTo ? { lte: filters.createdTo } : {}),
+          },
+        }
+      : {}),
+  };
 
   const [listings, total] = await Promise.all([
     prisma.listing.findMany({

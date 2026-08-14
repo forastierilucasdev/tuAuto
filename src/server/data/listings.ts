@@ -514,7 +514,9 @@ export async function createListing(input: {
             data: {
               activationCount: { increment: 1 },
               quotaConsumed: { increment: 1 },
-              ...(activation.useFeaturedVoucher ? { pendingFeaturedVouchers: { decrement: 1 } } : {}),
+              ...(activation.useFeaturedVoucher
+                ? { pendingFeaturedVouchers: { decrement: 1 }, featuredVouchersUsed: { increment: 1 } }
+                : {}),
             },
           }),
         ]
@@ -657,7 +659,9 @@ export async function updateOwnedListing(
             data: {
               ...(cost?.consumesQuota ? { quotaConsumed: { increment: 1 } } : {}),
               ...(cost?.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
-              ...(activation!.useFeaturedVoucher ? { pendingFeaturedVouchers: { decrement: 1 } } : {}),
+              ...(activation!.useFeaturedVoucher
+                ? { pendingFeaturedVouchers: { decrement: 1 }, featuredVouchersUsed: { increment: 1 } }
+                : {}),
             },
           }),
         ]
@@ -706,7 +710,9 @@ export async function reactivateListing(listingId: string, userId: string) {
             data: {
               ...(cost.consumesQuota ? { quotaConsumed: { increment: 1 } } : {}),
               ...(cost.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
-              ...(activation.useFeaturedVoucher ? { pendingFeaturedVouchers: { decrement: 1 } } : {}),
+              ...(activation.useFeaturedVoucher
+                ? { pendingFeaturedVouchers: { decrement: 1 }, featuredVouchersUsed: { increment: 1 } }
+                : {}),
             },
           }),
         ]

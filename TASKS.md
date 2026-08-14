@@ -391,6 +391,24 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 68 — Destacados: filtro por usuario/fecha de alta, arreglo de overflow en Acciones (solicitado por el usuario)
+- [x] Filtro por usuario (email/nombre) y por rango de fecha de alta (`createdAt` de la publicación) en `/admin/destacados`
+- [x] Nueva columna "Usuario" en la tabla (antes no se mostraba, aunque ya se cargaba)
+- [x] `FeaturedRowActions`: layout cambiado de una fila con `flex-wrap` a un stack vertical explícito (input+botón "Agregar días" en su propia fila, "Quitar destacado" debajo) — se veía roto/desbordado en la columna Acciones
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios; filtros verificados con lectura contra la base real
+- [ ] Prueba manual en navegador
+
+## Fase 67 — Cupo y suscripción: nombre del plan visible, contadores de vouchers otorgados/usados, botón Guardar (solicitado por el usuario)
+- [x] `User.subscriptionPlanCode` (nuevo) — la tarjeta "Suscripción" (admin y `/dashboard/anuncios`) ahora muestra el nombre del plan vigente en vez de un cupo crudo que no bajaba (confundía, porque el cupo real vive en un solo pozo combinado — ver `loadActivationContext`)
+- [x] `User.featuredVouchersGranted`/`featuredVouchersUsed` (nuevos, históricos, nunca decrecen) — se suman en paralelo a `pendingFeaturedVouchers` en cada sitio donde se otorga (combo "para la próxima publicación", ajuste manual admin) o se consume un voucher (`createListing`/`updateOwnedListing`/`reactivateListing`)
+- [x] `/admin/usuarios/[id]`: bloque de cupo reordenado con los subtítulos pedidos — Suscripción (nombre+vencimiento) / Publicaciones compradas / Publicaciones realizadas / **Publicaciones disponibles** (cálculo combinado, destacado) / Vouchers de destacado compradas / utilizados / disponibles / Publicaciones totales
+- [x] `/dashboard/anuncios` (vista del propio usuario): mismos subtítulos nuevos agregados a las tarjetas — el usuario ya veía "Publicaciones disponibles" decrementando solo; ahora también ve "Publicaciones compradas", "Vouchers de destacado comprados/utilizados"
+- [x] Botones +1/-1 de "Publicaciones compradas"/"Vouchers de destacado" en el admin reemplazados por un campo de ajuste + botón "Guardar" (antes cada click impactaba al toque, sin confirmación)
+- [x] Migración aditiva aplicada contra la base real (3 columnas nuevas en `User`), con backfill best-effort (`featuredVouchersGranted` = saldo actual donde había, no hay forma de reconstruir el resto)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con scripts desechables contra la base real (otorgar suscripción sube "disponibles" en la cantidad correcta y resuelve el nombre del plan; ajuste de vouchers +3/-1 deja granted/used consistentes) — todo revertido después
+- [ ] Prueba manual en navegador
+
 ## Fase 66 — Suscripciones y Pagos: editar plan, aprobar pago en efectivo, comprobante desde admin (solicitado por el usuario)
 - [x] "Editar" junto a Dar de baja/Reactivar en la tabla de Planes (`EditPlanModal`): nombre, descripción, precio, duración y cantidad — impacta directo en `/dashboard/compra` (sin caché) y en lo que acredita la próxima compra de ese plan
 - [x] Confirmado (sin cambios de código necesarios): dar de baja/reactivar/editar un plan ya impactaba directo en Comprar publicación/suscripción, y una promoción reactivada ya adopta el formato de su categoría hermana — no hay tarjetas ni tipos de plan separados en el código, es un único template por sección

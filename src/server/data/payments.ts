@@ -89,10 +89,16 @@ export async function getSubscriptionPlans() {
 export async function getSubscriptionStatus(userId: string) {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { subscriptionQuota: true, subscriptionExpiresAt: true },
+    select: { subscriptionQuota: true, subscriptionExpiresAt: true, subscriptionPlanCode: true },
   });
   const active = Boolean(user.subscriptionExpiresAt && user.subscriptionExpiresAt.getTime() > Date.now());
-  return { active, quota: active ? user.subscriptionQuota : 0, expiresAt: user.subscriptionExpiresAt };
+  const plan = active && user.subscriptionPlanCode ? await prisma.plan.findUnique({ where: { code: user.subscriptionPlanCode } }) : null;
+  return {
+    active,
+    quota: active ? user.subscriptionQuota : 0,
+    expiresAt: user.subscriptionExpiresAt,
+    planName: plan?.name ?? null,
+  };
 }
 
 /** "Destacados disponibles" en Resumen/Mis compras — distinto de "Publicaciones destacadas" (avisos ya destacados hoy). */
@@ -269,6 +275,7 @@ async function applySubscriptionEffect(payment: PaymentModel, plan: PlanModel, p
       data: {
         subscriptionQuota: plan.quantity!,
         subscriptionExpiresAt: new Date(Date.now() + plan.durationDays! * 24 * 60 * 60 * 1000),
+        subscriptionPlanCode: plan.code,
       },
     }),
   ]);
@@ -316,7 +323,11 @@ async function applyFeatureComboEffect(payment: PaymentModel, providerPaymentId:
       prisma.payment.update({ where: { id: payment.id }, data: { status: "APPROVED", providerPaymentId } }),
       prisma.user.update({
         where: { id: payment.userId },
-        data: { purchasedPublications: { increment: 1 }, pendingFeaturedVouchers: { increment: 1 } },
+        data: {
+          purchasedPublications: { increment: 1 },
+          pendingFeaturedVouchers: { increment: 1 },
+          featuredVouchersGranted: { increment: 1 },
+        },
       }),
     ]);
     return;

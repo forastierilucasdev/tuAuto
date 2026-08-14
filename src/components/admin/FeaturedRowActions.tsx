@@ -26,19 +26,28 @@ export function FeaturedRowActions({ listingId, isCurrentlyFeatured, canEdit }: 
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Input
-        type="number"
-        min={1}
-        max={365}
-        value={days}
-        onChange={(e) => setDays(Number(e.target.value))}
-        disabled={!canEdit}
-        className="w-20"
-      />
-      <Button type="button" variant="outline" size="sm" disabled={!canEdit || pending} onClick={extend}>
-        {pending ? "..." : "Agregar días"}
-      </Button>
+    <div className="flex min-w-40 flex-col items-start gap-2">
+      <div className="flex items-center gap-2">
+        <Input
+          type="number"
+          min={1}
+          max={365}
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+          disabled={!canEdit}
+          className="w-16 shrink-0"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={!canEdit || pending}
+          onClick={extend}
+          className="shrink-0 whitespace-nowrap"
+        >
+          {pending ? "..." : "Agregar días"}
+        </Button>
+      </div>
       {isCurrentlyFeatured && (
         <ReasonConfirmModal
           label="Quitar destacado"
@@ -50,7 +59,7 @@ export function FeaturedRowActions({ listingId, isCurrentlyFeatured, canEdit }: 
           onSuccess={() => router.refresh()}
         />
       )}
-      {error && <p className="w-full text-xs text-danger">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 }

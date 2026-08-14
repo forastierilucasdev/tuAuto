@@ -106,12 +106,22 @@ model User {
   // suscripción nueva reemplaza estos dos campos, no se acumulan.
   subscriptionQuota     Int       @default(0)
   subscriptionExpiresAt DateTime?
+  // Qué plan es la suscripción vigente — solo para mostrar el nombre
+  // ("Suscripción: 30 publicaciones por 30 días — vence..."), nunca se lee
+  // para calcular cupo (eso sigue siendo `subscriptionQuota`). No se limpia
+  // al cancelar/vencer: queda como referencia histórica, sin efecto porque
+  // la UI solo lo muestra cuando `subscriptionExpiresAt` sigue vigente.
+  subscriptionPlanCode String?
 
   // Créditos de "destacar" pendientes de aplicar: se suman al comprar
   // "Publicación 30 días + 7 días destacado" eligiendo "aplicar a la próxima
   // publicación" (en vez de a una publicación existente) — se consumen solos
   // en la próxima publicación/reactivación (ver `loadActivationContext`).
   pendingFeaturedVouchers Int @default(0)
+  // Contadores históricos (nunca decrecen, a diferencia de `pendingFeaturedVouchers`
+  // que es el saldo vivo) — solo para mostrar "comprados"/"utilizados" por separado.
+  featuredVouchersGranted Int @default(0)
+  featuredVouchersUsed    Int @default(0)
 
   // Se incrementa al cambiar la contraseña — el JWT de sesión guarda el
   // valor vigente al loguearse, así que un cambio de contraseña invalida

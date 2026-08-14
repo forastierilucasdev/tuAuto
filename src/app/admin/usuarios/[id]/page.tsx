@@ -8,7 +8,7 @@ import { UserAccountActions } from "@/components/admin/UserAccountActions";
 import { UserSubscriptionActions } from "@/components/admin/UserSubscriptionActions";
 import { getModulePermissions, requireAdminPermission } from "@/lib/admin-permissions";
 import { getUserForAdmin, isAccountLocked, isUserSuspended } from "@/server/data/admin/users";
-import { getOwnerListingGroups } from "@/server/data/listings";
+import { FREE_PUBLICATION_QUOTA, getOwnerListingGroups } from "@/server/data/listings";
 import { getPaymentHistory, getSubscriptionPlans, getSubscriptionStatus } from "@/server/data/payments";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/utils";
@@ -46,6 +46,16 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
   const usuariosPermissions = getModulePermissions(session.user.adminRole, "usuarios");
   const suscripcionesPermissions = getModulePermissions(session.user.adminRole, "suscripciones");
   const hasActiveSubscription = subscriptionStatus.active;
+  // Misma fórmula que `loadActivationContext()` (server/data/listings.ts) —
+  // se recalcula acá en vez de llamarla para no repetir la query de User,
+  // que ya se cargó completa en `getUserForAdmin`.
+  const availablePublications = Math.max(
+    0,
+    FREE_PUBLICATION_QUOTA +
+      user.purchasedPublications +
+      (hasActiveSubscription ? user.subscriptionQuota : 0) -
+      user.quotaConsumed
+  );
   const locked = isAccountLocked(user.lockedUntil);
   const suspended = isUserSuspended(user.suspendedUntil);
 
@@ -117,15 +127,21 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
 
         <Card>
           <CardContent className="space-y-2 pt-5 text-sm">
-            <p><span className="text-muted-foreground">Publicaciones compradas:</span> {user.purchasedPublications}</p>
-            <p><span className="text-muted-foreground">Cupo consumido:</span> {user.quotaConsumed}</p>
-            <p><span className="text-muted-foreground">Vouchers de destacado pendientes:</span> {user.pendingFeaturedVouchers}</p>
             <p>
               <span className="text-muted-foreground">Suscripción:</span>{" "}
               {hasActiveSubscription
-                ? `${user.subscriptionQuota} cupo, vence ${dateFormatter.format(user.subscriptionExpiresAt!)}`
+                ? `${subscriptionStatus.planName ?? "Plan no identificado"} — vence ${dateFormatter.format(user.subscriptionExpiresAt!)}`
                 : "Sin suscripción activa"}
             </p>
+            <p><span className="text-muted-foreground">Publicaciones compradas:</span> {user.purchasedPublications}</p>
+            <p><span className="text-muted-foreground">Publicaciones realizadas:</span> {user.activationCount}</p>
+            <p className="text-base">
+              <span className="text-muted-foreground">Publicaciones disponibles:</span>{" "}
+              <span className="font-bold text-primary">{availablePublications}</span>
+            </p>
+            <p><span className="text-muted-foreground">Vouchers de destacado compradas:</span> {user.featuredVouchersGranted}</p>
+            <p><span className="text-muted-foreground">Vouchers de destacado utilizados:</span> {user.featuredVouchersUsed}</p>
+            <p><span className="text-muted-foreground">Vouchers de destacado disponibles:</span> {user.pendingFeaturedVouchers}</p>
             <p><span className="text-muted-foreground">Publicaciones totales:</span> {totalListings}</p>
           </CardContent>
         </Card>
