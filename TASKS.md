@@ -391,6 +391,15 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 69 — Auditoría: acciones legibles, objeto resuelto, detalle antes/después, filtros (solicitado por el usuario)
+- [x] Diccionario `ACTION_LABEL`: cada código de acción (`subscription.grant`, etc.) se traduce a una frase en español; el código crudo queda debajo, chico, como referencia — nunca se rompe si se agrega una acción nueva sin actualizar el diccionario (usa el código como fallback)
+- [x] `resolveAuditTargets()`: la columna "Objeto" pasa de `User · cmsg4xz...` a un nombre real con link (usuario, publicación, plan, verificación de identidad) — una query por tabla agrupando todos los IDs de la página, nunca una por fila
+- [x] `AuditChangesModal`: botón "Ver detalle" que muestra el antes/después que cada acción ya guardaba en `changes` (Json) pero que no se mostraba en ningún lado — genérico, sin renderer por tipo de acción
+- [x] Filtros conectados a la UI (ya existían en la capa de datos, nunca se habían expuesto): admin (texto), objeto (tabla), fecha desde/hasta
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con lectura directa contra la base real: nombres resueltos correctamente para los 3 admins con actividad reciente, filtros por admin/tabla funcionando, y un `changes` real de la base (el mismo caso de "Suscripción 5→30" reportado antes) confirma que el detalle se va a ver bien
+- [ ] Prueba manual en navegador
+
 ## Fase 68 — Destacados: filtro por usuario/fecha de alta, arreglo de overflow en Acciones (solicitado por el usuario)
 - [x] Filtro por usuario (email/nombre) y por rango de fecha de alta (`createdAt` de la publicación) en `/admin/destacados`
 - [x] Nueva columna "Usuario" en la tabla (antes no se mostraba, aunque ya se cargaba)

@@ -5,6 +5,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Auditoría: acciones legibles, objeto resuelto, detalle antes/después, filtros
+`AdminAuditLog` ya guardaba todo lo necesario (`changes.before`/`after`) desde la Fase 1 del panel admin, pero nada de eso se mostraba: la tabla solo tenía el código crudo de la acción y un ID pelado, y el formulario de filtros nunca se conectó a la pantalla aunque la capa de datos ya lo soportaba.
+
+- **Acción legible**: diccionario `ACTION_LABEL` traduce cada código (`subscription.grant`, `listing.suspend`, etc.) a una frase en español, con el código crudo debajo en chico como referencia técnica. Si se agrega una acción nueva sin actualizar el diccionario, se muestra el código tal cual — no rompe nada.
+- **Objeto resuelto**: `resolveAuditTargets()` (`server/data/admin/audit-log.ts`) agrupa los IDs de la página por tabla (User/Listing/Payment/Plan/VerificationRequest) y hace **una sola query por tabla**, nunca una por fila — la columna "Objeto" pasa de `User · cmsg4xzot...` a un nombre real con link (usuario, publicación, plan, o "Identidad de {usuario}" para una verificación).
+- **"Ver detalle"**: `AuditChangesModal`, nuevo componente genérico (sin renderer por tipo de acción) que muestra el `before`/`after` ya guardado como pares campo → antes → después, con fechas ISO formateadas a `es-AR`.
+- **Filtros conectados**: admin (texto, email o nombre), objeto (tabla), fecha desde/hasta — la función `listAuditLog()` ya los soportaba (salvo el de admin, que pasó de `adminId` exacto a `adminSearch` por texto, más útil sin tener que conocer el ID de memoria).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con lectura directa contra la base real: los 3 admins con actividad reciente resuelven a su nombre real, los filtros devuelven lo esperado, y un `changes` real ya guardado (el caso "Suscripción 5→30" de la ronda anterior) confirma el formato del detalle.
+
 ### Added (2026-08-14) — Destacados: filtro por usuario/fecha de alta, arreglo de layout en Acciones
 - `/admin/destacados`: nuevo filtro por usuario (email/nombre) y por rango de fecha de alta de la publicación, más una columna "Usuario" que antes no se mostraba (el dato ya se cargaba, solo faltaba en la tabla).
 - `FeaturedRowActions` (input de días + "Agregar días" + "Quitar destacado") pasó de un `flex-wrap` en una sola fila a un stack vertical explícito — el layout anterior se desbordaba de la columna "Acciones" en la tabla.

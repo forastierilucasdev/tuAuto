@@ -34,7 +34,7 @@ export async function logAdminAction(input: {
 }
 
 export type AdminAuditFilters = {
-  adminId?: string;
+  adminSearch?: string;
   targetTable?: AdminAuditTargetTable;
   from?: Date;
   to?: Date;
@@ -45,7 +45,16 @@ const AUDIT_LOG_PAGE_SIZE = 30;
 export async function listAuditLog(filters: AdminAuditFilters, page = 1) {
   const safePage = Math.max(1, Math.trunc(page) || 1);
   const where = {
-    ...(filters.adminId ? { adminId: filters.adminId } : {}),
+    ...(filters.adminSearch
+      ? {
+          admin: {
+            OR: [
+              { email: { contains: filters.adminSearch, mode: "insensitive" as const } },
+              { fullName: { contains: filters.adminSearch, mode: "insensitive" as const } },
+            ],
+          },
+        }
+      : {}),
     ...(filters.targetTable ? { targetTable: filters.targetTable } : {}),
     ...(filters.from || filters.to
       ? { createdAt: { ...(filters.from ? { gte: filters.from } : {}), ...(filters.to ? { lte: filters.to } : {}) } }
@@ -64,4 +73,73 @@ export async function listAuditLog(filters: AdminAuditFilters, page = 1) {
   ]);
 
   return { entries, total, page: safePage, totalPages: Math.max(1, Math.ceil(total / AUDIT_LOG_PAGE_SIZE)) };
+}
+
+export type AuditTargetInfo = { label: string; href?: string };
+
+/**
+ * Resuelve `targetTable · targetId` (un ID pelado) a algo legible —
+ * agrupado por tabla y consultado en una sola query por tabla (nunca una
+ * query por fila, aunque la página tenga 30 entradas). Si el registro ya
+ * no existe (borrado físico, caso raro), esa entrada simplemente no
+ * aparece en el mapa — el que llama muestra el fallback crudo.
+ */
+export async function resolveAuditTargets(
+  entries: { targetTable: AdminAuditTargetTable; targetId: string }[]
+): Promise<Map<string, AuditTargetInfo>> {
+  const idsByTable = new Map<AdminAuditTargetTable, Set<string>>();
+  for (const entry of entries) {
+    if (!idsByTable.has(entry.targetTable)) idsByTable.set(entry.targetTable, new Set());
+    idsByTable.get(entry.targetTable)!.add(entry.targetId);
+  }
+
+  const result = new Map<string, AuditTargetInfo>();
+
+  const userIds = [...(idsByTable.get("User") ?? [])];
+  if (userIds.length > 0) {
+    const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, fullName: true, email: true } });
+    for (const user of users) {
+      result.set(`User:${user.id}`, { label: `${user.fullName} (${user.email})`, href: `/admin/usuarios/${user.id}` });
+    }
+  }
+
+  const listingIds = [...(idsByTable.get("Listing") ?? [])];
+  if (listingIds.length > 0) {
+    const listings = await prisma.listing.findMany({ where: { id: { in: listingIds } }, select: { id: true, title: true } });
+    for (const listing of listings) {
+      result.set(`Listing:${listing.id}`, { label: listing.title, href: `/admin/publicaciones/${listing.id}` });
+    }
+  }
+
+  const paymentIds = [...(idsByTable.get("Payment") ?? [])];
+  if (paymentIds.length > 0) {
+    const payments = await prisma.payment.findMany({ where: { id: { in: paymentIds } }, select: { id: true, description: true, userId: true } });
+    for (const payment of payments) {
+      result.set(`Payment:${payment.id}`, { label: payment.description, href: `/admin/usuarios/${payment.userId}` });
+    }
+  }
+
+  const planCodes = [...(idsByTable.get("Plan") ?? [])];
+  if (planCodes.length > 0) {
+    const plans = await prisma.plan.findMany({ where: { code: { in: planCodes } }, select: { code: true, name: true } });
+    for (const plan of plans) {
+      result.set(`Plan:${plan.code}`, { label: plan.name });
+    }
+  }
+
+  const verificationIds = [...(idsByTable.get("VerificationRequest") ?? [])];
+  if (verificationIds.length > 0) {
+    const requests = await prisma.verificationRequest.findMany({
+      where: { id: { in: verificationIds } },
+      select: { id: true, user: { select: { id: true, fullName: true } } },
+    });
+    for (const request of requests) {
+      result.set(`VerificationRequest:${request.id}`, {
+        label: `Identidad de ${request.user.fullName}`,
+        href: `/admin/usuarios/${request.user.id}`,
+      });
+    }
+  }
+
+  return result;
 }
