@@ -107,3 +107,15 @@ async function uploadPrivateImage(bucket: string, fileSizeLimit: string, file: F
 export function uploadVerificationDocument(file: File, userId: string, side: "frente" | "dorso") {
   return uploadPrivateImage(VERIFICATIONS_BUCKET, "5MB", file, `${userId}/${side}-${Date.now()}`);
 }
+
+/**
+ * Único lugar que puede volver visible una foto de DNI: URL temporal (5
+ * minutos), usada solo por el panel de admin (`/admin/identidad`) al
+ * revisar una solicitud — nunca una URL pública ni persistida.
+ */
+export async function getVerificationDocumentSignedUrl(path: string): Promise<string | null> {
+  const client = getAdminClient();
+  const { data, error } = await client.storage.from(VERIFICATIONS_BUCKET).createSignedUrl(path, 5 * 60);
+  if (error) return null;
+  return data.signedUrl;
+}

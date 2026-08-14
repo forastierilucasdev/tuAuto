@@ -1,10 +1,10 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import type { AccountType } from "@/generated/prisma/client";
+import type { AccountType, AdminRole } from "@/generated/prisma/client";
 import { loginSchema } from "@/lib/validations/auth";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
-import { findUserForAuth, getSessionVersion, touchLastLogin } from "@/server/data/users";
+import { findUserForAuth, getSessionState, touchLastLogin } from "@/server/data/users";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
@@ -29,7 +29,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!limited.success || !ipLimited.success) return null;
 
         const user = await findUserForAuth(email);
-        if (!user || !user.isActive) return null;
+        if (!user || !user.isActive || user.deletedAt) return null;
 
         const passwordMatches = await bcrypt.compare(password, user.passwordHash);
         if (!passwordMatches) return null;
@@ -42,6 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.fullName,
           accountType: user.accountType,
           sessionVersion: user.sessionVersion,
+          adminRole: user.adminRole,
         };
       },
     }),
@@ -52,18 +53,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id as string;
         token.accountType = user.accountType as AccountType;
         token.sessionVersion = user.sessionVersion;
+        token.adminRole = user.adminRole as AdminRole | null;
         return token;
       }
       // En cada request posterior al login: si `sessionVersion` ya no
       // coincide con el valor vigente en la base, la sesión se invalida acá
       // mismo (ver `changePasswordAction`) en vez de esperar a que el JWT
       // expire solo — así una cookie robada deja de servir apenas la
-      // víctima cambia su contraseña.
+      // víctima cambia su contraseña. De paso se refresca `adminRole` — un
+      // cambio de rol, un ban o un borrado lógico (admin o no) toman efecto
+      // en el próximo request, sin invalidación aparte.
       const userId = token.id as string | undefined;
       if (userId) {
-        const currentVersion = await getSessionVersion(userId);
-        if (currentVersion === null || currentVersion !== token.sessionVersion) {
+        const state = await getSessionState(userId);
+        if (!state || state.sessionVersion !== token.sessionVersion) {
           token.id = undefined;
+        } else {
+          token.adminRole = state.adminRole;
         }
       }
       return token;
@@ -73,6 +79,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (!token.id) return null as unknown as typeof session;
       session.user.id = token.id as string;
       session.user.accountType = token.accountType as AccountType;
+      session.user.adminRole = (token.adminRole ?? null) as AdminRole | null;
       return session;
     },
   },

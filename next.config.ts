@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "picsum.photos" },
       { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" },
+      // URLs firmadas del bucket privado `verifications` (fotos de DNI) —
+      // solo se generan para el panel /admin/identidad, nunca públicas.
+      { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/sign/**" },
     ],
   },
   async headers() {

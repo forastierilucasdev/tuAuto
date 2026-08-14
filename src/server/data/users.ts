@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import type { AccountType, User } from "@/generated/prisma/client";
+import type { AccountType, AdminRole, User } from "@/generated/prisma/client";
 
 export type SafeUser = {
   id: string;
@@ -31,16 +31,21 @@ export async function findUserForAuth(email: string) {
 
 /**
  * Usado por el callback `jwt` de Auth.js en cada request para invalidar
- * sesiones cuya `sessionVersion` quedó vieja (cambio de contraseña) o cuya
- * cuenta se desactivó — `null` significa "sesión ya no válida".
+ * sesiones cuya `sessionVersion` quedó vieja (cambio de contraseña), cuya
+ * cuenta se desactivó/baneó, o se borró lógicamente — `null` significa
+ * "sesión ya no válida". De paso devuelve `adminRole` vigente, así un
+ * cambio de rol (o un ban/borrado a un admin) se aplica en el próximo
+ * request sin plomería nueva.
  */
-export async function getSessionVersion(userId: string): Promise<number | null> {
+export async function getSessionState(
+  userId: string
+): Promise<{ sessionVersion: number; adminRole: AdminRole | null } | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { sessionVersion: true, isActive: true },
+    select: { sessionVersion: true, isActive: true, deletedAt: true, adminRole: true },
   });
-  if (!user || !user.isActive) return null;
-  return user.sessionVersion;
+  if (!user || !user.isActive || user.deletedAt) return null;
+  return { sessionVersion: user.sessionVersion, adminRole: user.adminRole };
 }
 
 export async function getFullProfile(id: string) {

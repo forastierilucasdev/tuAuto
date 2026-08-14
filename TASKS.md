@@ -391,6 +391,27 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 59 — Panel de administración `/admin`: RBAC, auditoría, borrado lógico (solicitado por el usuario)
+Fase 1 de un pedido enterprise mucho más grande — alcance acotado explícitamente con el usuario antes de empezar (ver "Fuera de alcance" abajo).
+
+- [x] Schema: `AdminRole` (`SUPERADMIN|EDITOR|LECTOR`) nullable en `User`, `deletedAt` en `User`/`Listing`, `AdminAuditLog`
+- [x] Migración aditiva aplicada contra la base real (procedimiento no interactivo: `migrate diff` → carpeta a mano → `db execute` → `migrate resolve --applied` → `generate`)
+- [x] Bootstrap: primer SUPERADMIN (`forastierilucasdev@gmail.com`, cuenta creada específicamente para esto)
+- [x] `adminRole` viaja en el JWT/sesión (`types/next-auth.d.ts`, `auth.ts`, `getSessionState` — reemplaza a `getSessionVersion`, ahora también invalida sesión si `deletedAt`)
+- [x] `deletedAt` excluido de todas las queries públicas/del dueño existentes (catálogo, login, panel de publicaciones, destacar, etc.)
+- [x] `lib/admin-permissions.ts`: matriz de permisos por rol/módulo (Lectura/Editor/Eliminación), `requireAdmin`/`requireAdminPermission`/`requireSuperAdminRole` — validado siempre server-side, nunca solo en la UI
+- [x] `AdminAuditLog`: escritura explícita (`logAdminAction`) al final de cada mutación de admin, con antes/después en JSON + IP; visor de solo lectura en `/admin/auditoria`
+- [x] Módulo Usuarios: lista con búsqueda/filtros, detalle, banear/desbanear, borrado lógico/restaurar, asignar rol de admin (exclusivo Superadmin)
+- [x] Módulo Identidad: cola de solicitudes de verificación de DNI con fotos (URL firmada temporal), aprobar/rechazar (exclusivo Superadmin) — cubre el gap ya documentado en `ERRORES.md`
+- [x] Módulo Publicaciones: lista con búsqueda/filtros, detalle/edición (sin tocar cupo/reactivación, distinto de una edición del dueño), cambiar estado, dar de baja/restaurar
+- [x] Módulo Suscripciones y Pagos: lista de pagos + planes, otorgar/renovar suscripción (crea un `Payment` trazable, `provider: "admin"`), cancelar suscripción, ajustar cupo comprado/vouchers, dar de baja un plan
+- [x] Módulo Destacados: lista de publicaciones destacadas, destacar manual por días, quitar destacado antes de tiempo
+- [x] UI: `/admin/layout.tsx` (guard `requireAdmin()`, sin `middleware.ts` — decisión explícita y justificada), `AdminHeader` (insignia de rol), `AdminSidebarNav`, botones deshabilitados por permiso, modales de confirmación en toda acción destructiva
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con script desechable contra la base real (auditoría, borrado lógico de publicación/usuario, invalidación de sesión simulada) y con servidor de desarrollo: anónimo → `/login`; logueado sin rol → `/`; login real como Superadmin → `/admin/usuarios` carga con la insignia de rol
+- [ ] Prueba manual en navegador con los 3 roles (confirmar botones deshabilitados/ocultos para Lector/Editor)
+- [ ] **Fuera de alcance en esta ronda** (a futuro, rondas separadas): 2FA, restricción por IP, sesión única por admin, bloqueo persistente de cuenta, exportación CSV/Excel, alertas automáticas por mail (bloqueado además por no tener `RESEND_API_KEY` real), auto-moderación, CRM de reportes/notas internas, documentación Swagger (no aplica), suite de tests automatizados (no existe ninguna en el repo)
+
 ## Fase 58 — Vistas reales por publicación, privadas para el dueño (solicitado por el usuario)
 - [x] `Listing.viewCount` (ya existía sin usar) pasa a incrementarse de verdad, deduplicado por visitante/día (`ListingView`, nueva tabla, única por publicación+visitante+día)
 - [x] Visitante identificado por hash SHA-256 (`userId` si está logueado, IP+user-agent si no) — nunca se guarda la IP en texto plano

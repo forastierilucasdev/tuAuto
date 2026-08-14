@@ -71,6 +71,7 @@ function notExpiredWhere(): Prisma.ListingWhereInput {
 
 function visibleStatusWhere(): Prisma.ListingWhereInput {
   return {
+    deletedAt: null,
     OR: PUBLICLY_VISIBLE_STATUSES.map((status) => ({ status, ...notExpiredWhere() })),
   };
 }
@@ -202,7 +203,10 @@ export async function getListingBySlug(slug: string, viewerUserId?: string) {
       },
     },
   });
-  if (!listing) return null;
+  // Dado de baja por un admin — invisible para cualquiera, incluido el
+  // dueño (que puede seguir viéndola en su panel, pero no operarla
+  // normalmente ni que aparezca en el detalle público).
+  if (!listing || listing.deletedAt) return null;
 
   const isOwner = viewerUserId && listing.userId === viewerUserId;
   if (isOwner) return listing;
@@ -258,7 +262,7 @@ function toOwnerListingData(listing: ListingWithCardData): OwnerListingData {
 
 export async function getOwnerListingGroups(userId: string) {
   const listings = await prisma.listing.findMany({
-    where: { userId },
+    where: { userId, deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: CARD_INCLUDE,
   });
@@ -512,8 +516,8 @@ export async function reorderListingImages(listingId: string, orderedImageIds: s
 }
 
 async function assertOwnership(listingId: string, userId: string) {
-  const listing = await prisma.listing.findUnique({ where: { id: listingId }, select: { userId: true } });
-  if (!listing || listing.userId !== userId) {
+  const listing = await prisma.listing.findUnique({ where: { id: listingId }, select: { userId: true, deletedAt: true } });
+  if (!listing || listing.userId !== userId || listing.deletedAt) {
     throw new Error("No tenés permiso para modificar esta publicación.");
   }
 }
@@ -665,7 +669,7 @@ export async function deleteOwnedListing(listingId: string, userId: string) {
 
 export async function getOwnedListingForEdit(listingId: string, userId: string) {
   return prisma.listing.findFirst({
-    where: { id: listingId, userId },
+    where: { id: listingId, userId, deletedAt: null },
     include: { images: { orderBy: { order: "asc" } }, brand: true, model: true },
   });
 }
@@ -679,16 +683,25 @@ export async function getOwnedListingForEdit(listingId: string, userId: string) 
 export async function getListingForFeatureCheck(listingId: string, userId: string) {
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
-    select: { id: true, userId: true, title: true, status: true, expiresAt: true, featured: true, featuredUntil: true },
+    select: {
+      id: true,
+      userId: true,
+      title: true,
+      status: true,
+      expiresAt: true,
+      featured: true,
+      featuredUntil: true,
+      deletedAt: true,
+    },
   });
-  if (!listing || listing.userId !== userId) return null;
+  if (!listing || listing.userId !== userId || listing.deletedAt) return null;
   return listing;
 }
 
 /** Publicaciones propias elegibles para destacar (activas, no destacadas todavía) — selector de Mis compras. */
 export async function getFeaturableListings(userId: string) {
   const listings = await prisma.listing.findMany({
-    where: { userId, status: "ACTIVE" },
+    where: { userId, status: "ACTIVE", deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: CARD_INCLUDE,
   });

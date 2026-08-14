@@ -59,6 +59,14 @@ enum TransmissionType {
   ASISTIDA
 }
 
+// Null = no es admin. Los 3 roles del panel /admin — ver `lib/admin-permissions.ts`
+// para la matriz de qué puede hacer cada uno en cada módulo.
+enum AdminRole {
+  SUPERADMIN
+  EDITOR
+  LECTOR
+}
+
 model User {
   id           String      @id @default(cuid())
   email        String      @unique
@@ -107,6 +115,13 @@ model User {
   // necesitar una tabla de sesiones server-side. Ver `lib/auth.ts`.
   sessionVersion Int @default(0)
 
+  // Panel de administración (`/admin`) — null para el 99% de las cuentas
+  // (usuarios normales del marketplace). `deletedAt` es borrado lógico: la
+  // fila sigue en la base, pero se excluye de toda lectura pública/del
+  // dueño (login incluido, ver `getSessionState`) — nunca un DELETE real.
+  adminRole AdminRole?
+  deletedAt DateTime?
+
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -114,8 +129,11 @@ model User {
   listings             Listing[]
   payments             Payment[]
   verificationRequests VerificationRequest[]
+  adminAuditLogs       AdminAuditLog[]        @relation("AdminAuditLogs")
 
   @@index([accountType])
+  @@index([adminRole])
+  @@index([deletedAt])
 }
 
 model AgencyProfile {
@@ -199,6 +217,12 @@ model Listing {
   soldAt        DateTime?
   viewCount     Int           @default(0)
 
+  // Borrado lógico desde el panel de administración — la fila sigue en la
+  // base, se excluye de toda lectura pública/del dueño. Nunca se usa para
+  // el borrado normal del dueño (`deleteOwnedListing`, que sigue siendo un
+  // DELETE real de una publicación sin ninguna venta/reporte asociado).
+  deletedAt DateTime?
+
   // Datos opcionales de la venta, cargados al marcar como vendida (privados,
   // solo el dueño los ve — no se muestran en el catálogo público).
   buyerInfo      String?
@@ -218,6 +242,7 @@ model Listing {
   @@index([price])
   @@index([mileageKm])
   @@index([userId])
+  @@index([deletedAt])
 }
 
 // Una fila por (publicación, visitante, día) — dedup para que `Listing.viewCount`
@@ -318,4 +343,26 @@ model Payment {
   updatedAt         DateTime      @updatedAt
 
   @@index([userId, status])
+}
+
+/// Registro de auditoría del panel de administración — una fila por cada
+/// acción de un admin (banear, borrar lógicamente, otorgar suscripción,
+/// destacar/quitar destacado, cambiar el rol de otro admin, etc). Se escribe
+/// explícitamente desde cada Server Action de `/admin` (ver
+/// `server/data/admin/audit-log.ts`), nunca vía hook automático de Prisma.
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  adminId     String
+  admin       User     @relation("AdminAuditLogs", fields: [adminId], references: [id])
+  action      String
+  targetTable String
+  targetId    String
+  /// { before: {...}, after: {...} }
+  changes     Json?
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([adminId])
+  @@index([targetTable, targetId])
+  @@index([createdAt])
 }
