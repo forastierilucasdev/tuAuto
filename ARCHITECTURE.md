@@ -185,6 +185,14 @@ RBAC real (no visual), auditoría y borrado lógico para gestionar usuarios, pub
 - **Identidad** reutiliza `VerificationRequest` (ya existía, sin panel para resolverla — gap documentado en `ERRORES.md`). Las fotos de DNI viven en el bucket privado `verifications`; el panel nunca genera una URL pública, solo una **firmada de 5 minutos** (`getVerificationDocumentSignedUrl()` en `lib/supabase-storage.ts`) para mostrarlas de forma temporal — `next.config.ts` tuvo que sumar el patrón `/storage/v1/object/sign/**` a `images.remotePatterns` (antes solo permitía `/object/public/**`).
 - **Bootstrap**: sin autoregistro de admins. El primer SUPERADMIN se promovió a mano, una sola vez, con un script desechable (ya borrado) que crea la cuenta y setea `adminRole: "SUPERADMIN"` directo en la base — cualquier admin siguiente se crea desde el propio panel (`assignAdminRoleAction`, exclusivo Superadmin).
 
+### 7.2.1. Seguridad de sesión de admin (Fase 2)
+
+Todo lo de acá abajo aplica **solo a cuentas con `adminRole` seteado** — un usuario normal del marketplace nunca pasa por ninguna de estas reglas (evita abrir una forma de bloquear a un vendedor real fallando su contraseña a repetición a propósito).
+
+- **Bloqueo por intentos fallidos**: `User.failedLoginAttempts`/`lockedUntil` (nuevos). `recordFailedAdminLogin()`/`recordSuccessfulAdminLogin()` en `server/data/users.ts` — 5 fallos seguidos bloquean el login por 30 minutos (`authorize()` en `lib/auth.ts` rechaza incluso con la contraseña correcta mientras dure). **Mismo mensaje de error genérico** que cualquier otro rechazo de login (cuenta inexistente, contraseña incorrecta, cuenta inactiva) — a propósito: diferenciarlo permitiría usar la respuesta como oráculo para descubrir qué emails son cuentas de admin. Desbloqueo manual desde `/admin/usuarios/[id]` (`unlockUserLoginAction`, mismo permiso que banear) para no depender de esperar los 30 minutos.
+- **Sesión única por admin**: `recordSuccessfulAdminLogin()` incrementa `sessionVersion` en cada login de admin exitoso — reutiliza el mecanismo que ya existía para invalidar sesiones por cambio de contraseña (`getSessionState()`, comparado en cada request vía el callback `jwt`), sin tabla de sesiones server-side. Loguearse en un dispositivo nuevo corta cualquier sesión de admin abierta en otro.
+- **Expiración por inactividad (30 min)**: `adminLastActivityAt` (epoch ms) viaja dentro del propio JWT, no en la base — se refresca en el mismo callback `jwt` que ya corre en cada request para chequear `sessionVersion`. Un usuario normal nunca tiene este campo, así que conserva la duración de sesión habitual; solo un token con `adminRole` se corta si pasaron más de 30 minutos desde el último request.
+
 ## 8. Despliegue
 
 - **Base de datos**: Supabase (Postgres).

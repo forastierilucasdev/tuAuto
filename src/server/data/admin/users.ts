@@ -78,3 +78,12 @@ export async function restoreUser(userId: string) {
 export async function setUserAdminRole(userId: string, adminRole: AdminRole | null) {
   return prisma.user.update({ where: { id: userId }, data: { adminRole } });
 }
+
+/** Levanta el bloqueo por intentos fallidos (ver `recordFailedAdminLogin` en `server/data/users.ts`) antes de que venza solo. */
+export async function unlockUserLogin(userId: string) {
+  return prisma.user.update({ where: { id: userId }, data: { failedLoginAttempts: 0, lockedUntil: null } });
+}
+
+export function isAccountLocked(lockedUntil: Date | null): boolean {
+  return Boolean(lockedUntil && lockedUntil.getTime() > Date.now());
+}

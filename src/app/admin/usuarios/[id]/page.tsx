@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { UserAccountActions } from "@/components/admin/UserAccountActions";
 import { UserSubscriptionActions } from "@/components/admin/UserSubscriptionActions";
 import { getModulePermissions, requireAdminPermission } from "@/lib/admin-permissions";
-import { getUserForAdmin } from "@/server/data/admin/users";
+import { getUserForAdmin, isAccountLocked } from "@/server/data/admin/users";
 import { getOwnerListingGroups } from "@/server/data/listings";
 import { getPaymentHistory, getSubscriptionPlans, getSubscriptionStatus } from "@/server/data/payments";
 import { prisma } from "@/lib/prisma";
@@ -17,6 +17,7 @@ import { accountTypeLabel } from "@/lib/constants";
 export const metadata: Metadata = { title: "Detalle de usuario | Admin" };
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+const dateTimeFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 const PAYMENT_STATUS_VARIANT = { APPROVED: "success", PENDING: "info", REJECTED: "danger" } as const;
 
@@ -45,6 +46,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
   const usuariosPermissions = getModulePermissions(session.user.adminRole, "usuarios");
   const suscripcionesPermissions = getModulePermissions(session.user.adminRole, "suscripciones");
   const hasActiveSubscription = subscriptionStatus.active;
+  const locked = isAccountLocked(user.lockedUntil);
 
   return (
     <div>
@@ -92,6 +94,16 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
                 "Sin solicitud"
               )}
             </p>
+            {(user.adminRole || locked || user.failedLoginAttempts > 0) && (
+              <p>
+                <span className="text-muted-foreground">Inicio de sesión:</span>{" "}
+                {locked ? (
+                  <Badge variant="danger">Bloqueado hasta {dateTimeFormatter.format(user.lockedUntil!)}</Badge>
+                ) : (
+                  <span>{user.failedLoginAttempts} intento{user.failedLoginAttempts === 1 ? "" : "s"} fallido{user.failedLoginAttempts === 1 ? "" : "s"} recientes</span>
+                )}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -120,6 +132,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
               isActive={user.isActive}
               deletedAt={user.deletedAt}
               currentAdminRole={user.adminRole}
+              isLocked={locked}
               isSuperAdmin={session.user.adminRole === "SUPERADMIN"}
               isSelf={session.user.id === user.id}
               permissions={usuariosPermissions}

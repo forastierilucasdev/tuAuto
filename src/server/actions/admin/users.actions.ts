@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminPermission, requireSuperAdminRole } from "@/lib/admin-permissions";
 import { logAdminAction } from "@/server/data/admin/audit-log";
-import { getUserForAdmin, restoreUser, setUserActive, setUserAdminRole, softDeleteUser } from "@/server/data/admin/users";
+import {
+  getUserForAdmin,
+  restoreUser,
+  setUserActive,
+  setUserAdminRole,
+  softDeleteUser,
+  unlockUserLogin,
+} from "@/server/data/admin/users";
 import type { AdminRole } from "@/generated/prisma/client";
 
 export type AdminActionState = { error?: string; success?: boolean } | undefined;
@@ -78,6 +85,28 @@ export async function restoreUserAction(userId: string): Promise<AdminActionStat
     targetTable: "User",
     targetId: userId,
     changes: { before: { deletedAt: before.deletedAt }, after: { deletedAt: null } },
+  });
+
+  revalidatePath("/admin/usuarios");
+  revalidatePath(`/admin/usuarios/${userId}`);
+  return { success: true };
+}
+
+export async function unlockUserLoginAction(userId: string): Promise<AdminActionState> {
+  const session = await requireAdminPermission("usuarios", "edit");
+  const before = await getUserForAdmin(userId);
+  if (!before) return { error: "Usuario no encontrado." };
+
+  await unlockUserLogin(userId);
+  await logAdminAction({
+    adminId: session.user.id,
+    action: "user.unlockLogin",
+    targetTable: "User",
+    targetId: userId,
+    changes: {
+      before: { failedLoginAttempts: before.failedLoginAttempts, lockedUntil: before.lockedUntil },
+      after: { failedLoginAttempts: 0, lockedUntil: null },
+    },
   });
 
   revalidatePath("/admin/usuarios");

@@ -4,7 +4,18 @@ import bcrypt from "bcryptjs";
 import type { AccountType, AdminRole } from "@/generated/prisma/client";
 import { loginSchema } from "@/lib/validations/auth";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
-import { findUserForAuth, getSessionState, touchLastLogin } from "@/server/data/users";
+import {
+  findUserForAuth,
+  getSessionState,
+  recordFailedAdminLogin,
+  recordSuccessfulAdminLogin,
+  touchLastLogin,
+} from "@/server/data/users";
+
+// Sesión de admin inactiva por más de esto se corta sola en el próximo
+// request — solo aplica a tokens con `adminRole` (ver callback `jwt`), un
+// usuario normal conserva la duración de sesión habitual.
+const ADMIN_INACTIVITY_TIMEOUT_MS = 30 * 60_000;
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
@@ -31,8 +42,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const user = await findUserForAuth(email);
         if (!user || !user.isActive || user.deletedAt) return null;
 
+        const isAdmin = Boolean(user.adminRole);
+        // Bloqueo por intentos fallidos, solo para cuentas de admin (ver
+        // `recordFailedAdminLogin`) — se chequea antes de comparar la
+        // contraseña, así una cuenta bloqueada rechaza incluso con la
+        // contraseña correcta. Mismo mensaje de error que cualquier otro
+        // rechazo (más abajo, `return null`) — a propósito: si el error
+        // fuera distinto acá, alguien probando emails al azar podría usar
+        // esa diferencia como oráculo para descubrir cuáles son cuentas de
+        // admin.
+        if (isAdmin && user.lockedUntil && user.lockedUntil.getTime() > Date.now()) return null;
+
         const passwordMatches = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordMatches) return null;
+        if (!passwordMatches) {
+          if (isAdmin) await recordFailedAdminLogin(user.id);
+          return null;
+        }
+
+        // Login de admin exitoso: reinicia el contador de intentos fallidos
+        // y fuerza "sesión única" (revisar `recordSuccessfulAdminLogin`)
+        // incrementando `sessionVersion` — cualquier sesión de admin abierta
+        // en otro dispositivo/navegador se corta en su próximo request.
+        const sessionVersion = isAdmin ? await recordSuccessfulAdminLogin(user.id) : user.sessionVersion;
 
         await touchLastLogin(user.id);
 
@@ -41,7 +72,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           name: user.fullName,
           accountType: user.accountType,
-          sessionVersion: user.sessionVersion,
+          sessionVersion,
           adminRole: user.adminRole,
         };
       },
@@ -54,6 +85,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.accountType = user.accountType as AccountType;
         token.sessionVersion = user.sessionVersion;
         token.adminRole = user.adminRole as AdminRole | null;
+        if (user.adminRole) token.adminLastActivityAt = Date.now();
         return token;
       }
       // En cada request posterior al login: si `sessionVersion` ya no
@@ -70,6 +102,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.id = undefined;
         } else {
           token.adminRole = state.adminRole;
+          // Expiración por inactividad, exclusiva de sesiones de admin — un
+          // usuario normal nunca tiene `adminLastActivityAt`, conserva la
+          // duración de sesión habitual.
+          if (state.adminRole) {
+            // El cast es necesario: el tipo inferido de `token` en este
+            // callback no respeta bien el módulo aumentado de `JWT` para
+            // esta propiedad (queda como `{}`) — el valor en runtime sí es
+            // siempre `number | undefined`, lo pusimos nosotros mismos.
+            const lastActivity = (token.adminLastActivityAt as number | undefined) ?? 0;
+            if (Date.now() - lastActivity > ADMIN_INACTIVITY_TIMEOUT_MS) {
+              token.id = undefined;
+            } else {
+              token.adminLastActivityAt = Date.now();
+            }
+          } else {
+            token.adminLastActivityAt = undefined;
+          }
         }
       }
       return token;

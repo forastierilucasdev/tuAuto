@@ -391,6 +391,19 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 60 — Panel admin, Fase 2: sesión única, bloqueo por intentos fallidos, expiración por inactividad (solicitado por el usuario)
+Alcance limitado a cuentas con `adminRole` — usuarios normales del marketplace no se ven afectados.
+
+- [x] `User.failedLoginAttempts`/`lockedUntil` (migración aditiva) — bloqueo tras 5 intentos fallidos, 30 minutos, solo cuentas de admin
+- [x] Mismo mensaje de error genérico bloqueado o no (evita un oráculo de "esta cuenta es admin")
+- [x] Sesión única por admin: cada login exitoso incrementa `sessionVersion`, reutiliza la invalidación ya existente por cambio de contraseña
+- [x] Expiración por inactividad (30 min) para sesiones de admin, vía timestamp dentro del propio JWT — sin afectar la duración de sesión de usuarios normales
+- [x] Desbloqueo manual ("Desbloquear inicio de sesión") en `/admin/usuarios/[id]`, auditado
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con script desechable (umbral de bloqueo, rechazo con contraseña correcta mientras dura, desbloqueo, incremento de `sessionVersion`) y con logins reales contra el servidor de desarrollo: doble login de admin corta la sesión vieja (`200`→`307`); doble login de usuario normal no afecta la sesión anterior
+- [ ] Prueba manual en navegador (loguearse como admin en dos navegadores distintos y confirmar que el primero se corta)
+- [ ] Sigue pendiente del bloque de seguridad original: 2FA, restricción por IP, exportación CSV, alertas automáticas por mail, auto-moderación, buzón de reportes/CRM
+
 ## Fase 59 — Panel de administración `/admin`: RBAC, auditoría, borrado lógico (solicitado por el usuario)
 Fase 1 de un pedido enterprise mucho más grande — alcance acotado explícitamente con el usuario antes de empezar (ver "Fuera de alcance" abajo).
 

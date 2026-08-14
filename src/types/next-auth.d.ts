@@ -28,5 +28,9 @@ declare module "next-auth/jwt" {
     // el dueño cambia su contraseña (ver `lib/auth.ts`).
     sessionVersion?: number;
     adminRole?: AdminRole | null;
+    // Epoch ms de la última vez que se refrescó una sesión de admin — solo
+    // presente en tokens con `adminRole`, base de la expiración por
+    // inactividad (`ADMIN_INACTIVITY_TIMEOUT_MS` en `lib/auth.ts`).
+    adminLastActivityAt?: number;
   }
 }

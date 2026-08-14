@@ -11,6 +11,7 @@ import {
   restoreUserAction,
   softDeleteUserAction,
   unbanUserAction,
+  unlockUserLoginAction,
 } from "@/server/actions/admin/users.actions";
 import type { AdminRole } from "@/generated/prisma/client";
 
@@ -19,6 +20,7 @@ export function UserAccountActions({
   isActive,
   deletedAt,
   currentAdminRole,
+  isLocked,
   isSuperAdmin,
   isSelf,
   permissions,
@@ -27,6 +29,7 @@ export function UserAccountActions({
   isActive: boolean;
   deletedAt: Date | null;
   currentAdminRole: AdminRole | null;
+  isLocked: boolean;
   isSuperAdmin: boolean;
   isSelf: boolean;
   permissions: { canEdit: boolean; canDelete: boolean };
@@ -89,6 +92,17 @@ export function UserAccountActions({
             disabled={!permissions.canDelete || Boolean(currentAdminRole)}
             confirmMessage="Borrado lógico: la cuenta y sus publicaciones dejan de verse en todos lados, pero quedan guardadas. Se puede restaurar después."
             onConfirm={() => softDeleteUserAction(userId)}
+            onSuccess={() => router.refresh()}
+          />
+        )}
+
+        {isLocked && (
+          <AdminConfirmButton
+            label="Desbloquear inicio de sesión"
+            variant="success"
+            disabled={!permissions.canEdit}
+            confirmMessage="Se levanta el bloqueo por intentos fallidos antes de que venza solo (30 minutos)."
+            onConfirm={() => unlockUserLoginAction(userId)}
             onSuccess={() => router.refresh()}
           />
         )}

@@ -48,6 +48,46 @@ export async function getSessionState(
   return { sessionVersion: user.sessionVersion, adminRole: user.adminRole };
 }
 
+// Bloqueo de login solo para cuentas de admin (`adminRole` no nulo) — un
+// usuario normal nunca pasa por estas dos funciones, ver `authorize()` en
+// `lib/auth.ts`. Aplicarlo a cualquier cuenta abriría una forma de bloquear
+// a propósito a un vendedor real fallando su contraseña a repetición.
+const ADMIN_LOGIN_MAX_ATTEMPTS = 5;
+const ADMIN_LOGIN_LOCK_MS = 30 * 60_000;
+
+/** Se llama con la contraseña incorrecta en una cuenta de admin — al llegar al máximo, bloquea por `ADMIN_LOGIN_LOCK_MS` y reinicia el contador. */
+export async function recordFailedAdminLogin(userId: string) {
+  const { failedLoginAttempts } = await prisma.user.update({
+    where: { id: userId },
+    data: { failedLoginAttempts: { increment: 1 } },
+    select: { failedLoginAttempts: true },
+  });
+  if (failedLoginAttempts >= ADMIN_LOGIN_MAX_ATTEMPTS) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { lockedUntil: new Date(Date.now() + ADMIN_LOGIN_LOCK_MS), failedLoginAttempts: 0 },
+    });
+  }
+}
+
+/**
+ * Login de admin exitoso: reinicia el contador de intentos y, de paso,
+ * incrementa `sessionVersion` — reutiliza el mismo mecanismo de
+ * invalidación que ya existe para el cambio de contraseña (ver
+ * `updatePassword`) para forzar "sesión única": cualquier JWT de admin
+ * emitido antes de este login queda desincronizado y se corta en su
+ * próximo request (`getSessionState` de arriba). Devuelve el nuevo
+ * `sessionVersion` para que el JWT recién emitido ya nazca al día.
+ */
+export async function recordSuccessfulAdminLogin(userId: string): Promise<number> {
+  const { sessionVersion } = await prisma.user.update({
+    where: { id: userId },
+    data: { failedLoginAttempts: 0, lockedUntil: null, sessionVersion: { increment: 1 } },
+    select: { sessionVersion: true },
+  });
+  return sessionVersion;
+}
+
 export async function getFullProfile(id: string) {
   return prisma.user.findUnique({
     where: { id },

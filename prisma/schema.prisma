@@ -122,6 +122,13 @@ model User {
   adminRole AdminRole?
   deletedAt DateTime?
 
+  // Bloqueo por intentos fallidos — solo se escriben para cuentas de admin
+  // (`adminRole` no nulo), ver `recordFailedAdminLogin`/`recordSuccessfulAdminLogin`
+  // en `server/data/users.ts`. Para el resto de las cuentas quedan siempre
+  // en su valor por default.
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
