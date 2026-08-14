@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { PaymentStatus, Prisma } from "@/generated/prisma/client";
+import { applyPaymentEffect } from "@/server/data/payments";
 
 const ADMIN_PAYMENT_PAGE_SIZE = 25;
 
@@ -37,7 +38,10 @@ export async function listPaymentsForAdmin(filters: AdminPaymentFilters, page = 
       orderBy: { createdAt: "desc" },
       skip: (safePage - 1) * ADMIN_PAYMENT_PAGE_SIZE,
       take: ADMIN_PAYMENT_PAGE_SIZE,
-      include: { user: { select: { id: true, email: true, fullName: true } } },
+      include: {
+        user: { select: { id: true, email: true, fullName: true } },
+        listing: { select: { title: true } },
+      },
     }),
     prisma.payment.count({ where }),
   ]);
@@ -65,6 +69,52 @@ export async function listPlansForAdmin() {
 
 export async function togglePlanActive(planCode: string, isActive: boolean) {
   return prisma.plan.update({ where: { code: planCode }, data: { isActive } });
+}
+
+export type UpdatePlanInput = {
+  name: string;
+  description: string | null;
+  price: number;
+  durationDays: number | null;
+  quantity: number | null;
+};
+
+/** No toca `code` (rompería el vínculo con `Payment.planCode`, que es un string suelto sin FK) ni `isActive` (eso lo maneja `togglePlanActive`). El impacto es directo: `/dashboard/compra` lee `Plan` sin caché, y la próxima compra de este plan usa los valores nuevos. */
+export async function updatePlan(planCode: string, data: UpdatePlanInput) {
+  return prisma.plan.update({
+    where: { code: planCode },
+    data: {
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      durationDays: data.durationDays,
+      quantity: data.quantity,
+    },
+  });
+}
+
+/**
+ * "Aprobar pago en efectivo": reusa `applyPaymentEffect` (el mismo efecto
+ * que aplica el webhook de Mercado Pago cuando confirma un pago) en vez de
+ * solo cambiar `status` — así el pago realmente acredita cupo/suscripción/
+ * destacado, no queda "aprobado" sin haber entregado lo que se pagó.
+ * `providerPaymentId` sintético (único por `payment.id`) porque no hay uno
+ * real de Mercado Pago en este caso.
+ */
+export async function approveCashPayment(paymentId: string, reason: string) {
+  const before = await prisma.payment.findUnique({ where: { id: paymentId } });
+  if (!before) throw new Error("Pago no encontrado.");
+  if (before.status !== "PENDING") throw new Error("Solo se puede aprobar un pago pendiente.");
+
+  await applyPaymentEffect(paymentId, `efectivo_${paymentId}`);
+  const after = await prisma.payment.update({
+    where: { id: paymentId },
+    data: {
+      provider: "admin_cash",
+      description: `${before.description} (pagado en efectivo, aprobado por administración)`,
+    },
+  });
+  return { before, after, reason };
 }
 
 /**

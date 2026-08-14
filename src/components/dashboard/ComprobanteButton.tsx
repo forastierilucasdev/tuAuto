@@ -17,6 +17,7 @@ type ComprobanteData = {
   listingTitle: string | null;
   buyerName: string;
   buyerEmail: string;
+  provider: string;
 };
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -35,6 +36,14 @@ function tipoDeAnuncio(planCode: string): string {
   if (planCode.startsWith("SUBSCRIPTION_")) return "Suscripción";
   if (planCode.startsWith("PUBLICATIONS_PACK_")) return "Publicación";
   return "Otro";
+}
+
+/** Medio de pago legible — `provider` es un string libre (`"mercadopago"` de siempre, `"admin"`/`"admin_cash"` para lo otorgado o aprobado a mano desde el panel). */
+function medioDePago(provider: string): string {
+  if (provider === "mercadopago") return "Mercado Pago";
+  if (provider === "admin_cash") return "Efectivo (registrado por administración)";
+  if (provider === "admin") return "Otorgado por administración";
+  return provider;
 }
 
 /**
@@ -67,7 +76,7 @@ export function ComprobanteButton({ payment }: { payment: ComprobanteData }) {
           <Row label="Descripción" value={payment.description} />
           <Row label="Fecha" value={payment.createdAt.toLocaleDateString("es-AR")} />
           <Row label="Hora" value={payment.createdAt.toLocaleTimeString("es-AR")} />
-          <Row label="Medio de pago" value="Mercado Pago" />
+          <Row label="Medio de pago" value={medioDePago(payment.provider)} />
           <Row label="Estado" value="Aprobado" />
         </dl>
         <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
@@ -75,8 +84,9 @@ export function ComprobanteButton({ payment }: { payment: ComprobanteData }) {
           <span className="text-lg font-bold text-navy">{formatCurrency(payment.amount, payment.currency)}</span>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          Este es un resumen de Motoresya, no una factura — el comprobante oficial de Mercado Pago está
-          disponible en tu cuenta de Mercado Pago.
+          {payment.provider === "mercadopago"
+            ? "Este es un resumen de Motoresya, no una factura — el comprobante oficial de Mercado Pago está disponible en tu cuenta de Mercado Pago."
+            : "Este es un resumen de Motoresya, no una factura."}
         </p>
         <div className="mt-4 flex justify-end">
           <Button type="button" size="sm" onClick={() => setOpen(false)}>

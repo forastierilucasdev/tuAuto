@@ -391,6 +391,16 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 66 — Suscripciones y Pagos: editar plan, aprobar pago en efectivo, comprobante desde admin (solicitado por el usuario)
+- [x] "Editar" junto a Dar de baja/Reactivar en la tabla de Planes (`EditPlanModal`): nombre, descripción, precio, duración y cantidad — impacta directo en `/dashboard/compra` (sin caché) y en lo que acredita la próxima compra de ese plan
+- [x] Confirmado (sin cambios de código necesarios): dar de baja/reactivar/editar un plan ya impactaba directo en Comprar publicación/suscripción, y una promoción reactivada ya adopta el formato de su categoría hermana — no hay tarjetas ni tipos de plan separados en el código, es un único template por sección
+- [x] Tabla de Pagos: fila PENDING ahora tiene "Aprobar (efectivo)" (`ReasonConfirmModal`, motivo obligatorio) — reusa `applyPaymentEffect` (la misma función que usa el webhook de Mercado Pago) para que el pago realmente acredite cupo/suscripción/destacado, no solo cambie el estado
+- [x] Fila APPROVED ahora tiene "Ver comprobante" (reusa `ComprobanteButton` del dashboard del usuario)
+- [x] Gap corregido de paso: `ComprobanteButton` mostraba "Medio de pago: Mercado Pago" hardcodeado incluso para pagos otorgados por admin — ahora refleja el `provider` real
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con script desechable contra la base real (editar plan y revertir; Payment de prueba PENDING→APPROVED con el mismo efecto de `applyPublicationPackEffect`, cupo acreditado, revertido y borrado) — sin login de admin disponible en esta sesión para el flujo completo por navegador
+- [ ] Prueba manual en navegador
+
 ## Fase 65 — Destacados: rango desde-hasta, agregar días sin resetear, baja con motivo auditado (solicitado por el usuario)
 - [x] Nueva columna `Listing.featuredSince` (migración aditiva) — marca el inicio del período de destacado vigente, nunca se pisa mientras siga vigente
 - [x] `/admin/destacados`: columnas "Desde — Hasta" y "Días pendientes" (calculado, no se guarda)

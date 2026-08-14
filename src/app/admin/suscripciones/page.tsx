@@ -8,6 +8,8 @@ import { Select } from "@/components/ui/Select";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { PlanActiveToggle } from "@/components/admin/PlanActiveToggle";
+import { EditPlanModal } from "@/components/admin/EditPlanModal";
+import { PaymentRowActions } from "@/components/admin/PaymentRowActions";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { PaymentStatus } from "@/generated/prisma/client";
 
@@ -71,7 +73,10 @@ export default async function AdminSuscripcionesPage(props: { searchParams: Prom
                     {plan.isActive ? <Badge variant="success">Activo</Badge> : <Badge variant="danger">De baja</Badge>}
                   </td>
                   <td className="px-4 py-3">
-                    <PlanActiveToggle planCode={plan.code} isActive={plan.isActive} canEdit={permissions.canEdit} />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <EditPlanModal plan={plan} canEdit={permissions.canEdit} />
+                      <PlanActiveToggle planCode={plan.code} isActive={plan.isActive} canEdit={permissions.canEdit} />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -115,6 +120,7 @@ export default async function AdminSuscripcionesPage(props: { searchParams: Prom
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3">Proveedor</th>
                 <th className="px-4 py-3">Fecha</th>
+                <th className="px-4 py-3">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -132,11 +138,30 @@ export default async function AdminSuscripcionesPage(props: { searchParams: Prom
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{payment.provider}</td>
                   <td className="px-4 py-3 text-muted-foreground">{dateFormatter.format(payment.createdAt)}</td>
+                  <td className="px-4 py-3">
+                    <PaymentRowActions
+                      paymentId={payment.id}
+                      status={payment.status}
+                      canEdit={permissions.canEdit}
+                      comprobante={{
+                        description: payment.description,
+                        amount: Number(payment.amount),
+                        currency: payment.currency,
+                        createdAt: payment.createdAt,
+                        providerPaymentId: payment.providerPaymentId,
+                        planCode: payment.planCode,
+                        listingTitle: payment.listing?.title ?? null,
+                        buyerName: payment.user.fullName,
+                        buyerEmail: payment.user.email,
+                        provider: payment.provider,
+                      }}
+                    />
+                  </td>
                 </tr>
               ))}
               {payments.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                     No hay pagos que coincidan con esos filtros.
                   </td>
                 </tr>

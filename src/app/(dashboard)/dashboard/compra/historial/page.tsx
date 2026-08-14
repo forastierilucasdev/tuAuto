@@ -74,6 +74,7 @@ export default async function HistorialDePagosPage() {
                           listingTitle: payment.listing?.title ?? null,
                           buyerName,
                           buyerEmail,
+                          provider: payment.provider,
                         }}
                       />
                     ) : (
