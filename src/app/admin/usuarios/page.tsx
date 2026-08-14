@@ -5,9 +5,10 @@ import { listUsersForAdmin } from "@/server/data/admin/users";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonVariants } from "@/components/ui/Button";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { accountTypeLabel } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import type { AccountType } from "@/generated/prisma/client";
 
 export const metadata: Metadata = { title: "Usuarios | Admin" };
@@ -37,8 +38,15 @@ export default async function AdminUsuariosPage(props: { searchParams: Promise<R
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy">Usuarios</h1>
-      <p className="mt-1 text-muted-foreground">{total} cuenta{total === 1 ? "" : "s"}</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">Usuarios</h1>
+          <p className="mt-1 text-muted-foreground">{total} cuenta{total === 1 ? "" : "s"}</p>
+        </div>
+        <a href={`/admin/usuarios/export?${params.toString()}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+          Exportar CSV
+        </a>
+      </div>
 
       <form className="mt-4 flex flex-wrap items-end gap-3">
         <div>

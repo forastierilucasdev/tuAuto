@@ -10,8 +10,7 @@ export type AdminPaymentFilters = {
   planCode?: string;
 };
 
-export async function listPaymentsForAdmin(filters: AdminPaymentFilters, page = 1) {
-  const safePage = Math.max(1, Math.trunc(page) || 1);
+function buildPaymentWhere(filters: AdminPaymentFilters): Prisma.PaymentWhereInput {
   const where: Prisma.PaymentWhereInput = {};
 
   if (filters.search) {
@@ -24,6 +23,13 @@ export async function listPaymentsForAdmin(filters: AdminPaymentFilters, page = 
   }
   if (filters.status) where.status = filters.status;
   if (filters.planCode) where.planCode = filters.planCode;
+
+  return where;
+}
+
+export async function listPaymentsForAdmin(filters: AdminPaymentFilters, page = 1) {
+  const safePage = Math.max(1, Math.trunc(page) || 1);
+  const where = buildPaymentWhere(filters);
 
   const [payments, total] = await Promise.all([
     prisma.payment.findMany({
@@ -42,6 +48,15 @@ export async function listPaymentsForAdmin(filters: AdminPaymentFilters, page = 
     page: safePage,
     totalPages: Math.max(1, Math.ceil(total / ADMIN_PAYMENT_PAGE_SIZE)),
   };
+}
+
+/** Sin paginar — usado por la exportación CSV. */
+export async function listAllPaymentsForAdmin(filters: AdminPaymentFilters) {
+  return prisma.payment.findMany({
+    where: buildPaymentWhere(filters),
+    orderBy: { createdAt: "desc" },
+    include: { user: { select: { id: true, email: true, fullName: true } } },
+  });
 }
 
 export async function listPlansForAdmin() {

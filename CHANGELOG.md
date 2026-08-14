@@ -5,6 +5,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Panel admin: exportación CSV en Usuarios, Publicaciones y Pagos
+- Botón "Exportar CSV" en las 3 tablas del panel (`/admin/usuarios`, `/admin/publicaciones`, `/admin/suscripciones`) — nuevo Route Handler por módulo (`export/route.ts`) que respeta los filtros/búsqueda actuales de la página (no solo la página visible: baja todo lo que coincide) y arma el CSV a mano, sin dependencia nueva (`lib/csv.ts`: escapado RFC 4180 + BOM UTF-8 para que Excel no rompa los acentos).
+- Mismo permiso que ver la lista (`read`, los 3 roles) — exportar no expone más datos de los que ya se pueden ver en pantalla.
+- Se extrajo el armado del `where` de Prisma a una función compartida en cada `server/data/admin/*.ts` (`buildUserWhere`/`buildListingWhere`/`buildPaymentWhere`), reusada por la versión paginada (la tabla) y la versión completa (la exportación), para que no se puedan desincronizar los filtros entre las dos.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con el servidor de desarrollo y un login real: sin sesión → `307` a `/login`; los 3 CSV descargan con `Content-Type`/`Content-Disposition` correctos, acentos (Teléfono, Sí) intactos; un filtro (`tipo=AGENCIA`) devuelve solo las filas que coinciden.
+
 ### Added (2026-08-14) — Panel admin, Fase 2: sesión única, bloqueo por intentos fallidos, expiración por inactividad
 Segunda ronda del bloque "Medidas de Autenticación y Acceso" que había quedado fuera de la Fase 1 (`TASKS.md` Fase 59) — el usuario eligió avanzar con "seguridad de sesión" primero (2FA, restricción por IP, exportación CSV y CRM de reportes siguen pendientes). **Alcance limitado a cuentas con `adminRole` seteado** — un usuario normal del marketplace nunca pasa por ninguna de estas reglas, a propósito: aplicarlas a cualquier cuenta abriría una forma de bloquear a un vendedor real fallando su contraseña a repetición.
 

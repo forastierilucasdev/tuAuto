@@ -5,10 +5,10 @@ import { listPaymentsForAdmin, listPlansForAdmin } from "@/server/data/admin/sub
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonVariants } from "@/components/ui/Button";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { PlanActiveToggle } from "@/components/admin/PlanActiveToggle";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { PaymentStatus } from "@/generated/prisma/client";
 
 export const metadata: Metadata = { title: "Suscripciones y Pagos | Admin" };
@@ -81,9 +81,14 @@ export default async function AdminSuscripcionesPage(props: { searchParams: Prom
       </div>
 
       <div className="mt-8">
-        <h2 className="mb-3 text-sm font-bold text-navy">Pagos ({total})</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-bold text-navy">Pagos ({total})</h2>
+          <a href={`/admin/suscripciones/export?${params.toString()}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            Exportar CSV
+          </a>
+        </div>
 
-        <form className="mb-4 flex flex-wrap items-end gap-3">
+        <form className="mb-4 mt-3 flex flex-wrap items-end gap-3">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground" htmlFor="q">Buscar</label>
             <Input id="q" name="q" defaultValue={search} placeholder="Email o nombre del usuario" />

@@ -5,10 +5,10 @@ import { listListingsForAdmin } from "@/server/data/admin/listings";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonVariants } from "@/components/ui/Button";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { ListingRowActions } from "@/components/admin/ListingRowActions";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { ListingStatus } from "@/generated/prisma/client";
 
 export const metadata: Metadata = { title: "Publicaciones | Admin" };
@@ -55,8 +55,15 @@ export default async function AdminPublicacionesPage(props: { searchParams: Prom
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy">Publicaciones</h1>
-      <p className="mt-1 text-muted-foreground">{total} publicaci{total === 1 ? "ón" : "ones"}</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">Publicaciones</h1>
+          <p className="mt-1 text-muted-foreground">{total} publicaci{total === 1 ? "ón" : "ones"}</p>
+        </div>
+        <a href={`/admin/publicaciones/export?${params.toString()}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+          Exportar CSV
+        </a>
+      </div>
 
       <form className="mt-4 flex flex-wrap items-end gap-3">
         <div>

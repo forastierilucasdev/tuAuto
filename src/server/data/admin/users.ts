@@ -12,8 +12,7 @@ export type AdminUserFilters = {
 
 const ADMIN_USER_PAGE_SIZE = 25;
 
-export async function listUsersForAdmin(filters: AdminUserFilters, page = 1) {
-  const safePage = Math.max(1, Math.trunc(page) || 1);
+function buildUserWhere(filters: AdminUserFilters): Prisma.UserWhereInput {
   const where: Prisma.UserWhereInput = {
     deletedAt: filters.showDeleted ? { not: null } : null,
   };
@@ -29,6 +28,13 @@ export async function listUsersForAdmin(filters: AdminUserFilters, page = 1) {
   if (filters.isActive !== undefined) where.isActive = filters.isActive;
   if (filters.adminRole === "NONE") where.adminRole = null;
   else if (filters.adminRole) where.adminRole = filters.adminRole;
+
+  return where;
+}
+
+export async function listUsersForAdmin(filters: AdminUserFilters, page = 1) {
+  const safePage = Math.max(1, Math.trunc(page) || 1);
+  const where = buildUserWhere(filters);
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
@@ -52,6 +58,27 @@ export async function listUsersForAdmin(filters: AdminUserFilters, page = 1) {
   ]);
 
   return { users, total, page: safePage, totalPages: Math.max(1, Math.ceil(total / ADMIN_USER_PAGE_SIZE)) };
+}
+
+/** Sin paginar — usado por la exportación CSV, que baja todo lo que coincide con el filtro actual, no solo la página visible. */
+export async function listAllUsersForAdmin(filters: AdminUserFilters) {
+  return prisma.user.findMany({
+    where: buildUserWhere(filters),
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+      dni: true,
+      phone: true,
+      accountType: true,
+      isActive: true,
+      isVerified: true,
+      adminRole: true,
+      deletedAt: true,
+      createdAt: true,
+    },
+  });
 }
 
 export async function getUserForAdmin(userId: string) {

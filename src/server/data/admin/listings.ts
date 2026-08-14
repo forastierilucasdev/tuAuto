@@ -17,13 +17,7 @@ const ADMIN_LISTING_INCLUDE = {
   user: { select: { id: true, email: true, fullName: true } },
 } satisfies Prisma.ListingInclude;
 
-/**
- * Distinta de `getCatalogResults`: esa fuerza `visibleStatusWhere()` (solo
- * lo público) — acá el admin necesita encontrar cualquier estado, incluidas
- * borrador/pausada/vencida/vendida/borradas lógicamente.
- */
-export async function listListingsForAdmin(filters: AdminListingFilters, page = 1) {
-  const safePage = Math.max(1, Math.trunc(page) || 1);
+function buildListingWhere(filters: AdminListingFilters): Prisma.ListingWhereInput {
   const where: Prisma.ListingWhereInput = {
     deletedAt: filters.showDeleted ? { not: null } : null,
   };
@@ -37,6 +31,18 @@ export async function listListingsForAdmin(filters: AdminListingFilters, page = 
   }
   if (filters.status) where.status = filters.status;
   if (filters.vehicleType) where.vehicleType = filters.vehicleType;
+
+  return where;
+}
+
+/**
+ * Distinta de `getCatalogResults`: esa fuerza `visibleStatusWhere()` (solo
+ * lo público) — acá el admin necesita encontrar cualquier estado, incluidas
+ * borrador/pausada/vencida/vendida/borradas lógicamente.
+ */
+export async function listListingsForAdmin(filters: AdminListingFilters, page = 1) {
+  const safePage = Math.max(1, Math.trunc(page) || 1);
+  const where = buildListingWhere(filters);
 
   const [listings, total] = await Promise.all([
     prisma.listing.findMany({
@@ -55,6 +61,15 @@ export async function listListingsForAdmin(filters: AdminListingFilters, page = 
     page: safePage,
     totalPages: Math.max(1, Math.ceil(total / ADMIN_LISTING_PAGE_SIZE)),
   };
+}
+
+/** Sin paginar — usado por la exportación CSV. */
+export async function listAllListingsForAdmin(filters: AdminListingFilters) {
+  return prisma.listing.findMany({
+    where: buildListingWhere(filters),
+    orderBy: { createdAt: "desc" },
+    include: ADMIN_LISTING_INCLUDE,
+  });
 }
 
 export async function getListingForAdminDetail(listingId: string) {
