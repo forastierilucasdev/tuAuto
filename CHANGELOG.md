@@ -77,6 +77,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - Se agrega el botón "Volver" (a `/`) en `/concesionarias`, que faltaba.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios; verificado con el servidor de desarrollo (`/`, `/concesionarias` responden 200).
 
+### Changed (2026-08-13) — "Publicaciones destacadas" del inicio pasa a carrusel
+- La sección "Publicaciones destacadas" del inicio pasa de grilla fija a carrusel horizontal con scroll (`FeaturedListingsCarousel`, mismo patrón que `FeaturedAgenciesCarousel`: `VehicleCard` sin cambios, cada tarjeta en un ancho fijo `w-64`/`sm:w-72`) — solo en el inicio, el catálogo (`/catalogo`) sigue en grilla.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.

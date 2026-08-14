@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { HeroSearch } from "@/components/home/HeroSearch";
 import { FeaturedAgenciesCarousel } from "@/components/home/FeaturedAgenciesCarousel";
+import { FeaturedListingsCarousel } from "@/components/home/FeaturedListingsCarousel";
 import { CategoryGrid } from "@/components/vehicles/CategoryGrid";
-import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import { buttonVariants } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { getFeaturedListings } from "@/server/data/listings";
@@ -82,11 +82,7 @@ export default async function HomePage() {
               Ver todo el catálogo
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((vehicle) => (
-              <VehicleCard key={vehicle.slug} vehicle={vehicle} />
-            ))}
-          </div>
+          <FeaturedListingsCarousel vehicles={featured} />
         </section>
       )}
 
