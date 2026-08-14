@@ -81,6 +81,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - La sección "Publicaciones destacadas" del inicio pasa de grilla fija a carrusel horizontal con scroll (`FeaturedListingsCarousel`, mismo patrón que `FeaturedAgenciesCarousel`: `VehicleCard` sin cambios, cada tarjeta en un ancho fijo `w-64`/`sm:w-72`) — solo en el inicio, el catálogo (`/catalogo`) sigue en grilla.
 - `tsc --noEmit`, `eslint`, `npm run build` limpios.
 
+### Added (2026-08-14) — Vistas reales por publicación, privadas para el dueño
+- Nuevo contador `Listing.viewCount` (ya existía en el schema, sin usar) — ahora se incrementa de verdad, con vistas deduplicadas (una por visitante/día, no una por carga de página) vía una nueva tabla `ListingView` (única por publicación+visitante+día).
+- El visitante se identifica por hash (SHA-256): `userId` si está logueado, o IP+user-agent si es anónimo — nunca se guarda la IP en texto plano.
+- Se descartan bots/crawlers/previews conocidos (buscadores, WhatsApp/Telegram/Slack, `curl`/clientes HTTP) por user-agent, y nunca cuenta la vista del propio dueño.
+- El conteo es privado: solo aparece en "Mis publicaciones" (`OwnerListingCard`, ícono de ojo), nunca en la publicación pública (`/catalogo/[slug]`).
+- Registrado con `after()` (`next/server`, primer uso en el proyecto) para no atrasar la respuesta de la página.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Migración aditiva (`ListingView`) aplicada contra la base real. Verificado con un script desechable contra la base real (dedup mismo visitante/día, visitante distinto cuenta aparte, bot se descarta, usuario logueado cuenta por `userId`) y con el servidor de desarrollo (visita real por `curl` a una publicación — `viewCount` pasó de 0 a 1, fila de dedup creada correctamente) — datos de prueba revertidos al terminar.
+
 ### Added (2026-08-12) — "Soporte": reporte de errores por email
 - Nueva pantalla `/dashboard/soporte` (link nuevo en el panel "Mi cuenta", debajo de "Cambiar contraseña" — separado del grupo "Anuncios" con su propio divisor): el usuario describe el error y opcionalmente adjunta una captura.
 - El mail se arma y envía del lado del servidor con nombre/correo/teléfono del usuario logueado y fecha/hora — el formulario no los pide, así no dependen de que el usuario los tipee. Se manda a `soporte@motoresya.com.ar` con `replyTo` al correo del usuario.

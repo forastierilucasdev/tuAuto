@@ -236,6 +236,10 @@ export type OwnerListingData = VehicleCardData & {
   expiresAt: Date | null;
   soldAt: Date | null;
   realSalePrice: number | null;
+  // Vistas reales (deduplicadas por visitante/día, ver `lib/listing-views.ts`)
+  // — dato privado, solo visible acá (panel del dueño), nunca en la
+  // publicación pública.
+  viewCount: number;
 };
 
 function toOwnerListingData(listing: ListingWithCardData): OwnerListingData {
@@ -248,6 +252,7 @@ function toOwnerListingData(listing: ListingWithCardData): OwnerListingData {
     expiresAt: listing.expiresAt,
     soldAt: listing.soldAt,
     realSalePrice: listing.realSalePrice ? Number(listing.realSalePrice) : null,
+    viewCount: listing.viewCount,
   };
 }
 

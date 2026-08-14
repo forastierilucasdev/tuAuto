@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
+import { headers } from "next/headers";
 import {
   Banknote,
   Building2,
@@ -18,6 +20,8 @@ import { Badge } from "@/components/ui/Badge";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { getEffectiveFeatured, getListingBySlug } from "@/server/data/listings";
 import { auth } from "@/lib/auth";
+import { getClientIp } from "@/lib/rate-limit";
+import { recordListingView } from "@/lib/listing-views";
 import { buildWhatsAppLink, cn, formatCurrency, formatKm } from "@/lib/utils";
 import {
   accountTypeLabel,
@@ -50,6 +54,19 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
 
   const isFeatured = getEffectiveFeatured(listing.featured, listing.featuredUntil);
   const isBusiness = isBusinessAccountType(listing.user.accountType);
+  const isOwner = session?.user?.id === listing.userId;
+
+  // No cuenta como vista al dueño mirando su propia publicación. `headers()`
+  // se lee acá (durante el render) porque `after()` en un Server Component
+  // no puede leer request APIs — hay que pasarle los valores ya resueltos.
+  if (!isOwner) {
+    const headersList = await headers();
+    const ip = getClientIp(headersList);
+    const userAgent = headersList.get("user-agent") ?? "";
+    const viewerId = session?.user?.id;
+    after(() => recordListingView({ listingId: listing.id, userId: viewerId, ip, userAgent }));
+  }
+
   const businessName = listing.user.agencyProfile?.businessName;
   const contactAddress = listing.contactAddress ?? listing.user.agencyProfile?.address ?? null;
 

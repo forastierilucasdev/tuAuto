@@ -391,6 +391,17 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 58 — Vistas reales por publicación, privadas para el dueño (solicitado por el usuario)
+- [x] `Listing.viewCount` (ya existía sin usar) pasa a incrementarse de verdad, deduplicado por visitante/día (`ListingView`, nueva tabla, única por publicación+visitante+día)
+- [x] Visitante identificado por hash SHA-256 (`userId` si está logueado, IP+user-agent si no) — nunca se guarda la IP en texto plano
+- [x] Bots/crawlers/previews conocidos descartados por user-agent; la vista del propio dueño nunca cuenta
+- [x] Conteo privado: solo visible en "Mis publicaciones" (`OwnerListingCard`), nunca en la publicación pública
+- [x] Registrado con `after()` (`next/server`) para no atrasar la respuesta de la página — primer uso en el proyecto, verificado contra la doc de Next.js 16 antes de escribir el código (`node_modules/next/dist/docs`)
+- [x] Migración aditiva (`ListingView`) aplicada contra la base real (procedimiento no interactivo ya usado: `migrate diff` → carpeta a mano → `db execute` → `migrate resolve --applied` → `generate`)
+- [x] Verificado con script desechable contra la base real (dedup, visitante distinto, bot descartado, usuario logueado) y con servidor de desarrollo (visita real por `curl` → `viewCount` 0→1) — datos de prueba revertidos
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [ ] Prueba manual en navegador (confirmar el contador en "Mis publicaciones" tras visitar la publicación logueado con otra cuenta o en incógnito)
+
 ## Fase 57 — "Publicaciones destacadas" del inicio pasa a carrusel (solicitado por el usuario)
 - [x] Nuevo `FeaturedListingsCarousel` (mismo patrón que `FeaturedAgenciesCarousel`): scroll horizontal, `VehicleCard` sin cambios, ancho fijo por tarjeta
 - [x] Solo en el inicio — `/catalogo` sigue en grilla

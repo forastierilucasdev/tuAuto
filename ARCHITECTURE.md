@@ -96,6 +96,16 @@ prisma/
   - `getReactivationCost(status)` sigue centralizando si una reactivación consume cupo/cuenta como publicación nueva. Se hace cumplir de verdad: las tres funciones tiran `QuotaExceededError` si no queda cupo y la transición lo consume (guardar como borrador y reactivar desde Reservada/Pausada nunca consumen cupo).
 - **Destacado con vencimiento efectivo**: `featured`/`featuredUntil` se leen siempre a través de `getEffectiveFeatured(featured, featuredUntil)` (mismo patrón que `getEffectiveStatus` para el status) — un destacado vencido deja de contar como destacado sin que nada lo reescriba en la base. Las consultas que separan destacados del resto (catálogo, home) lo resuelven en el propio `WHERE` de Prisma en vez de traer todo y filtrar en JS.
 
+### 4.1. Vistas reales de una publicación
+
+`Listing.viewCount` es un contador de vistas **deduplicadas** (una por visitante/día, no una por carga de página) y **privado** (solo se muestra en el panel del dueño, `OwnerListingCard` — nunca en la publicación pública). El registro vive en `src/lib/listing-views.ts`:
+
+- El visitante se identifica con un hash (SHA-256, nunca la IP en texto plano): `userId` si está logueado (une vistas entre dispositivos), o `IP + user-agent` si es anónimo.
+- La dedup usa una tabla aparte, `ListingView`, única por `(listingId, visitorHash, viewDate)` — refrescar la página el mismo día no vuelve a sumar. Se inserta con `create()` dentro de una `$transaction` junto con el `increment` de `Listing.viewCount`; un choque contra esa unique (`P2002`) significa "ya contado hoy", no un error real (mismo patrón de idempotencia que `Payment.providerPaymentId`, sección 7.3).
+- Bots/crawlers/previews conocidos (buscadores, WhatsApp/Telegram/Slack link previews, `curl`/`wget`/clientes HTTP) se descartan por user-agent antes de tocar la base.
+- El dueño mirando su propia publicación nunca cuenta como vista — se filtra en `catalogo/[slug]/page.tsx` antes de programar el registro.
+- El registro se programa con `after()` (`next/server`) para no atrasar la respuesta de la página — primer uso de `after()` en el proyecto. `headers()` (IP, user-agent) se lee durante el render, **no** dentro del callback de `after()`, porque un Server Component no puede leer APIs de request ahí (ver `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/after.md`).
+
 ## 5. Filtros en cascada del catálogo
 
 Tipo → Marca → Modelo → Año se resuelven contra las tablas de taxonomía (no contra texto libre de las publicaciones), evitando duplicados ("Toyota" vs "toyota"). La cascada está centralizada en el hook `src/hooks/useVehicleTaxonomy.ts`, que llama a Server Actions (`server/actions/taxonomy.actions.ts`) para poblar cada select — lo usan **tres** componentes cliente distintos: `HeroSearch` (buscador principal del home), `CatalogFilters` (filtros del catálogo) y `ListingForm` (alta de publicación), evitando triplicar la misma lógica de efectos.

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Trash2 } from "lucide-react";
+import { Eye, Star, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonVariants } from "@/components/ui/Button";
@@ -233,6 +233,11 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
             </p>
           )
         )}
+
+        <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+          <Eye className="h-3.5 w-3.5" />
+          {listing.viewCount} vista{listing.viewCount === 1 ? "" : "s"}
+        </p>
 
         {actions.length > 0 && (
           <div className="mt-auto grid grid-cols-2 gap-2 pt-2">{actions}</div>
