@@ -8,50 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AuditChangesModal } from "@/components/admin/AuditChangesModal";
+import { ACTION_LABEL, TARGET_TABLE_LABEL, TARGET_TABLES } from "@/lib/admin-audit-labels";
 
 export const metadata: Metadata = { title: "Auditoría | Admin" };
 
 const dateFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-
-// Frase legible por acción — si se agrega una acción nueva y no está acá,
-// se muestra el código crudo como fallback (ver más abajo), nunca se rompe.
-const ACTION_LABEL: Record<string, string> = {
-  "listing.setFeatured": "Agregó/extendió destacado",
-  "listing.removeFeaturedEarly": "Quitó destacado antes de tiempo",
-  "listing.update": "Editó datos de la publicación",
-  "listing.setStatus": "Cambió el estado de la publicación",
-  "listing.softDelete": "Dio de baja la publicación",
-  "listing.suspend": "Suspendió la publicación",
-  "listing.unsuspend": "Reactivó la publicación suspendida",
-  "listing.restore": "Restauró la publicación",
-  "verification.approve": "Aprobó la verificación de identidad",
-  "verification.addNote": "Agregó una observación de identidad",
-  "subscription.grant": "Otorgó/renovó una suscripción",
-  "subscription.cancel": "Canceló la suscripción",
-  "subscription.adjustPurchasedPublications": "Ajustó publicaciones compradas",
-  "subscription.adjustFeaturedVouchers": "Ajustó vouchers de destacado",
-  "plan.toggleActive": "Dio de baja / reactivó un plan",
-  "plan.update": "Editó un plan",
-  "payment.approveCash": "Aprobó un pago en efectivo",
-  "user.ban": "Baneó la cuenta",
-  "user.unban": "Desbaneó la cuenta",
-  "user.softDelete": "Eliminó la cuenta (lógico)",
-  "user.restore": "Restauró la cuenta",
-  "user.unlockLogin": "Desbloqueó el inicio de sesión",
-  "user.suspend": "Suspendió la cuenta",
-  "user.unsuspend": "Reactivó la cuenta suspendida",
-  "user.setAdminRole": "Cambió el rol de administrador",
-};
-
-const TARGET_TABLE_LABEL: Record<AdminAuditTargetTable, string> = {
-  User: "Usuario",
-  Listing: "Publicación",
-  Payment: "Pago",
-  Plan: "Plan",
-  VerificationRequest: "Verificación de identidad",
-};
-
-const TARGET_TABLES: AdminAuditTargetTable[] = ["User", "Listing", "Payment", "Plan", "VerificationRequest"];
 
 function param(sp: Record<string, string | string[] | undefined>, key: string) {
   const value = sp[key];

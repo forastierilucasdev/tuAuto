@@ -36,6 +36,7 @@ export async function logAdminAction(input: {
 export type AdminAuditFilters = {
   adminSearch?: string;
   targetTable?: AdminAuditTargetTable;
+  targetId?: string;
   from?: Date;
   to?: Date;
 };
@@ -56,6 +57,7 @@ export async function listAuditLog(filters: AdminAuditFilters, page = 1) {
         }
       : {}),
     ...(filters.targetTable ? { targetTable: filters.targetTable } : {}),
+    ...(filters.targetId ? { targetId: filters.targetId } : {}),
     ...(filters.from || filters.to
       ? { createdAt: { ...(filters.from ? { gte: filters.from } : {}), ...(filters.to ? { lte: filters.to } : {}) } }
       : {}),

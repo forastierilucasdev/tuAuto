@@ -5,6 +5,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Motivo obligatorio en Pausar/Dar de baja, aviso de cupo al reactivar, historial de auditoría por publicación
+- **"Pausar" y "Dar de baja"** desde `/admin/publicaciones` piden motivo obligatorio (`ReasonConfirmModal`), igual que ya pedían "Suspender"/"Quitar destacado"/"Aprobar pago en efectivo" — queda en `AdminAuditLog`, no se le muestra al dueño de la publicación. "Marcar Activa"/"Marcar Vendida" siguen sin pedirlo (no fue parte del pedido).
+- **Reactivar sin cupo**: `adminSetListingStatus` nunca chequeó ni consumió cupo (a propósito — no es una "republicación", ver comentario ya existente) pero eso pasaba en silencio. Ahora, si el dueño no tiene publicaciones disponibles, el modal de "Marcar Activa" avisa explícitamente antes de confirmar que es una excepción administrativa que no descuenta cupo.
+- **Historial de auditoría por publicación**: nueva sección al pie de `/admin/publicaciones/[id]` con todas las acciones de admin sobre esa publicación puntual — reusa el trabajo de la Fase 69 (`listAuditLog`, `AuditChangesModal`), con un filtro `targetId` nuevo que antes no existía en la capa de datos.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Filtro `targetId` verificado con lectura directa contra la base real.
+
 ### Added (2026-08-14) — Auditoría: acciones legibles, objeto resuelto, detalle antes/después, filtros
 `AdminAuditLog` ya guardaba todo lo necesario (`changes.before`/`after`) desde la Fase 1 del panel admin, pero nada de eso se mostraba: la tabla solo tenía el código crudo de la acción y un ID pelado, y el formulario de filtros nunca se conectó a la pantalla aunque la capa de datos ya lo soportaba.
 

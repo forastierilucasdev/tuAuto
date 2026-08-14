@@ -67,8 +67,34 @@ export async function adminSetListingStatusAction(listingId: string, status: Lis
   return { success: true };
 }
 
-export async function adminSoftDeleteListingAction(listingId: string): Promise<AdminActionState> {
+/** "Pausar" pide motivo obligatorio, a diferencia de "Marcar Activa"/"Marcar Vendida" (`adminSetListingStatusAction`) — mismo criterio que "Quitar destacado"/pagos en efectivo: queda solo en el registro de auditoría, no se le muestra al dueño. */
+export async function adminPauseListingAction(listingId: string, reason: string): Promise<AdminActionState> {
+  const session = await requireAdminPermission("publicaciones", "edit");
+  const trimmedReason = reason.trim();
+  if (trimmedReason.length < 3) return { error: "Contanos el motivo de la pausa." };
+  const before = await getListingForAdminDetail(listingId);
+  if (!before) return { error: "Publicación no encontrada." };
+
+  await adminSetListingStatus(listingId, "PAUSADA");
+  await logAdminAction({
+    adminId: session.user.id,
+    action: "listing.pause",
+    targetTable: "Listing",
+    targetId: listingId,
+    changes: { before: { status: before.status }, after: { status: "PAUSADA", reason: trimmedReason } },
+  });
+
+  revalidatePath("/admin/publicaciones");
+  revalidatePath(`/admin/publicaciones/${listingId}`);
+  revalidatePath("/catalogo");
+  revalidatePath("/dashboard/publicaciones");
+  return { success: true };
+}
+
+export async function adminSoftDeleteListingAction(listingId: string, reason: string): Promise<AdminActionState> {
   const session = await requireAdminPermission("publicaciones", "delete");
+  const trimmedReason = reason.trim();
+  if (trimmedReason.length < 3) return { error: "Contanos el motivo de la baja." };
   const before = await getListingForAdminDetail(listingId);
   if (!before) return { error: "Publicación no encontrada." };
 
@@ -78,7 +104,7 @@ export async function adminSoftDeleteListingAction(listingId: string): Promise<A
     action: "listing.softDelete",
     targetTable: "Listing",
     targetId: listingId,
-    changes: { before: { deletedAt: before.deletedAt }, after: { deletedAt: new Date() } },
+    changes: { before: { deletedAt: before.deletedAt }, after: { deletedAt: new Date(), reason: trimmedReason } },
   });
 
   revalidatePath("/admin/publicaciones");
