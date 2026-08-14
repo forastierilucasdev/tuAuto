@@ -5,6 +5,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Acceso al panel admin desde el menú de cuenta
+El panel `/admin` no tenía ningún link visible desde el sitio — había que escribir la URL a mano. Se agrega "Panel de administración" en el menú "Mi cuenta" (`AccountMenu.tsx`), visible solo para cuentas con `adminRole` seteado (se lee de `session.user.adminRole`, ya viaja en la sesión desde la Fase 1).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Added (2026-08-14) — Panel admin: exportación CSV en Usuarios, Publicaciones y Pagos
 - Botón "Exportar CSV" en las 3 tablas del panel (`/admin/usuarios`, `/admin/publicaciones`, `/admin/suscripciones`) — nuevo Route Handler por módulo (`export/route.ts`) que respeta los filtros/búsqueda actuales de la página (no solo la página visible: baja todo lo que coincide) y arma el CSV a mano, sin dependencia nueva (`lib/csv.ts`: escapado RFC 4180 + BOM UTF-8 para que Excel no rompa los acentos).
 - Mismo permiso que ver la lista (`read`, los 3 roles) — exportar no expone más datos de los que ya se pueden ver en pantalla.

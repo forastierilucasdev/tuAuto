@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
-import { HelpCircle, IdCard, KeyRound, LayoutDashboard, LogOut, PlusCircle, Repeat, ShoppingBag, User as UserIcon } from "lucide-react";
+import { HelpCircle, IdCard, KeyRound, LayoutDashboard, LogOut, PlusCircle, Repeat, ShieldCheck, ShoppingBag, User as UserIcon } from "lucide-react";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { SlideOverPanel } from "@/components/ui/SlideOverPanel";
 import { getMyProfileAction } from "@/server/actions/profile.actions";
@@ -133,6 +133,17 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
             <ADMIN_ITEM.icon className="h-5 w-5 text-muted-foreground" />
             {ADMIN_ITEM.label}
           </Link>
+
+          {session.user.adminRole && (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className={cn(itemClasses, "text-primary hover:bg-primary/10")}
+            >
+              <ShieldCheck className="h-5 w-5" />
+              Panel de administración
+            </Link>
+          )}
 
           <hr className="my-2 border-border" />
           <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Anuncios</p>

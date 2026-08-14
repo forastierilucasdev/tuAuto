@@ -391,6 +391,11 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 62 — Acceso al panel admin desde el menú de cuenta (solicitado por el usuario)
+- [x] "Panel de administración" en el menú "Mi cuenta", visible solo si `session.user.adminRole` está seteado
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [ ] Prueba manual en navegador
+
 ## Fase 61 — Exportación CSV en el panel admin (solicitado por el usuario)
 - [x] Botón "Exportar CSV" en Usuarios, Publicaciones y Suscripciones/Pagos, respeta los filtros/búsqueda actuales
 - [x] Route Handler por módulo (`export/route.ts`), mismo permiso que ver la lista (`read`)
