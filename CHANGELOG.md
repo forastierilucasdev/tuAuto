@@ -5,6 +5,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Wizard completo de admin para editar publicaciones, con fotos
+Último ítem pendiente de la Fase 63 (deferido explícitamente en su momento por la ownership hardcodeada en `updateListingAction`/`deleteListingImageAction`/`reorderListingImagesAction`) — ya resuelto.
+
+- **`/admin/publicaciones/[id]/editar`** (nueva, exclusiva SUPERADMIN): el mismo `ListingForm` de 7 etapas que usa el dueño, ahora también disponible para editar la publicación de cualquier usuario — tipo/marca/modelo/año siguen bloqueados (mismo límite que ya tenía el dueño).
+- **`ListingForm.tsx` no se duplicó**: se le agregaron props opcionales (`updateAction`, `deleteImageAction`, `reorderImagesAction`, `requireDeleteReason`) que, sin usarlas, dejan el comportamiento exactamente igual al del dueño — el panel admin las inyecta para reemplazar las Server Actions y agregar el paso de motivo antes de borrar una foto.
+- **Sin efectos de cupo**: `adminUpdateListingFullAction` reusa `adminUpdateListing` (ya documentado como "no es una republicación", no toca `quotaConsumed`/`activationCount`/`expiresAt`) — a diferencia de `updateOwnedListing` del dueño, editar desde acá nunca reactiva de rebote ni le consume cupo a nadie.
+- **Fotos**: `adminDeleteListingImageAction` pide motivo obligatorio (moderación de contenido indebido) y, a diferencia del dueño, permite llegar a 0 fotos si hace falta borrarlas todas. `adminReorderListingImagesAction` reusa la función del dueño pasándole su `userId` real — el chequeo de ownership pasa trivialmente sin duplicar la validación de integridad (misma cantidad/IDs).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable contra la base real (borrar y restaurar una foto exacta, invertir y revertir el orden) y con el servidor de desarrollo (las dos rutas nuevas redirigen a `/login` sin sesión, sin errores de servidor) — no se pudo probar el flujo completo con una sesión SUPERADMIN real por no tener la contraseña a mano en esta sesión.
+
 ### Added (2026-08-14) — Motivo obligatorio en Pausar/Dar de baja, aviso de cupo al reactivar, historial de auditoría por publicación
 - **"Pausar" y "Dar de baja"** desde `/admin/publicaciones` piden motivo obligatorio (`ReasonConfirmModal`), igual que ya pedían "Suspender"/"Quitar destacado"/"Aprobar pago en efectivo" — queda en `AdminAuditLog`, no se le muestra al dueño de la publicación. "Marcar Activa"/"Marcar Vendida" siguen sin pedirlo (no fue parte del pedido).
 - **Reactivar sin cupo**: `adminSetListingStatus` nunca chequeó ni consumió cupo (a propósito — no es una "republicación", ver comentario ya existente) pero eso pasaba en silencio. Ahora, si el dueño no tiene publicaciones disponibles, el modal de "Marcar Activa" avisa explícitamente antes de confirmar que es una excepción administrativa que no descuenta cupo.

@@ -80,7 +80,14 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
       </div>
 
       <div className="mt-6 max-w-xl">
-        <h2 className="mb-3 text-sm font-bold text-navy">Datos de la publicación</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-bold text-navy">Datos de la publicación</h2>
+          {session.user.adminRole === "SUPERADMIN" && (
+            <Link href={`/admin/publicaciones/${listing.id}/editar`} className="text-sm font-medium text-primary hover:underline">
+              Editar con el wizard completo (todas las etapas + fotos)
+            </Link>
+          )}
+        </div>
         <ListingEditForm listingId={listing.id} disabled={!permissions.canEdit} listing={listing} />
       </div>
 

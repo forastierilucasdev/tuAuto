@@ -8,6 +8,8 @@ export const ACTION_LABEL: Record<string, string> = {
   "listing.setFeatured": "Agregó/extendió destacado",
   "listing.removeFeaturedEarly": "Quitó destacado antes de tiempo",
   "listing.update": "Editó datos de la publicación",
+  "listing.deleteImage": "Eliminó una foto de la publicación",
+  "listing.reorderImages": "Reordenó las fotos de la publicación",
   "listing.setStatus": "Cambió el estado de la publicación",
   "listing.pause": "Pausó la publicación",
   "listing.softDelete": "Dio de baja la publicación",

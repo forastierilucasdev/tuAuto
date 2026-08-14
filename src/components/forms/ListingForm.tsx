@@ -72,6 +72,12 @@ type ListingFormProps = {
         contactAddress: string | null;
       };
       existingImages: ExistingImage[];
+      /** Solo panel admin: reemplaza `updateListingAction`/`deleteListingImageAction`/`reorderListingImagesAction` por las variantes de admin (sin chequeo de ownership, permiso validado server-side por `requireAdminPermission`+`requireSuperAdminRole`). Sin esto, el wizard se comporta exactamente igual que para el dueño. */
+      updateAction?: typeof updateListingAction;
+      deleteImageAction?: (listingId: string, imageId: string, reason?: string) => Promise<ListingActionState>;
+      reorderImagesAction?: (listingId: string, orderedImageIds: string[]) => Promise<ListingActionState>;
+      /** Solo panel admin: pide un motivo (modal aparte) antes de borrar una foto — nunca se le muestra al dueño, queda en el registro de auditoría. */
+      requireDeleteReason?: boolean;
     }
 );
 
@@ -82,7 +88,7 @@ type StepId = "datos" | "precio" | "ubicacion" | "contacto" | "fotos" | "observa
 export function ListingForm(props: ListingFormProps) {
   const isEdit = props.mode === "edit";
   const isReactivation = isEdit ? props.isReactivation : false;
-  const action = isEdit ? updateListingAction : createListingAction;
+  const action = isEdit ? (props.updateAction ?? updateListingAction) : createListingAction;
   const [state, formAction, pending] = useActionState(action, initialState);
 
   // --- Datos principales (bloqueados en modo "edit": vienen de la publicación existente) ---
@@ -142,17 +148,43 @@ export function ListingForm(props: ListingFormProps) {
   const [photos, setPhotos] = React.useState<{ file: File; preview: string }[]>([]);
   const remainingSlots = Math.max(0, MAX_IMAGES - existingImages.length - photos.length);
 
-  async function removeExistingImage(imageId: string) {
+  // Solo panel admin (`requireDeleteReason`): en vez de borrar al toque, se
+  // abre un modal chico pidiendo el motivo — se guarda en auditoría, nunca
+  // se le muestra al dueño. Para el dueño, `pendingDeleteImageId` nunca se
+  // usa y el click borra directo, como siempre.
+  const [pendingDeleteImageId, setPendingDeleteImageId] = React.useState<string | null>(null);
+  const [deleteReason, setDeleteReason] = React.useState("");
+
+  async function performRemoveImage(imageId: string, reason?: string) {
     if (!isEdit) return;
     setDeleteImageError(undefined);
     setDeletingImageId(imageId);
-    const result = await deleteListingImageAction(props.listingId, imageId);
+    const result = await (props.deleteImageAction ?? deleteListingImageAction)(props.listingId, imageId, reason);
     setDeletingImageId(null);
     if (result?.error) {
       setDeleteImageError(result.error);
       return;
     }
     setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+  }
+
+  function requestRemoveImage(imageId: string) {
+    if (isEdit && props.requireDeleteReason) {
+      setDeleteReason("");
+      setPendingDeleteImageId(imageId);
+      return;
+    }
+    void performRemoveImage(imageId);
+  }
+
+  async function confirmRemoveImageWithReason() {
+    if (!pendingDeleteImageId) return;
+    if (deleteReason.trim().length < 3) {
+      setDeleteImageError("Contanos el motivo de la eliminación.");
+      return;
+    }
+    await performRemoveImage(pendingDeleteImageId, deleteReason.trim());
+    setPendingDeleteImageId(null);
   }
 
   async function moveExistingImage(index: number, direction: -1 | 1) {
@@ -167,7 +199,10 @@ export function ListingForm(props: ListingFormProps) {
     setExistingImages(reordered);
     setReorderError(undefined);
     setReordering(true);
-    const result = await reorderListingImagesAction(props.listingId, reordered.map((img) => img.id));
+    const result = await (props.reorderImagesAction ?? reorderListingImagesAction)(
+      props.listingId,
+      reordered.map((img) => img.id)
+    );
     setReordering(false);
     if (result?.error) {
       setExistingImages(previous);
@@ -646,7 +681,7 @@ export function ListingForm(props: ListingFormProps) {
                       )}
                       <button
                         type="button"
-                        onClick={() => removeExistingImage(img.id)}
+                        onClick={() => requestRemoveImage(img.id)}
                         disabled={deletingImageId === img.id}
                         title="Quitar foto"
                         className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70 disabled:opacity-50"
@@ -902,6 +937,43 @@ export function ListingForm(props: ListingFormProps) {
           </div>
         </div>
       </Modal>
+
+      {isEdit && props.requireDeleteReason && (
+        <Modal
+          open={pendingDeleteImageId !== null}
+          onClose={() => setPendingDeleteImageId(null)}
+          title="Eliminar foto"
+        >
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">Contanos el motivo — queda en el registro de auditoría.</p>
+            <div>
+              <Label htmlFor="delete-image-reason">Motivo</Label>
+              <Textarea
+                id="delete-image-reason"
+                rows={3}
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Ej: foto indebida..."
+              />
+            </div>
+            {deleteImageError && <p className="text-danger">{deleteImageError}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button type="button" variant="outline" size="sm" onClick={() => setPendingDeleteImageId(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={deletingImageId === pendingDeleteImageId}
+                onClick={confirmRemoveImageWithReason}
+              >
+                {deletingImageId === pendingDeleteImageId ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </form>
   );
 }

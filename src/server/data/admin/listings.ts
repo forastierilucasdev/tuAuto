@@ -89,6 +89,18 @@ export async function adminUpdateListing(listingId: string, data: UpdateListingI
   return prisma.listing.update({ where: { id: listingId }, data });
 }
 
+/**
+ * Borrado de foto desde el panel admin (moderación de contenido indebido) —
+ * a diferencia de `deleteListingImage` (dueño), no valida ownership (ya lo
+ * hizo `requireAdminPermission`+`requireSuperAdminRole` antes de llamar acá)
+ * y NO exige que quede al menos una foto: si hay que borrar todas porque
+ * todas son indebidas, se borran todas — la publicación ya tiene una imagen
+ * de relleno genérica prevista para ese caso (`FALLBACK_IMAGE`).
+ */
+export async function adminDeleteListingImage(listingId: string, imageId: string) {
+  await prisma.image.deleteMany({ where: { id: imageId, listingId } });
+}
+
 export async function adminSetListingStatus(listingId: string, status: ListingStatus) {
   return prisma.listing.update({
     where: { id: listingId },

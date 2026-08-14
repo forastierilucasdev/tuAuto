@@ -391,6 +391,18 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 71 — Wizard completo de admin para editar publicaciones, con fotos (solicitado por el usuario, deferido desde la Fase 63)
+- [x] `/admin/publicaciones/[id]/editar` (nueva, exclusiva SUPERADMIN vía `requireSuperAdminRole`): mismo `ListingForm` que usa el dueño, las 7 etapas completas
+- [x] `ListingForm.tsx` extendido con props opcionales (`updateAction`, `deleteImageAction`, `reorderImagesAction`, `requireDeleteReason`) — sin esto, el wizard se comporta exactamente igual que para el dueño; nunca se duplicó el componente
+- [x] `adminUpdateListingFullAction` (nueva): reusa `adminUpdateListing` (no toca cupo/activationCount/expiresAt — no es una republicación) + el mismo pipeline de subida de fotos del dueño (`uploadListingImage`/`attachListingImages`, agnóstico de dueño)
+- [x] `adminDeleteListingImageAction`/`adminDeleteListingImage` (nueva): motivo obligatorio (modal aparte, no se le muestra al dueño), sin la regla de "al menos 1 foto" — se puede llegar a 0 si todas son indebidas
+- [x] `adminReorderListingImagesAction` (nueva): reusa `reorderListingImages` del dueño pasando su `userId` real — el chequeo de ownership pasa trivialmente, sin duplicar la validación de integridad
+- [x] Link "Editar con el wizard completo" en `/admin/publicaciones/[id]`, visible solo para SUPERADMIN
+- [x] Nuevas acciones sumadas a `ACTION_LABEL` (`listing.deleteImage`, `listing.reorderImages`) — aparecen en el historial de auditoría de la publicación
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con script desechable contra la base real (borrar+restaurar una foto exacta, invertir+revertir el orden con el truco del userId real) y con servidor de desarrollo (ambas rutas nuevas redirigen a `/login` sin sesión, no tiran 500)
+- [ ] Prueba manual en navegador (con sesión SUPERADMIN real)
+
 ## Fase 70 — Motivo obligatorio en Pausar/Dar de baja, aviso de cupo al reactivar, historial de auditoría por publicación (solicitado por el usuario)
 - [x] "Pausar" (`adminPauseListingAction`, nueva) y "Dar de baja" (`adminSoftDeleteListingAction`, ahora pide `reason`) usan `ReasonConfirmModal` — motivo obligatorio, queda en `AdminAuditLog`, no se le muestra al dueño (mismo criterio que "Quitar destacado"/aprobar pago en efectivo)
 - [x] "Marcar Activa"/"Marcar Vendida" NO piden motivo (no se pidió) — siguen con `AdminConfirmButton` simple
