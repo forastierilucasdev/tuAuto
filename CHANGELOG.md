@@ -5,6 +5,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — ID único de publicación visible + solicitado en Soporte
+- Cada tarjeta de "Mis publicaciones" (`OwnerListingCard`) muestra ahora el ID de la publicación (`cuid`, seleccionable) junto a un link "Reportar error" que lleva directo a `/dashboard/soporte` con el ID precargado.
+- `/dashboard/soporte` acepta un `?listingId=` opcional en la URL y lo pasa como valor inicial de un nuevo campo "ID de la publicación" (opcional) en el formulario; `submitSupportReportAction` lo incluye en el correo enviado a soporte cuando está presente.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con el servidor de desarrollo y un login real (PowerShell): la tarjeta de una publicación real muestra su ID correcto, y el link "Reportar error" prellena ese mismo ID en el formulario de Soporte.
+
 ### Added (2026-08-14) — Suspensión de cuentas y publicaciones, e Identidad con observaciones
 - **Suspender una publicación puntual** (días + motivo) desde `/admin/publicaciones/[id]`: nuevo estado computado "Suspendida" (`getEffectiveStatus()`, mismo criterio 100% calculado que ya usa "Vencida" — nunca se reescribe la columna `status`, solo `suspendedUntil`/`suspensionReason`). Se oculta del catálogo, aparece para el dueño en "Inactivas" con la fecha y el motivo, y se ocultan Editar/Eliminar/Marcar vendido mientras dura (no se puede esquivar la suspensión operando alrededor). Se reactiva sola al pasar los días, o el admin la reactiva antes.
 - **Suspender una cuenta completa** (días + motivo) desde `/admin/usuarios/[id]`: a diferencia de banear, el usuario **puede seguir logueándose** — lo que cambia es que todas sus publicaciones dejan de ser públicas (incluidas destacadas/carrusel del inicio) y no puede publicar ni reactivar mientras dure. El usuario ve el estado de su cuenta en el menú "Mi cuenta" (junto a "Tipo de cuenta") y, si está suspendida, el detalle (días restantes + motivo) en `/dashboard/perfil/tipo-cuenta`. Se reactiva sola al pasar los días, o el admin la reactiva antes.

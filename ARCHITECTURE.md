@@ -171,6 +171,7 @@ Los 4 tipos de compra (pack de publicación, suscripción, destacar por día, co
 
 - **`RESEND_API_KEY` opcional pero necesaria para que funcione de verdad**: sin ella, `sendSupportEmail()` devuelve un error explícito ("El envío de reportes todavía no está configurado...") en vez de fallar en silencio o fingir éxito — a diferencia del patrón de Upstash/webhook secret (que caen a un fallback funcional), acá no hay una alternativa segura, o se manda el mail o no se manda.
 - **`RESEND_FROM_EMAIL`**: sin verificar el dominio `motoresya.com.ar` en Resend, solo se puede mandar desde `onboarding@resend.dev` (remitente de prueba de Resend) y solo a la casilla verificada de esa cuenta de Resend — no a `soporte@motoresya.com.ar` todavía. Verificar el dominio en Resend (Domains) antes de depender de esto en producción.
+- **ID de publicación**: el `cuid` que Prisma ya generaba para cada `Listing` se muestra ahora en cada tarjeta de "Mis publicaciones" (`OwnerListingCard`, no hace falta un ID "amigable" nuevo — el que ya existe alcanza para identificar una publicación sin ambigüedad). El link "Reportar error" de la tarjeta pasa ese ID como `?listingId=` en la URL de `/dashboard/soporte`, que lo precarga en un campo opcional del formulario e, si está presente, lo suma al cuerpo del mail — así soporte no depende de que el usuario copie el ID a mano ni de que sepa dónde buscarlo.
 
 ## 7.2. Panel de administración (`/admin`)
 

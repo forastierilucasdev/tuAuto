@@ -251,6 +251,14 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
           {listing.viewCount} vista{listing.viewCount === 1 ? "" : "s"}
         </p>
 
+        {/* ID único de la publicación — para reportar un error en Soporte hay que indicar cuál es. */}
+        <p className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground/70">
+          <span className="select-all font-mono">ID: {listing.id}</span>
+          <Link href={`/dashboard/soporte?listingId=${listing.id}`} className="shrink-0 underline hover:text-primary">
+            Reportar error
+          </Link>
+        </p>
+
         {actions.length > 0 && (
           <div className="mt-auto grid grid-cols-2 gap-2 pt-2">{actions}</div>
         )}

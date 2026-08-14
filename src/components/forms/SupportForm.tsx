@@ -5,13 +5,14 @@ import { useActionState } from "react";
 import { ImagePlus } from "lucide-react";
 import { submitSupportReportAction, type SupportActionState } from "@/server/actions/support.actions";
 import { Label } from "@/components/ui/Label";
+import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 
 const initialState: SupportActionState = undefined;
 
-/** Nombre/correo/teléfono del usuario y fecha/hora se agregan del lado del servidor — el formulario solo pide la descripción y, opcional, una captura. */
-export function SupportForm() {
+/** Nombre/correo/teléfono del usuario y fecha/hora se agregan del lado del servidor — el formulario solo pide la descripción, el ID de publicación (opcional) y, opcional, una captura. */
+export function SupportForm({ defaultListingId }: { defaultListingId?: string }) {
   const [state, formAction, pending] = useActionState(submitSupportReportAction, initialState);
   const [fileName, setFileName] = React.useState<string | null>(null);
 
@@ -33,6 +34,16 @@ export function SupportForm() {
           rows={5}
           placeholder="Contanos qué estabas haciendo y qué pasó..."
           required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="listingId">ID de la publicación (opcional)</Label>
+        <Input
+          id="listingId"
+          name="listingId"
+          defaultValue={defaultListingId ?? ""}
+          placeholder="Lo encontrás en la tarjeta, dentro de Mis publicaciones"
         />
       </div>
 

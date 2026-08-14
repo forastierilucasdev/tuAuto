@@ -30,6 +30,8 @@ export async function submitSupportReportAction(
     return { error: "Contanos un poco más de detalle sobre qué pasó (mínimo 10 caracteres)." };
   }
 
+  const listingId = String(formData.get("listingId") ?? "").trim();
+
   const screenshot = formData.get("screenshot");
   const hasScreenshot = screenshot instanceof File && screenshot.size > 0;
   let attachment: { filename: string; content: Buffer; contentType?: string } | undefined;
@@ -49,6 +51,7 @@ export async function submitSupportReportAction(
     <p><strong>Correo:</strong> ${escapeHtml(profile.email)}</p>
     <p><strong>Teléfono:</strong> ${escapeHtml(profile.phone)}</p>
     <p><strong>Fecha y hora:</strong> ${new Date().toLocaleString("es-AR")}</p>
+    ${listingId ? `<p><strong>ID de publicación:</strong> ${escapeHtml(listingId)}</p>` : ""}
     <hr />
     <p><strong>Descripción del error:</strong></p>
     <p>${escapeHtml(description).replace(/\n/g, "<br/>")}</p>
