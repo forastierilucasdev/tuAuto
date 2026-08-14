@@ -110,10 +110,50 @@ export async function cancelSubscription(userId: string) {
   });
 }
 
+/**
+ * Un ajuste positivo ("bonificar") queda trazable en el propio historial de
+ * pagos del usuario (mismo criterio que `grantSubscription`) — uno
+ * negativo (corregir un error) no genera una fila de "compra" falsa, sería
+ * confuso mostrar un pago en $0 negativo.
+ */
 export async function adjustPurchasedPublications(userId: string, delta: number) {
-  return prisma.user.update({ where: { id: userId }, data: { purchasedPublications: { increment: delta } } });
+  const updates: Prisma.PrismaPromise<unknown>[] = [
+    prisma.user.update({ where: { id: userId }, data: { purchasedPublications: { increment: delta } } }),
+  ];
+  if (delta > 0) {
+    updates.push(
+      prisma.payment.create({
+        data: {
+          userId,
+          planCode: "ADMIN_BONUS_PUBLICATIONS",
+          amount: 0,
+          status: "APPROVED",
+          provider: "admin",
+          description: `${delta} publicación${delta === 1 ? "" : "es"} bonificada${delta === 1 ? "" : "s"} (otorgado por el administrador)`,
+        },
+      })
+    );
+  }
+  await prisma.$transaction(updates);
 }
 
 export async function adjustFeaturedVouchers(userId: string, delta: number) {
-  return prisma.user.update({ where: { id: userId }, data: { pendingFeaturedVouchers: { increment: delta } } });
+  const updates: Prisma.PrismaPromise<unknown>[] = [
+    prisma.user.update({ where: { id: userId }, data: { pendingFeaturedVouchers: { increment: delta } } }),
+  ];
+  if (delta > 0) {
+    updates.push(
+      prisma.payment.create({
+        data: {
+          userId,
+          planCode: "ADMIN_BONUS_FEATURED",
+          amount: 0,
+          status: "APPROVED",
+          provider: "admin",
+          description: `${delta} destacado${delta === 1 ? "" : "s"} bonificado${delta === 1 ? "" : "s"} (otorgado por el administrador)`,
+        },
+      })
+    );
+  }
+  await prisma.$transaction(updates);
 }

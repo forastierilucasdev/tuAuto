@@ -9,6 +9,8 @@ import {
   getListingForAdminDetail,
   restoreListing,
   softDeleteListing,
+  suspendListing,
+  unsuspendListing,
 } from "@/server/data/admin/listings";
 import { updateListingSchema } from "@/lib/validations/listing";
 import type { ListingStatus } from "@/generated/prisma/client";
@@ -82,6 +84,51 @@ export async function adminSoftDeleteListingAction(listingId: string): Promise<A
   revalidatePath("/admin/publicaciones");
   revalidatePath(`/admin/publicaciones/${listingId}`);
   revalidatePath("/catalogo");
+  return { success: true };
+}
+
+export async function adminSuspendListingAction(listingId: string, days: number, reason: string): Promise<AdminActionState> {
+  const session = await requireAdminPermission("publicaciones", "edit");
+  const before = await getListingForAdminDetail(listingId);
+  if (!before) return { error: "Publicación no encontrada." };
+
+  const listing = await suspendListing(listingId, days, reason);
+  await logAdminAction({
+    adminId: session.user.id,
+    action: "listing.suspend",
+    targetTable: "Listing",
+    targetId: listingId,
+    changes: {
+      before: { suspendedUntil: before.suspendedUntil, suspensionReason: before.suspensionReason },
+      after: { suspendedUntil: listing.suspendedUntil, suspensionReason: listing.suspensionReason },
+    },
+  });
+
+  revalidatePath("/admin/publicaciones");
+  revalidatePath(`/admin/publicaciones/${listingId}`);
+  revalidatePath("/catalogo");
+  revalidatePath("/dashboard/publicaciones");
+  return { success: true };
+}
+
+export async function adminUnsuspendListingAction(listingId: string): Promise<AdminActionState> {
+  const session = await requireAdminPermission("publicaciones", "edit");
+  const before = await getListingForAdminDetail(listingId);
+  if (!before) return { error: "Publicación no encontrada." };
+
+  await unsuspendListing(listingId);
+  await logAdminAction({
+    adminId: session.user.id,
+    action: "listing.unsuspend",
+    targetTable: "Listing",
+    targetId: listingId,
+    changes: { before: { suspendedUntil: before.suspendedUntil }, after: { suspendedUntil: null } },
+  });
+
+  revalidatePath("/admin/publicaciones");
+  revalidatePath(`/admin/publicaciones/${listingId}`);
+  revalidatePath("/catalogo");
+  revalidatePath("/dashboard/publicaciones");
   return { success: true };
 }
 

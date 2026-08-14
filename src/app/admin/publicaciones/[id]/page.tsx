@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { BackButton } from "@/components/ui/BackButton";
 import { Badge } from "@/components/ui/Badge";
 import { getModulePermissions, requireAdminPermission } from "@/lib/admin-permissions";
-import { getListingForAdminDetail } from "@/server/data/admin/listings";
+import { getListingForAdminDetail, isListingSuspended } from "@/server/data/admin/listings";
 import { ListingEditForm } from "@/components/admin/ListingEditForm";
 import { ListingStatusActions } from "@/components/admin/ListingStatusActions";
 
@@ -18,6 +18,7 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
 
   const listing = await getListingForAdminDetail(id);
   if (!listing) notFound();
+  const suspended = isListingSuspended(listing.suspendedUntil);
 
   return (
     <div>
@@ -28,6 +29,7 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <h1 className="text-2xl font-bold text-navy">{listing.title}</h1>
         <Badge variant="default">{listing.status}</Badge>
+        {suspended && <Badge variant="danger">Suspendida</Badge>}
         {listing.deletedAt && <Badge variant="danger">Dada de baja</Badge>}
       </div>
       <p className="mt-1 text-muted-foreground">
@@ -36,6 +38,13 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
           {listing.user.fullName} ({listing.user.email})
         </Link>
       </p>
+      <p className="mt-1 text-xs text-muted-foreground">ID: {listing.id}</p>
+      {suspended && (
+        <p className="mt-1 text-sm text-danger">
+          Suspendida hasta el {new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(listing.suspendedUntil!)}
+          {listing.suspensionReason && <> — Motivo: {listing.suspensionReason}</>}
+        </p>
+      )}
 
       {listing.images.length > 0 && (
         <div className="mt-4 flex gap-3 overflow-x-auto">
@@ -52,6 +61,7 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
         <ListingStatusActions
           listingId={listing.id}
           deletedAt={listing.deletedAt}
+          isSuspended={suspended}
           canEdit={permissions.canEdit}
           canDelete={permissions.canDelete}
         />

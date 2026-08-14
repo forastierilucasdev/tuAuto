@@ -391,6 +391,17 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 63 — Suspensión de cuentas/publicaciones, Identidad con observaciones (solicitado por el usuario)
+- [x] Suspender publicación puntual (días+motivo): estado computado "Suspendida" (`getEffectiveStatus`), oculta del catálogo, visible en Inactivas del dueño con fecha+motivo, Editar/Eliminar/Marcar vendido ocultos mientras dura, se reactiva sola o el admin la reactiva
+- [x] Suspender cuenta completa (días+motivo): NO banea (el usuario sigue logueándose), oculta todas sus publicaciones del catálogo, bloquea publicar/reactivar, estado visible en el menú de cuenta y detalle en `/dashboard/perfil/tipo-cuenta`
+- [x] Identidad: "Rechazar" reemplazado por "Guardar observación" (sigue `PENDING`); columna "Identidad" en la lista de Usuarios
+- [x] Componente `SuspendActionModal` reusable (días+motivo) para cuenta y publicación
+- [x] Corregido de paso: colisión de claves `OR` entre `visibleStatusWhere()` y `effectivelyFeaturedWhere()` en `getCatalogResults`/`getFeaturedListings` (la última pisaba a la primera silenciosamente)
+- [x] Gap-fix: bonificar publicaciones/destacados manualmente ahora deja un `Payment` trazable en el historial del usuario (antes no dejaba rastro visible para el usuario)
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con script desechable contra la base real y con servidor de desarrollo + login real
+- [ ] Prueba manual en navegador (suspender una cuenta/publicación de prueba y confirmar en el catálogo y en el panel del usuario)
+
 ## Fase 62 — Acceso al panel admin desde el menú de cuenta (solicitado por el usuario)
 - [x] "Panel de administración" en el menú "Mi cuenta", visible solo si `session.user.adminRole` está seteado
 - [x] `tsc --noEmit`, `eslint`, `npm run build` limpios

@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { AdminConfirmButton } from "@/components/admin/AdminConfirmButton";
+import { SuspendActionModal } from "@/components/admin/SuspendActionModal";
 import {
   assignAdminRoleAction,
   banUserAction,
   restoreUserAction,
   softDeleteUserAction,
+  suspendUserAction,
   unbanUserAction,
   unlockUserLoginAction,
+  unsuspendUserAction,
 } from "@/server/actions/admin/users.actions";
 import type { AdminRole } from "@/generated/prisma/client";
 
@@ -21,6 +24,7 @@ export function UserAccountActions({
   deletedAt,
   currentAdminRole,
   isLocked,
+  isSuspended,
   isSuperAdmin,
   isSelf,
   permissions,
@@ -30,6 +34,7 @@ export function UserAccountActions({
   deletedAt: Date | null;
   currentAdminRole: AdminRole | null;
   isLocked: boolean;
+  isSuspended: boolean;
   isSuperAdmin: boolean;
   isSelf: boolean;
   permissions: { canEdit: boolean; canDelete: boolean };
@@ -106,6 +111,26 @@ export function UserAccountActions({
             onSuccess={() => router.refresh()}
           />
         )}
+
+        {!deletedAt &&
+          (isSuspended ? (
+            <AdminConfirmButton
+              label="Reactivar cuenta"
+              variant="success"
+              disabled={!permissions.canEdit}
+              confirmMessage="La cuenta y sus publicaciones vuelven a ser públicas de inmediato."
+              onConfirm={() => unsuspendUserAction(userId)}
+              onSuccess={() => router.refresh()}
+            />
+          ) : (
+            <SuspendActionModal
+              label="Suspender cuenta"
+              entityLabel="La cuenta (y sus publicaciones)"
+              disabled={!permissions.canEdit}
+              onConfirm={(days, reason) => suspendUserAction(userId, days, reason)}
+              onSuccess={() => router.refresh()}
+            />
+          ))}
       </div>
 
       {isSuperAdmin && (

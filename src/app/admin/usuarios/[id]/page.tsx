@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { UserAccountActions } from "@/components/admin/UserAccountActions";
 import { UserSubscriptionActions } from "@/components/admin/UserSubscriptionActions";
 import { getModulePermissions, requireAdminPermission } from "@/lib/admin-permissions";
-import { getUserForAdmin, isAccountLocked } from "@/server/data/admin/users";
+import { getUserForAdmin, isAccountLocked, isUserSuspended } from "@/server/data/admin/users";
 import { getOwnerListingGroups } from "@/server/data/listings";
 import { getPaymentHistory, getSubscriptionPlans, getSubscriptionStatus } from "@/server/data/payments";
 import { prisma } from "@/lib/prisma";
@@ -47,6 +47,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
   const suscripcionesPermissions = getModulePermissions(session.user.adminRole, "suscripciones");
   const hasActiveSubscription = subscriptionStatus.active;
   const locked = isAccountLocked(user.lockedUntil);
+  const suspended = isUserSuspended(user.suspendedUntil);
 
   return (
     <div>
@@ -64,9 +65,16 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
           <Badge variant="danger">Baneado</Badge>
         )}
         {user.isVerified && <Badge variant="info">Identidad validada</Badge>}
+        {suspended && <Badge variant="danger">Suspendido</Badge>}
         {user.adminRole && <Badge variant="info">{user.adminRole}</Badge>}
       </div>
       <p className="mt-1 text-muted-foreground">{user.email}</p>
+      {suspended && (
+        <p className="mt-1 text-sm text-danger">
+          Suspendido hasta el {dateTimeFormatter.format(user.suspendedUntil!)}
+          {user.suspensionReason && <> — Motivo: {user.suspensionReason}</>}
+        </p>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card>
@@ -133,6 +141,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
               deletedAt={user.deletedAt}
               currentAdminRole={user.adminRole}
               isLocked={locked}
+              isSuspended={suspended}
               isSuperAdmin={session.user.adminRole === "SUPERADMIN"}
               isSelf={session.user.id === user.id}
               permissions={usuariosPermissions}

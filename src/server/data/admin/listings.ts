@@ -105,6 +105,28 @@ export async function restoreListing(listingId: string) {
   return prisma.listing.update({ where: { id: listingId }, data: { deletedAt: null } });
 }
 
+/**
+ * Suspensión de esta publicación puntual (días + motivo) — nunca reescribe
+ * `status`, `getEffectiveStatus()` en `server/data/listings.ts` la lee como
+ * "SUSPENDIDA" mientras esté vigente (mismo criterio 100% computado que ya
+ * usa EXPIRED). Se levanta sola al pasar la fecha, o a mano con
+ * `unsuspendListing`.
+ */
+export async function suspendListing(listingId: string, days: number, reason: string) {
+  return prisma.listing.update({
+    where: { id: listingId },
+    data: { suspendedUntil: new Date(Date.now() + days * 24 * 60 * 60 * 1000), suspensionReason: reason },
+  });
+}
+
+export async function unsuspendListing(listingId: string) {
+  return prisma.listing.update({ where: { id: listingId }, data: { suspendedUntil: null, suspensionReason: null } });
+}
+
+export function isListingSuspended(suspendedUntil: Date | null): boolean {
+  return Boolean(suspendedUntil && suspendedUntil.getTime() > Date.now());
+}
+
 // --- Destacados (mismo archivo: son el mismo modelo `Listing`) ---
 
 export async function listFeaturedListingsForAdmin(page = 1) {

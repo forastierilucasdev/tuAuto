@@ -29,6 +29,7 @@ const STATUS_LABEL: Record<OwnerListingData["status"], string> = {
   PAUSADA: "Pausada",
   EXPIRED: "Vencida",
   SOLD: "Vendida",
+  SUSPENDIDA: "Suspendida",
 };
 
 const STATUS_BADGE_VARIANT: Record<OwnerListingData["status"], "success" | "info" | "default" | "danger"> = {
@@ -38,6 +39,7 @@ const STATUS_BADGE_VARIANT: Record<OwnerListingData["status"], "success" | "info
   PAUSADA: "default",
   EXPIRED: "danger",
   SOLD: "default",
+  SUSPENDIDA: "danger",
 };
 
 const REACTIVATABLE: OwnerListingData["status"][] = ["RESERVADA", "PAUSADA", "EXPIRED", "DRAFT"];
@@ -115,13 +117,18 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
   // cuando el visitante es el dueño) — todas las tarjetas son clickeables.
   const isSold = listing.status === "SOLD";
   const isDraft = listing.status === "DRAFT";
+  // Suspendida por un admin: no entra en REACTIVATABLE (el dueño no la
+  // puede reactivar sola, solo se levanta sola por tiempo o la reactiva el
+  // admin) y se ocultan Editar/Eliminar/Marcar vendido mientras dura, para
+  // que no se pueda esquivar la suspensión operando alrededor.
+  const isSuspended = listing.status === "SUSPENDIDA";
   const mileageUnit = mileageUnitFor(listing.vehicleType);
   const showDestacar = listing.status === "ACTIVE" && !listing.featured;
   const showPausar = listing.status === "ACTIVE";
   const showReactivar = REACTIVATABLE.includes(listing.status);
   // Vendida solo se puede ver; borrador todavía no pasó por "vendible".
-  const showMarkSold = !isSold && !isDraft;
-  const showEditDelete = !isSold;
+  const showMarkSold = !isSold && !isDraft && !isSuspended;
+  const showEditDelete = !isSold && !isSuspended;
 
   const remainingDays = listing.expiresAt ? daysRemaining(new Date(listing.expiresAt), now) : null;
 
@@ -218,7 +225,12 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
           {listing.year}
         </p>
 
-        {isSold && listing.soldAt ? (
+        {isSuspended && listing.suspendedUntil ? (
+          <p className="text-xs text-danger">
+            Suspendida hasta el {dateFormatter.format(new Date(listing.suspendedUntil))}
+            {listing.suspensionReason && <> — Motivo: {listing.suspensionReason}</>}
+          </p>
+        ) : isSold && listing.soldAt ? (
           <p className="text-xs text-muted-foreground">
             Vendida el {dateFormatter.format(new Date(listing.soldAt))}
             {listing.realSalePrice !== null && (

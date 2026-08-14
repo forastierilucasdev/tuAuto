@@ -57,7 +57,13 @@ const PUBLICLY_VISIBLE_STATUSES = ["ACTIVE", "RESERVADA"] as const;
 // los reescriba, se calcula al leer (ver `getEffectiveStatus`).
 const EXPIRABLE_STATUSES: ListingStatus[] = ["ACTIVE", "RESERVADA", "PAUSADA"];
 
-function getEffectiveStatus(status: ListingStatus, expiresAt: Date | null): ListingStatus {
+// Suspensión de ESTA publicación puntual (admin, con motivo) — distinta de
+// que el DUEÑO esté suspendido (eso se resuelve aparte, ver
+// `visibleStatusWhere()` más abajo). 100% computado, nunca se reescribe
+// `status` — mismo criterio que ya usa EXPIRED, se chequea primero porque
+// una suspensión pisa cualquier otro estado mientras está vigente.
+function getEffectiveStatus(status: ListingStatus, expiresAt: Date | null, suspendedUntil?: Date | null): ListingStatus {
+  if (suspendedUntil && suspendedUntil.getTime() > Date.now()) return "SUSPENDIDA";
   if (EXPIRABLE_STATUSES.includes(status) && expiresAt && expiresAt.getTime() < Date.now()) {
     return "EXPIRED";
   }
@@ -69,10 +75,27 @@ function notExpiredWhere(): Prisma.ListingWhereInput {
   return { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] };
 }
 
+/**
+ * Todo dentro de un único `AND` (no una clave `OR` suelta) a propósito:
+ * `getCatalogResults` combina esto con `effectivelyFeaturedWhere()` vía
+ * `{...visibleStatusWhere(), ...effectivelyFeaturedWhere(...)}` — si acá
+ * hubiera una clave `OR` de nivel superior, esa combinación la pisaría por
+ * completo con el `OR` de destacados (mismo nombre de clave, gana el
+ * último spread), perdiendo el filtro de estado/vencimiento/suspensión sin
+ * ningún error visible. Con todo adentro de `AND`, nunca colisiona con
+ * ninguna otra clave que se le sume después.
+ */
 function visibleStatusWhere(): Prisma.ListingWhereInput {
   return {
     deletedAt: null,
-    OR: PUBLICLY_VISIBLE_STATUSES.map((status) => ({ status, ...notExpiredWhere() })),
+    AND: [
+      { OR: PUBLICLY_VISIBLE_STATUSES.map((status) => ({ status, ...notExpiredWhere() })) },
+      // Ni la publicación ni el dueño están suspendidos ahora mismo — dos
+      // mecanismos distintos (una publicación puntual, o la cuenta entera)
+      // que igual ocultan del catálogo público mientras duran.
+      { OR: [{ suspendedUntil: null }, { suspendedUntil: { lte: new Date() } }] },
+      { user: { OR: [{ suspendedUntil: null }, { suspendedUntil: { lte: new Date() } }] } },
+    ],
   };
 }
 
@@ -198,6 +221,7 @@ export async function getListingBySlug(slug: string, viewerUserId?: string) {
           accountType: true,
           avatarUrl: true,
           isVerified: true,
+          suspendedUntil: true,
           agencyProfile: { select: { businessName: true, city: true, province: true, address: true, logoUrl: true } },
         },
       },
@@ -211,11 +235,12 @@ export async function getListingBySlug(slug: string, viewerUserId?: string) {
   const isOwner = viewerUserId && listing.userId === viewerUserId;
   if (isOwner) return listing;
 
-  const effectiveStatus = getEffectiveStatus(listing.status, listing.expiresAt);
+  const effectiveStatus = getEffectiveStatus(listing.status, listing.expiresAt, listing.suspendedUntil);
   const isVisible = PUBLICLY_VISIBLE_STATUSES.includes(
     effectiveStatus as (typeof PUBLICLY_VISIBLE_STATUSES)[number]
   );
-  return isVisible ? listing : null;
+  const ownerSuspended = Boolean(listing.user.suspendedUntil && listing.user.suspendedUntil.getTime() > Date.now());
+  return isVisible && !ownerSuspended ? listing : null;
 }
 
 /** Mismo criterio de visibilidad que `getActiveListingsByUser` — usado para el contador de la tarjeta de concesionaria. */
@@ -244,19 +269,25 @@ export type OwnerListingData = VehicleCardData & {
   // — dato privado, solo visible acá (panel del dueño), nunca en la
   // publicación pública.
   viewCount: number;
+  // Suspensión de esta publicación puntual (admin, con motivo) — solo
+  // tienen valor cuando `status` efectivo es "SUSPENDIDA".
+  suspendedUntil: Date | null;
+  suspensionReason: string | null;
 };
 
 function toOwnerListingData(listing: ListingWithCardData): OwnerListingData {
   return {
     ...toVehicleCardData(listing),
     id: listing.id,
-    status: getEffectiveStatus(listing.status, listing.expiresAt),
+    status: getEffectiveStatus(listing.status, listing.expiresAt, listing.suspendedUntil),
     createdAt: listing.createdAt,
     publishedAt: listing.publishedAt,
     expiresAt: listing.expiresAt,
     soldAt: listing.soldAt,
     realSalePrice: listing.realSalePrice ? Number(listing.realSalePrice) : null,
     viewCount: listing.viewCount,
+    suspendedUntil: listing.suspendedUntil,
+    suspensionReason: listing.suspensionReason,
   };
 }
 
@@ -269,7 +300,7 @@ export async function getOwnerListingGroups(userId: string) {
 
   const withEffectiveStatus = listings.map((l) => ({
     listing: l,
-    status: getEffectiveStatus(l.status, l.expiresAt),
+    status: getEffectiveStatus(l.status, l.expiresAt, l.suspendedUntil),
   }));
 
   return {
@@ -280,11 +311,12 @@ export async function getOwnerListingGroups(userId: string) {
       .filter((l) => l.status === "ACTIVE" && !getEffectiveFeatured(l.listing.featured, l.listing.featuredUntil))
       .map((l) => toOwnerListingData(l.listing)),
     reservadas: withEffectiveStatus.filter((l) => l.status === "RESERVADA").map((l) => toOwnerListingData(l.listing)),
-    // Borrador, pausada y vencida: en las tres se dejó de operar el anuncio
-    // con normalidad. El badge de cada card indica el estado real y las
-    // acciones disponibles varían según corresponda (ver OwnerListingCard).
+    // Borrador, pausada, vencida y suspendida: en las cuatro se dejó de
+    // operar el anuncio con normalidad. El badge de cada card indica el
+    // estado real y las acciones disponibles varían según corresponda (ver
+    // OwnerListingCard).
     inactivas: withEffectiveStatus
-      .filter((l) => l.status === "DRAFT" || l.status === "PAUSADA" || l.status === "EXPIRED")
+      .filter((l) => l.status === "DRAFT" || l.status === "PAUSADA" || l.status === "EXPIRED" || l.status === "SUSPENDIDA")
       .map((l) => toOwnerListingData(l.listing)),
     vendidas: withEffectiveStatus.filter((l) => l.status === "SOLD").map((l) => toOwnerListingData(l.listing)),
   };
@@ -313,13 +345,24 @@ export class QuotaExceededError extends Error {
   }
 }
 
+export class AccountSuspendedError extends Error {
+  constructor() {
+    super("Tu cuenta está suspendida — no podés publicar ni reactivar publicaciones mientras dure.");
+    this.name = "AccountSuspendedError";
+  }
+}
+
 /**
  * Punto único que decide, para cualquier publicación/reactivación: cuántas
  * publicaciones quedan disponibles, hasta cuándo va a vencer (el ciclo normal
  * de 30 días, o la fecha de la suscripción activa si hay una — así todos los
- * avisos de una suscripción vencen juntos), y si hay un voucher de destacado
- * pendiente para aplicar. Se consulta una sola vez por operación — evita que
- * distintas funciones calculen estos números con criterios distintos.
+ * avisos de una suscripción vencen juntos), si hay un voucher de destacado
+ * pendiente para aplicar, y si la cuenta está suspendida (`isSuspended` —
+ * no tira acá: esta función también la usa `getAvailablePublications`, de
+ * solo lectura, que no debería romperse para una cuenta suspendida; cada
+ * mutación real chequea `isSuspended` y tira `AccountSuspendedError` ella
+ * misma). Se consulta una sola vez por operación — evita que distintas
+ * funciones calculen estos números con criterios distintos.
  */
 export async function loadActivationContext(userId: string) {
   const user = await prisma.user.findUniqueOrThrow({
@@ -330,6 +373,7 @@ export async function loadActivationContext(userId: string) {
       subscriptionQuota: true,
       subscriptionExpiresAt: true,
       pendingFeaturedVouchers: true,
+      suspendedUntil: true,
     },
   });
   const now = Date.now();
@@ -345,6 +389,7 @@ export async function loadActivationContext(userId: string) {
       ? user.subscriptionExpiresAt!
       : new Date(now + LISTING_DURATION_DAYS * 24 * 60 * 60 * 1000),
     useFeaturedVoucher: user.pendingFeaturedVouchers > 0,
+    isSuspended: Boolean(user.suspendedUntil && user.suspendedUntil.getTime() > now),
   };
 }
 
@@ -354,6 +399,10 @@ export async function getAvailablePublications(userId: string) {
 
 function assertAvailable(available: number) {
   if (available <= 0) throw new QuotaExceededError();
+}
+
+function assertNotSuspended(isSuspended: boolean) {
+  if (isSuspended) throw new AccountSuspendedError();
 }
 
 /**
@@ -394,9 +443,13 @@ export async function createListing(input: {
   /** "No, guardar como borrador" en el paso final del wizard. */
   asDraft?: boolean;
 }) {
-  // Guardar como borrador nunca consume cupo; publicar de una sí.
+  // Guardar como borrador nunca consume cupo ni está bloqueado por
+  // suspensión; publicar de una sí.
   const activation = input.asDraft ? null : await loadActivationContext(input.userId);
-  if (activation) assertAvailable(activation.available);
+  if (activation) {
+    assertNotSuspended(activation.isSuspended);
+    assertAvailable(activation.available);
+  }
 
   const brand = await prisma.brand.findUniqueOrThrow({ where: { slug: input.brandSlug } });
   const model = await prisma.model.findFirstOrThrow({
@@ -522,6 +575,17 @@ async function assertOwnership(listingId: string, userId: string) {
   }
 }
 
+export class ListingSuspendedError extends Error {
+  constructor() {
+    super("Esta publicación está suspendida — no se puede editar ni reactivar mientras dure.");
+    this.name = "ListingSuspendedError";
+  }
+}
+
+function assertListingNotSuspended(suspendedUntil: Date | null) {
+  if (suspendedUntil && suspendedUntil.getTime() > Date.now()) throw new ListingSuspendedError();
+}
+
 const REACTIVATABLE_STATUSES: ListingStatus[] = ["RESERVADA", "PAUSADA", "EXPIRED", "DRAFT"];
 
 export async function updateOwnedListing(
@@ -546,8 +610,9 @@ export async function updateOwnedListing(
   await assertOwnership(listingId, userId);
   const current = await prisma.listing.findUniqueOrThrow({
     where: { id: listingId },
-    select: { status: true },
+    select: { status: true, suspendedUntil: true },
   });
+  assertListingNotSuspended(current.suspendedUntil);
 
   // Guardar cambios en una publicación borrador/reservada/pausada/vencida la
   // vuelve a activar automáticamente ("¿conservar tus datos? Sí, editar" en
@@ -556,6 +621,7 @@ export async function updateOwnedListing(
   const reactivating = REACTIVATABLE_STATUSES.includes(current.status);
   const cost = reactivating ? getReactivationCost(current.status) : null;
   const activation = reactivating ? await loadActivationContext(userId) : null;
+  if (reactivating) assertNotSuspended(activation!.isSuspended);
   if (cost?.consumesQuota) assertAvailable(activation!.available);
 
   const [listing] = await prisma.$transaction([
@@ -597,13 +663,15 @@ export async function reactivateListing(listingId: string, userId: string) {
   await assertOwnership(listingId, userId);
   const current = await prisma.listing.findUniqueOrThrow({
     where: { id: listingId },
-    select: { status: true },
+    select: { status: true, suspendedUntil: true },
   });
+  assertListingNotSuspended(current.suspendedUntil);
   if (!REACTIVATABLE_STATUSES.includes(current.status)) {
     throw new Error("Esta publicación no se puede reactivar.");
   }
   const cost = getReactivationCost(current.status);
   const activation = await loadActivationContext(userId);
+  assertNotSuspended(activation.isSuspended);
   if (cost.consumesQuota) assertAvailable(activation.available);
 
   const [listing] = await prisma.$transaction([

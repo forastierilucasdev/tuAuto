@@ -7,12 +7,14 @@ import { createListingSchema, markSoldSchema, updateListingSchema } from "@/lib/
 import { uploadListingImage } from "@/lib/supabase-storage";
 import { validateImageFile } from "@/lib/image-validation";
 import {
+  AccountSuspendedError,
   attachListingImages,
   createListing,
   deleteListingImage,
   deleteOwnedListing,
   ImageMismatchError,
   LastImageError,
+  ListingSuspendedError,
   markListingAsSold,
   QuotaExceededError,
   reactivateListing,
@@ -83,7 +85,7 @@ export async function createListingAction(
   try {
     listing = await createListing({ userId: session.user.id, asDraft, ...parsed.data });
   } catch (error) {
-    if (error instanceof QuotaExceededError) return { error: error.message };
+    if (error instanceof QuotaExceededError || error instanceof AccountSuspendedError) return { error: error.message };
     throw error;
   }
 
@@ -144,7 +146,9 @@ export async function updateListingAction(
       await attachListingImages(listingId, urls);
     }
   } catch (error) {
-    if (error instanceof QuotaExceededError) return { error: error.message };
+    if (error instanceof QuotaExceededError || error instanceof AccountSuspendedError || error instanceof ListingSuspendedError) {
+      return { error: error.message };
+    }
     return { error: "No pudimos actualizar la publicación." };
   }
 
@@ -219,7 +223,9 @@ export async function reactivateListingAction(listingId: string): Promise<Reacti
   try {
     await reactivateListing(listingId, session.user.id);
   } catch (error) {
-    if (error instanceof QuotaExceededError) return { error: error.message };
+    if (error instanceof QuotaExceededError || error instanceof AccountSuspendedError || error instanceof ListingSuspendedError) {
+      return { error: error.message };
+    }
     throw error;
   }
 

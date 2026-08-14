@@ -24,6 +24,11 @@ function toSafeUser(user: User): SafeUser {
   };
 }
 
+/** Usado tanto del lado del usuario (mostrar su propio estado) como en el resto de la app — ver también `isUserSuspended` en `server/data/admin/users.ts` (misma lógica, versión del lado admin). */
+export function isUserSuspended(suspendedUntil: Date | null): boolean {
+  return Boolean(suspendedUntil && suspendedUntil.getTime() > Date.now());
+}
+
 /** Único uso permitido es dentro de `authorize()` de Auth.js, para comparar el hash. */
 export async function findUserForAuth(email: string) {
   return prisma.user.findUnique({ where: { email } });
@@ -102,6 +107,9 @@ export async function getFullProfile(id: string) {
       createdAt: true,
       activationCount: true,
       isVerified: true,
+      isActive: true,
+      suspendedUntil: true,
+      suspensionReason: true,
       agencyProfile: {
         select: {
           businessName: true,

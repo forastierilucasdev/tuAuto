@@ -62,6 +62,9 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
   const { data: session } = useSession();
   const [open, setOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile>(null);
+  // Lazy initializer: evita llamar a Date.now() directamente en el render
+  // (impuro) — mismo patrón que OwnerListingCard.tsx.
+  const [now] = React.useState(() => Date.now());
 
   React.useImperativeHandle(ref, () => ({ open: () => setOpen(true) }));
 
@@ -81,6 +84,7 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
   // que ese no se recorta. El nombre completo se ve igual dentro del panel
   // "Mi cuenta".
   const greetingName = isBusinessName ? displayName : displayName.split(" ")[0];
+  const isSuspended = Boolean(profile?.suspendedUntil && new Date(profile.suspendedUntil).getTime() > now);
 
   return (
     <>
@@ -125,6 +129,9 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
               <span className="flex flex-col">
                 <span>Tipo de cuenta</span>
                 <span className="text-xs font-semibold text-primary">{accountTypeLabel(profile.accountType)}</span>
+                <span className={cn("text-xs font-semibold", isSuspended ? "text-danger" : "text-success")}>
+                  Estado: {isSuspended ? "Suspendido" : "Activo"}
+                </span>
               </span>
             </Link>
           )}

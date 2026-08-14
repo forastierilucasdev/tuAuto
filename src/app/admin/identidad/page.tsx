@@ -21,7 +21,7 @@ export default async function AdminIdentidadPage() {
       <h1 className="text-2xl font-bold text-navy">Identidad</h1>
       <p className="mt-1 text-muted-foreground">
         {total} solicitud{total === 1 ? "" : "es"} pendiente{total === 1 ? "" : "s"} de revisión.
-        {!permissions.canEdit && " Solo un Superadministrador puede aprobar o rechazar."}
+        {!permissions.canEdit && " Solo un Superadministrador puede aprobar o dejar una observación."}
       </p>
 
       {requests.length === 0 ? (
@@ -32,7 +32,7 @@ export default async function AdminIdentidadPage() {
         <div className="mt-6 space-y-4">
           {requests.map((request) => (
             <div key={request.id} className="rounded-xl border border-border bg-surface p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <Link href={`/admin/usuarios/${request.userId}`} className="font-medium text-navy hover:underline">
                     {request.fullName}
@@ -40,10 +40,7 @@ export default async function AdminIdentidadPage() {
                   <p className="text-xs text-muted-foreground">
                     {request.user.email} · DNI {request.dni} · Tel. {request.phone} · {dateFormatter.format(request.createdAt)}
                   </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {request.user.isVerified && <Badge variant="success">Ya verificado</Badge>}
-                  <VerificationRowActions requestId={request.id} canEdit={permissions.canEdit} />
+                  {request.user.isVerified && <Badge variant="success" className="mt-1">Ya verificado</Badge>}
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-md">
@@ -53,6 +50,9 @@ export default async function AdminIdentidadPage() {
                 <div className="relative aspect-video overflow-hidden rounded-lg bg-surface-muted">
                   {request.dniBackUrl && <Image src={request.dniBackUrl} alt="DNI dorso" fill sizes="240px" className="object-contain" />}
                 </div>
+              </div>
+              <div className="mt-3 max-w-md">
+                <VerificationRowActions requestId={request.id} existingNote={request.adminNote} canEdit={permissions.canEdit} />
               </div>
             </div>
           ))}

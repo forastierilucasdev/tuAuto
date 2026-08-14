@@ -39,6 +39,7 @@ export async function grantSubscriptionAction(userId: string, planCode: string):
 
   revalidatePath("/admin/suscripciones");
   revalidatePath(`/admin/usuarios/${userId}`);
+  revalidatePath("/dashboard/compra/historial");
   return { success: true };
 }
 
@@ -83,6 +84,7 @@ export async function adjustPurchasedPublicationsAction(userId: string, delta: n
   });
 
   revalidatePath(`/admin/usuarios/${userId}`);
+  revalidatePath("/dashboard/compra/historial");
   return { success: true };
 }
 
@@ -105,6 +107,7 @@ export async function adjustFeaturedVouchersAction(userId: string, delta: number
   });
 
   revalidatePath(`/admin/usuarios/${userId}`);
+  revalidatePath("/dashboard/compra/historial");
   return { success: true };
 }
 

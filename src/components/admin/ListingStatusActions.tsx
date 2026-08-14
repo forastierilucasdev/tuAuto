@@ -2,10 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { AdminConfirmButton } from "@/components/admin/AdminConfirmButton";
+import { SuspendActionModal } from "@/components/admin/SuspendActionModal";
 import {
   adminRestoreListingAction,
   adminSetListingStatusAction,
   adminSoftDeleteListingAction,
+  adminSuspendListingAction,
+  adminUnsuspendListingAction,
 } from "@/server/actions/admin/listings.actions";
 import type { ListingStatus } from "@/generated/prisma/client";
 
@@ -18,11 +21,13 @@ const TRANSITIONS: { status: ListingStatus; label: string; message: string }[] =
 export function ListingStatusActions({
   listingId,
   deletedAt,
+  isSuspended,
   canEdit,
   canDelete,
 }: {
   listingId: string;
   deletedAt: Date | null;
+  isSuspended: boolean;
   canEdit: boolean;
   canDelete: boolean;
 }) {
@@ -39,6 +44,26 @@ export function ListingStatusActions({
             disabled={!canEdit}
             confirmMessage={t.message}
             onConfirm={() => adminSetListingStatusAction(listingId, t.status)}
+            onSuccess={() => router.refresh()}
+          />
+        ))}
+
+      {!deletedAt &&
+        (isSuspended ? (
+          <AdminConfirmButton
+            label="Reactivar (quitar suspensión)"
+            variant="success"
+            disabled={!canEdit}
+            confirmMessage="La publicación deja de estar suspendida de inmediato."
+            onConfirm={() => adminUnsuspendListingAction(listingId)}
+            onSuccess={() => router.refresh()}
+          />
+        ) : (
+          <SuspendActionModal
+            label="Suspender por días"
+            entityLabel="La publicación"
+            disabled={!canEdit}
+            onConfirm={(days, reason) => adminSuspendListingAction(listingId, days, reason)}
             onSuccess={() => router.refresh()}
           />
         ))}

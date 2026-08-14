@@ -1,5 +1,5 @@
 import { requireAdminPermission } from "@/lib/admin-permissions";
-import { listAllUsersForAdmin } from "@/server/data/admin/users";
+import { isUserSuspended, listAllUsersForAdmin } from "@/server/data/admin/users";
 import { buildCsv, csvResponse } from "@/lib/csv";
 import { accountTypeLabel } from "@/lib/constants";
 import type { AccountType } from "@/generated/prisma/client";
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   });
 
   const csv = buildCsv(
-    ["Nombre", "Email", "DNI", "Teléfono", "Tipo de cuenta", "Activo", "Verificado", "Rol admin", "Eliminado", "Alta"],
+    ["Nombre", "Email", "DNI", "Teléfono", "Tipo de cuenta", "Activo", "Verificado", "Suspendido", "Rol admin", "Eliminado", "Alta"],
     users.map((u) => [
       u.fullName,
       u.email,
@@ -25,6 +25,7 @@ export async function GET(request: Request) {
       accountTypeLabel(u.accountType),
       u.isActive ? "Sí" : "No",
       u.isVerified ? "Sí" : "No",
+      isUserSuspended(u.suspendedUntil) ? "Sí" : "No",
       u.adminRole ?? "",
       u.deletedAt ? "Sí" : "No",
       u.createdAt,

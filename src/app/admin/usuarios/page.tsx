@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdminPermission } from "@/lib/admin-permissions";
-import { listUsersForAdmin } from "@/server/data/admin/users";
+import { isUserSuspended, listUsersForAdmin } from "@/server/data/admin/users";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -76,6 +76,7 @@ export default async function AdminUsuariosPage(props: { searchParams: Promise<R
               <th className="px-4 py-3">Usuario</th>
               <th className="px-4 py-3">Tipo</th>
               <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3">Identidad</th>
               <th className="px-4 py-3">Rol admin</th>
               <th className="px-4 py-3">Alta</th>
             </tr>
@@ -98,7 +99,16 @@ export default async function AdminUsuariosPage(props: { searchParams: Promise<R
                   ) : (
                     <Badge variant="danger">Baneado</Badge>
                   )}
-                  {user.isVerified && <Badge variant="info" className="ml-1.5">Verificado</Badge>}
+                  {isUserSuspended(user.suspendedUntil) && <Badge variant="danger" className="ml-1.5">Suspendido</Badge>}
+                </td>
+                <td className="px-4 py-3">
+                  {user.isVerified ? (
+                    <Badge variant="success">Validada</Badge>
+                  ) : user.verificationRequests[0]?.status === "PENDING" ? (
+                    <Badge variant="info">Pendiente</Badge>
+                  ) : (
+                    <Badge variant="default">Sin solicitud</Badge>
+                  )}
                 </td>
                 <td className="px-4 py-3">{user.adminRole ? <Badge variant="info">{user.adminRole}</Badge> : "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{dateFormatter.format(user.createdAt)}</td>
@@ -106,7 +116,7 @@ export default async function AdminUsuariosPage(props: { searchParams: Promise<R
             ))}
             {users.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   No hay usuarios que coincidan con esos filtros.
                 </td>
               </tr>

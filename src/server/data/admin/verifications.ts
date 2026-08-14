@@ -50,6 +50,11 @@ export async function approveVerificationRequest(requestId: string) {
   return request;
 }
 
-export async function rejectVerificationRequest(requestId: string) {
-  return prisma.verificationRequest.update({ where: { id: requestId }, data: { status: "REJECTED" } });
+/**
+ * "Dejar pendiente con observación" (inconsistencias) — a propósito NO es
+ * un rechazo definitivo: la solicitud sigue en la cola de `PENDING`, la
+ * nota queda guardada para la próxima revisión (se sobrescribe cada vez).
+ */
+export async function addVerificationNote(requestId: string, note: string) {
+  return prisma.verificationRequest.update({ where: { id: requestId }, data: { adminNote: note } });
 }

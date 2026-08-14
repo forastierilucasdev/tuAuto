@@ -9,7 +9,9 @@ import {
   setUserActive,
   setUserAdminRole,
   softDeleteUser,
+  suspendUser,
   unlockUserLogin,
+  unsuspendUser,
 } from "@/server/data/admin/users";
 import type { AdminRole } from "@/generated/prisma/client";
 
@@ -111,6 +113,51 @@ export async function unlockUserLoginAction(userId: string): Promise<AdminAction
 
   revalidatePath("/admin/usuarios");
   revalidatePath(`/admin/usuarios/${userId}`);
+  return { success: true };
+}
+
+export async function suspendUserAction(userId: string, days: number, reason: string): Promise<AdminActionState> {
+  const session = await requireAdminPermission("usuarios", "edit");
+  const before = await getUserForAdmin(userId);
+  if (!before) return { error: "Usuario no encontrado." };
+
+  const user = await suspendUser(userId, days, reason);
+  await logAdminAction({
+    adminId: session.user.id,
+    action: "user.suspend",
+    targetTable: "User",
+    targetId: userId,
+    changes: {
+      before: { suspendedUntil: before.suspendedUntil, suspensionReason: before.suspensionReason },
+      after: { suspendedUntil: user.suspendedUntil, suspensionReason: user.suspensionReason },
+    },
+  });
+
+  revalidatePath("/admin/usuarios");
+  revalidatePath(`/admin/usuarios/${userId}`);
+  revalidatePath("/catalogo");
+  revalidatePath("/dashboard/perfil");
+  return { success: true };
+}
+
+export async function unsuspendUserAction(userId: string): Promise<AdminActionState> {
+  const session = await requireAdminPermission("usuarios", "edit");
+  const before = await getUserForAdmin(userId);
+  if (!before) return { error: "Usuario no encontrado." };
+
+  await unsuspendUser(userId);
+  await logAdminAction({
+    adminId: session.user.id,
+    action: "user.unsuspend",
+    targetTable: "User",
+    targetId: userId,
+    changes: { before: { suspendedUntil: before.suspendedUntil }, after: { suspendedUntil: null } },
+  });
+
+  revalidatePath("/admin/usuarios");
+  revalidatePath(`/admin/usuarios/${userId}`);
+  revalidatePath("/catalogo");
+  revalidatePath("/dashboard/perfil");
   return { success: true };
 }
 

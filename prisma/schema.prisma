@@ -30,6 +30,10 @@ enum ListingStatus {
   PAUSADA
   EXPIRED
   SOLD
+  // Suspendida por un admin (`suspendedUntil` vigente) — nunca se escribe
+  // en esta columna, es un valor 100% computado por `getEffectiveStatus()`
+  // (mismo criterio que ya usa EXPIRED), ver `server/data/listings.ts`.
+  SUSPENDIDA
 }
 
 enum VerificationStatus {
@@ -128,6 +132,16 @@ model User {
   // en su valor por default.
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
+
+  // Suspensión temporal por un admin — a diferencia de un ban (`isActive`),
+  // el usuario SIGUE pudiendo loguearse (ve el estado y el motivo en su
+  // panel); lo que cambia es que sus publicaciones dejan de ser públicas y
+  // no puede publicar/reactivar mientras dure (ver `visibleStatusWhere()`/
+  // `loadActivationContext()` en `server/data/listings.ts`). Se levanta
+  // sola al pasar `suspendedUntil` (computado al leer, sin cron) o a mano
+  // desde `/admin/usuarios`.
+  suspendedUntil   DateTime?
+  suspensionReason String?
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -230,6 +244,13 @@ model Listing {
   // DELETE real de una publicación sin ninguna venta/reporte asociado).
   deletedAt DateTime?
 
+  // Suspensión de una publicación puntual por un admin (motivo + días) —
+  // mismo criterio 100% computado que `featured`/`featuredUntil`: nunca se
+  // reescribe `status`, `getEffectiveStatus()` devuelve "SUSPENDIDA" acá
+  // mientras esté vigente y se levanta sola al pasar la fecha.
+  suspendedUntil   DateTime?
+  suspensionReason String?
+
   // Datos opcionales de la venta, cargados al marcar como vendida (privados,
   // solo el dueño los ve — no se muestran en el catálogo público).
   buyerInfo      String?
@@ -299,6 +320,9 @@ model VerificationRequest {
   dniBackPath  String
 
   status VerificationStatus @default(PENDING)
+  /// Observación del admin cuando hay inconsistencias — la solicitud sigue
+  /// PENDING (no es un rechazo definitivo), se sobrescribe en cada revisión.
+  adminNote String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

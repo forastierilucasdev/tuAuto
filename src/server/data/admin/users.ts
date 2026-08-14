@@ -51,7 +51,11 @@ export async function listUsersForAdmin(filters: AdminUserFilters, page = 1) {
         isVerified: true,
         adminRole: true,
         deletedAt: true,
+        suspendedUntil: true,
         createdAt: true,
+        // Última solicitud de verificación — una sola query, sin N+1
+        // (Prisma soporta `take` dentro de una relación anidada).
+        verificationRequests: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true } },
       },
     }),
     prisma.user.count({ where }),
@@ -76,6 +80,7 @@ export async function listAllUsersForAdmin(filters: AdminUserFilters) {
       isVerified: true,
       adminRole: true,
       deletedAt: true,
+      suspendedUntil: true,
       createdAt: true,
     },
   });
@@ -113,4 +118,27 @@ export async function unlockUserLogin(userId: string) {
 
 export function isAccountLocked(lockedUntil: Date | null): boolean {
   return Boolean(lockedUntil && lockedUntil.getTime() > Date.now());
+}
+
+/**
+ * Suspensión temporal de la cuenta (días + motivo) — a diferencia de un ban
+ * (`setUserActive(false)`), el usuario SIGUE pudiendo loguearse: lo que
+ * cambia es que sus publicaciones dejan de ser públicas y no puede
+ * publicar/reactivar mientras dure (ver `visibleStatusWhere()`/
+ * `loadActivationContext()` en `server/data/listings.ts`). Se levanta sola
+ * al pasar `suspendedUntil`, o a mano con `unsuspendUser`.
+ */
+export async function suspendUser(userId: string, days: number, reason: string) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { suspendedUntil: new Date(Date.now() + days * 24 * 60 * 60 * 1000), suspensionReason: reason },
+  });
+}
+
+export async function unsuspendUser(userId: string) {
+  return prisma.user.update({ where: { id: userId }, data: { suspendedUntil: null, suspensionReason: null } });
+}
+
+export function isUserSuspended(suspendedUntil: Date | null): boolean {
+  return Boolean(suspendedUntil && suspendedUntil.getTime() > Date.now());
 }

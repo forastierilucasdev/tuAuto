@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getModulePermissions, requireAdminPermission } from "@/lib/admin-permissions";
-import { listListingsForAdmin } from "@/server/data/admin/listings";
+import { isListingSuspended, listListingsForAdmin } from "@/server/data/admin/listings";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -20,6 +20,11 @@ const STATUS_LABEL: Record<ListingStatus, string> = {
   PAUSADA: "Pausada",
   EXPIRED: "Vencida",
   SOLD: "Vendida",
+  // Nunca se escribe literal en la columna `status` (ver `getEffectiveStatus`
+  // en `server/data/listings.ts`) — no entra en `FILTERABLE_STATUSES`, el
+  // filtro de abajo nunca la ofrece como opción. Se muestra igual como
+  // badge computado (columna "Estado" de la tabla).
+  SUSPENDIDA: "Suspendida",
 };
 
 const STATUS_VARIANT: Record<ListingStatus, "success" | "info" | "default" | "danger"> = {
@@ -29,7 +34,10 @@ const STATUS_VARIANT: Record<ListingStatus, "success" | "info" | "default" | "da
   PAUSADA: "default",
   EXPIRED: "danger",
   SOLD: "default",
+  SUSPENDIDA: "danger",
 };
+
+const FILTERABLE_STATUSES: ListingStatus[] = ["DRAFT", "ACTIVE", "RESERVADA", "PAUSADA", "EXPIRED", "SOLD"];
 
 function param(sp: Record<string, string | string[] | undefined>, key: string) {
   const value = sp[key];
@@ -74,8 +82,8 @@ export default async function AdminPublicacionesPage(props: { searchParams: Prom
           <label className="mb-1.5 block text-sm font-medium text-foreground" htmlFor="estado">Estado</label>
           <Select id="estado" name="estado" defaultValue={status ?? ""}>
             <option value="">Todos</option>
-            {Object.entries(STATUS_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
+            {FILTERABLE_STATUSES.map((value) => (
+              <option key={value} value={value}>{STATUS_LABEL[value]}</option>
             ))}
           </Select>
         </div>
@@ -108,6 +116,9 @@ export default async function AdminPublicacionesPage(props: { searchParams: Prom
                 <td className="px-4 py-3 text-muted-foreground">{listing.user.email}</td>
                 <td className="px-4 py-3">
                   <Badge variant={STATUS_VARIANT[listing.status]}>{STATUS_LABEL[listing.status]}</Badge>
+                  {isListingSuspended(listing.suspendedUntil) && (
+                    <Badge variant="danger" className="ml-1.5">Suspendida</Badge>
+                  )}
                   {listing.deletedAt && <Badge variant="danger" className="ml-1.5">Dada de baja</Badge>}
                 </td>
                 <td className="px-4 py-3">{formatCurrency(Number(listing.price), listing.currency)}</td>
