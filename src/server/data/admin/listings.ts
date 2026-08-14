@@ -152,6 +152,14 @@ export async function listFeaturedListingsForAdmin(page = 1) {
   };
 }
 
-export async function setListingFeatured(listingId: string, featured: boolean, featuredUntil: Date | null) {
-  return prisma.listing.update({ where: { id: listingId }, data: { featured, featuredUntil } });
+export async function setListingFeatured(
+  listingId: string,
+  featured: boolean,
+  featuredUntil: Date | null,
+  featuredSince?: Date | null
+) {
+  return prisma.listing.update({
+    where: { id: listingId },
+    data: featuredSince === undefined ? { featured, featuredUntil } : { featured, featuredUntil, featuredSince },
+  });
 }

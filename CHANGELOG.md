@@ -5,6 +5,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Destacados: rango desde-hasta, agregar días sin resetear, baja con motivo auditado
+- Nuevo `Listing.featuredSince` (migración aditiva) marca cuándo arrancó el período de destacado vigente — `/admin/destacados` ahora muestra "Desde — Hasta" y "Días pendientes" en vez de solo la fecha de vencimiento.
+- **Cambio de comportamiento en "Agregar días"**: antes reseteaba `featuredUntil` a `hoy + días` sin importar cuánto le quedara; ahora, si la publicación ya está destacada y vigente, suma los días al vencimiento actual (extiende el período, `featuredSince` no se toca); si no está destacada o ya venció, arranca un período nuevo desde ahora. Mismo criterio replicado en las 3 vías de compra del propio usuario que activan un destacado (`purchaseFeatureByDays`, combo de publicación+destacado, voucher bonificado), que ahora también setean `featuredSince` al arrancar.
+- **"Quitar destacado" pide motivo obligatorio** (nuevo componente `ReasonConfirmModal`, botón+modal con motivo pero sin días — variante de `AdminConfirmButton`/`SuspendActionModal`) — el motivo queda en `AdminAuditLog` junto con el resto del cambio.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Migración aditiva aplicada contra la base real. Verificado con script desechable contra la base real (nuevo período vs. extensión de uno vigente conserva `featuredSince`, baja anticipada dentro del rango esperado, datos de prueba revertidos) — no se pudo probar el flujo completo por navegador en esta sesión por no tener a mano la contraseña de la cuenta SUPERADMIN.
+
 ### Added (2026-08-14) — ID único de publicación visible + solicitado en Soporte
 - Cada tarjeta de "Mis publicaciones" (`OwnerListingCard`) muestra ahora el ID de la publicación (`cuid`, seleccionable) junto a un link "Reportar error" que lleva directo a `/dashboard/soporte` con el ID precargado.
 - `/dashboard/soporte` acepta un `?listingId=` opcional en la URL y lo pasa como valor inicial de un nuevo campo "ID de la publicación" (opcional) en el formulario; `submitSupportReportAction` lo incluye en el correo enviado a soporte cuando está presente.

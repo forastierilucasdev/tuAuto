@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { AdminConfirmButton } from "@/components/admin/AdminConfirmButton";
+import { ReasonConfirmModal } from "@/components/admin/ReasonConfirmModal";
 import { removeFeaturedEarlyAction, setFeaturedAction } from "@/server/actions/admin/featured.actions";
 
 export function FeaturedRowActions({ listingId, isCurrentlyFeatured, canEdit }: { listingId: string; isCurrentlyFeatured: boolean; canEdit: boolean }) {
@@ -37,15 +37,16 @@ export function FeaturedRowActions({ listingId, isCurrentlyFeatured, canEdit }: 
         className="w-20"
       />
       <Button type="button" variant="outline" size="sm" disabled={!canEdit || pending} onClick={extend}>
-        {pending ? "..." : "Destacar por días"}
+        {pending ? "..." : "Agregar días"}
       </Button>
       {isCurrentlyFeatured && (
-        <AdminConfirmButton
+        <ReasonConfirmModal
           label="Quitar destacado"
+          confirmLabel="Quitar destacado"
           variant="destructive"
           disabled={!canEdit}
-          confirmMessage="Deja de mostrarse como destacada de inmediato."
-          onConfirm={() => removeFeaturedEarlyAction(listingId)}
+          description="Deja de mostrarse como destacada de inmediato. Contanos el motivo para el registro de auditoría."
+          onConfirm={(reason) => removeFeaturedEarlyAction(listingId, reason)}
           onSuccess={() => router.refresh()}
         />
       )}

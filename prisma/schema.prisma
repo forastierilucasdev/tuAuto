@@ -232,6 +232,7 @@ model Listing {
 
   status        ListingStatus @default(ACTIVE)
   featured      Boolean       @default(false)
+  featuredSince DateTime?
   featuredUntil DateTime?
   expiresAt     DateTime?
   publishedAt   DateTime?

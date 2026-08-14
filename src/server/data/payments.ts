@@ -294,7 +294,11 @@ async function applyFeatureByDaysEffect(payment: PaymentModel, providerPaymentId
     updates.push(
       prisma.listing.update({
         where: { id: listingId },
-        data: { featured: true, featuredUntil: new Date(Date.now() + appliedDays * 24 * 60 * 60 * 1000) },
+        data: {
+          featured: true,
+          featuredSince: new Date(),
+          featuredUntil: new Date(Date.now() + appliedDays * 24 * 60 * 60 * 1000),
+        },
       })
     );
   }
@@ -335,6 +339,7 @@ async function applyFeatureComboEffect(payment: PaymentModel, providerPaymentId:
       data: {
         expiresAt: activation.expiresAt,
         featured: true,
+        featuredSince: new Date(),
         featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000),
       },
     }),

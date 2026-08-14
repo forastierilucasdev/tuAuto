@@ -391,6 +391,15 @@ Checklist de construcción del proyecto, agrupado por fases. Se actualiza a medi
 - [x] **Nota importante sobre credenciales de prueba**: para que un pago de sandbox se apruebe, el *vendedor* (no solo el comprador) tiene que ser una cuenta de prueba de Mercado Pago — usar las credenciales TEST de la cuenta real del desarrollador (con un comprador de prueba) da el error "una de las partes... es de prueba". La solución: crear un usuario de prueba con rol vendedor (Developers → Cuentas de prueba), loguearse como ese usuario, crear una app ahí, y usar sus **credenciales de producción** (prefijo `APP_USR-`, no `TEST-` — así lo indica el propio panel de Mercado Pago para una cuenta de prueba) como `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY`. El webhook también hay que configurarlo en ESA app (no en la del desarrollador real), porque la firma se valida contra la app dueña de las credenciales activas.
 - [ ] Antes de cobrar de verdad: cambiar las credenciales de prueba (de la cuenta de vendedor de prueba) por las credenciales de producción de la cuenta real que va a cobrar
 
+## Fase 65 — Destacados: rango desde-hasta, agregar días sin resetear, baja con motivo auditado (solicitado por el usuario)
+- [x] Nueva columna `Listing.featuredSince` (migración aditiva) — marca el inicio del período de destacado vigente, nunca se pisa mientras siga vigente
+- [x] `/admin/destacados`: columnas "Desde — Hasta" y "Días pendientes" (calculado, no se guarda)
+- [x] "Agregar días" ahora **extiende** el vencimiento vigente (no lo resetea) si la publicación ya está destacada; si no, arranca un período nuevo desde ahora — mismo cambio aplicado a las 3 vías de compra (`purchaseFeatureByDays`, combo, voucher) que también setean `featuredSince` al arrancar un período
+- [x] "Quitar destacado" pide motivo obligatorio (`ReasonConfirmModal`, nuevo componente reusable) — queda en el registro de auditoría junto al resto del cambio
+- [x] `tsc --noEmit`, `eslint`, `npm run build` limpios
+- [x] Verificado con script desechable contra la base real (nuevo período, extensión conserva `featuredSince`, baja anticipada, revertido) — sin login de admin disponible en esta sesión para probar el flujo end-to-end vía navegador
+- [ ] Prueba manual en navegador
+
 ## Fase 64 — ID único de publicación visible + solicitado en Soporte (solicitado por el usuario)
 - [x] `OwnerListingCard`: cada tarjeta muestra `ID: {listing.id}` (seleccionable) junto a un link "Reportar error" a `/dashboard/soporte?listingId=...`
 - [x] `/dashboard/soporte` lee el `listingId` opcional de la URL y lo precarga en el formulario

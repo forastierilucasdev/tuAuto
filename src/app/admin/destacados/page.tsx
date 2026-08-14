@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getModulePermissions, requireAdminPermission } from "@/lib/admin-permissions";
 import { getEffectiveFeatured } from "@/server/data/listings";
 import { listFeaturedListingsForAdmin } from "@/server/data/admin/listings";
+import { daysRemaining } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { FeaturedRowActions } from "@/components/admin/FeaturedRowActions";
@@ -35,13 +36,15 @@ export default async function AdminDestacadosPage(props: { searchParams: Promise
             <tr>
               <th className="px-4 py-3">Publicación</th>
               <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3">Destacado hasta</th>
+              <th className="px-4 py-3">Desde — Hasta</th>
+              <th className="px-4 py-3">Días pendientes</th>
               <th className="px-4 py-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {listings.map((listing) => {
               const isCurrentlyFeatured = getEffectiveFeatured(listing.featured, listing.featuredUntil);
+              const remaining = isCurrentlyFeatured ? daysRemaining(listing.featuredUntil) : 0;
               return (
                 <tr key={listing.id} className="border-b border-border last:border-0 hover:bg-surface-muted">
                   <td className="px-4 py-3">
@@ -53,7 +56,12 @@ export default async function AdminDestacadosPage(props: { searchParams: Promise
                     {isCurrentlyFeatured ? <Badge variant="featured">Destacado</Badge> : <Badge variant="default">Vencido</Badge>}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
+                    {listing.featuredSince ? dateFormatter.format(listing.featuredSince) : "—"}
+                    {" — "}
                     {listing.featuredUntil ? dateFormatter.format(listing.featuredUntil) : "Sin vencimiento"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {isCurrentlyFeatured ? `${remaining} día${remaining === 1 ? "" : "s"}` : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <FeaturedRowActions listingId={listing.id} isCurrentlyFeatured={isCurrentlyFeatured} canEdit={permissions.canEdit} />
@@ -63,7 +71,7 @@ export default async function AdminDestacadosPage(props: { searchParams: Promise
             })}
             {listings.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
                   No hay publicaciones destacadas.
                 </td>
               </tr>

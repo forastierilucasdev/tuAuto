@@ -493,7 +493,11 @@ export async function createListing(input: {
           publishedAt: new Date(),
           expiresAt: activation!.expiresAt,
           ...(activation!.useFeaturedVoucher
-            ? { featured: true, featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000) }
+            ? {
+                featured: true,
+                featuredSince: new Date(),
+                featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000),
+              }
             : {}),
         }),
   };
@@ -636,7 +640,11 @@ export async function updateOwnedListing(
               expiresAt: activation!.expiresAt,
               ...(cost?.countsAsNewListing ? { publishedAt: new Date() } : {}),
               ...(activation!.useFeaturedVoucher
-                ? { featured: true, featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000) }
+                ? {
+                    featured: true,
+                    featuredSince: new Date(),
+                    featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000),
+                  }
                 : {}),
             }
           : {}),
@@ -683,7 +691,11 @@ export async function reactivateListing(listingId: string, userId: string) {
         expiresAt: activation.expiresAt,
         ...(cost.countsAsNewListing ? { publishedAt: new Date() } : {}),
         ...(activation.useFeaturedVoucher
-          ? { featured: true, featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000) }
+          ? {
+              featured: true,
+              featuredSince: new Date(),
+              featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000),
+            }
           : {}),
       },
     }),
