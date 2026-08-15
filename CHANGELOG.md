@@ -5,6 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Catálogo administrable: Fase 5/10, Province/Locality administrables + wizard en cascada
+Provincia/Localidad dejan de ser un `<select>` de lista fija + texto libre y pasan a ser tablas reales administrables (`Province`/`Locality`), con `Listing.provinceId`/`.localityId` nullable — migración puramente aditiva, las publicaciones viejas conservan su texto libre sin vincularlas retroactivamente.
+
+- `/admin/ubicacion` (provincias, con botón "Cargar provincias registradas" que siembra en un clic las 24 fijas de `constants.ts`) y `/admin/ubicacion/[id]` (localidades de esa provincia: alta una por una o en lote vía textarea, editar, dar de baja/reactivar).
+- `resolveLocationPatch()` (nuevo, compartido por `updateOwnedListing`/`adminUpdateListing`): mismo criterio que `resolveVersionPatch` (Fase 75) aplicado a 2 niveles independientes — no pisa el texto legado (`province`/`city`) si nunca hubo una fila real resuelta y sigue sin elegirse una.
+- Wizard y editor básico de admin: Provincia→Localidad pasan a una cascada real (mismo patrón que Marca→Modelo→Versión), con opción huérfana + aviso informativo para publicaciones con texto legado.
+- **Decisión de diseño deliberada**: el filtro del catálogo público no se tocó — sigue comparando contra el texto legado, que queda sincronizado con el nombre real de `Province`/`Locality` cuando el wizard resuelve una ubicación, así que sigue funcionando igual sin ampliar el alcance de esta fase.
+- Auditoría extendida: `Province`/`Locality` sumadas a `resolveAuditTargets()`/`admin-audit-labels.ts`.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable contra la base real: seed idempotente, dedupe, alta masiva, toggle `isActive`, los 3 casos de `resolveLocationPatch()`, ciclo completo de un listing real — revertido, **excepto la siembra real de las 24 provincias**, dejada aplicada a propósito para que el wizard no arranque con un desplegable vacío en producción.
+
 ### Added (2026-08-14) — Catálogo administrable: Fase 4/10, CRUD Marca/Modelo + tabla Version + wizard en cascada
 `Brand`/`Model` ganan `isActive` (dar de baja deja de ofrecerlos sin afectar publicaciones existentes) y se agrega la tabla `Version`, con `Listing.versionId` nullable — Versión pasa de texto libre a un desplegable en cascada (Tipo→Marca→Modelo→Versión→Año) igual que Marca/Modelo, tanto en el wizard del dueño como en el editor básico de admin.
 

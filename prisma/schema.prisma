@@ -246,6 +246,38 @@ model Version {
   @@index([modelId])
 }
 
+// Provincia/Localidad administrables — migración puramente aditiva (decisión
+// explícita del usuario): las publicaciones viejas conservan su texto libre
+// (`Listing.province`/`.city`) sin intentar vincularlas retroactivamente.
+// `Province.name` espeja `PROVINCIAS` en `constants.ts` para que el botón
+// "Cargar provincias registradas" del admin pueda sembrarlas en un clic.
+model Province {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  localities Locality[]
+  listings   Listing[]
+}
+
+model Locality {
+  id         String   @id @default(cuid())
+  provinceId String
+  province   Province @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+  name       String
+  slug       String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  listings Listing[]
+
+  @@unique([provinceId, name])
+  @@index([provinceId])
+}
+
 model Listing {
   id     String @id @default(cuid())
   slug   String @unique
@@ -280,8 +312,16 @@ model Listing {
   acceptsFinancing Boolean  @default(false)
 
   mileageKm      Int?
+  // Texto libre histórico — se mantiene sincronizado con `provinceRef.name`/
+  // `localityRef.name` cuando el wizard resuelve una ubicación real de la
+  // cascada, pero sigue existiendo solo (sin FK) para publicaciones de antes
+  // de estas tablas (migración puramente aditiva, mismo criterio que `version`).
   province       String?
+  provinceId     String?
+  provinceRef    Province? @relation(fields: [provinceId], references: [id])
   city           String?
+  localityId     String?
+  localityRef    Locality? @relation(fields: [localityId], references: [id])
   contactAddress String?
 
   status        ListingStatus @default(ACTIVE)

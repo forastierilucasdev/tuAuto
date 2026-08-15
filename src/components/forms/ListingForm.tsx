@@ -15,7 +15,6 @@ import { Modal } from "@/components/ui/Modal";
 import {
   VEHICLE_TYPES,
   CONDITION_OPTIONS,
-  PROVINCIAS,
   TRANSMISSION_OPTIONS,
   conditionLabel,
   mileageUnitFor,
@@ -24,6 +23,7 @@ import {
   vehicleTypeLabel,
 } from "@/lib/constants";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
+import { useLocationTaxonomy } from "@/hooks/useLocationTaxonomy";
 import { cn, formatCurrency, formatKm } from "@/lib/utils";
 import {
   createListingAction,
@@ -59,6 +59,11 @@ type ListingFormProps = {
       /** Slug de la versión ya resuelta (si la publicación tiene `versionId`) — `null` si es de antes de este catálogo o nunca se cargó una. */
       versionSlug: string | null;
       versionName: string | null;
+      /** Mismo criterio que `versionSlug`/`versionName` — `null` si es de antes de estas tablas o nunca se resolvió. */
+      provinceSlug: string | null;
+      provinceName: string | null;
+      localitySlug: string | null;
+      localityName: string | null;
       year: number;
       defaultValues: {
         /** Texto libre histórico — solo se usa para el aviso cuando no hay `versionSlug` resuelto. */
@@ -72,6 +77,7 @@ type ListingFormProps = {
         acceptsTrade: boolean;
         acceptsFinancing: boolean;
         mileageKm: number | null;
+        /** Texto libre histórico — solo se usa para el aviso cuando no hay `provinceSlug`/`localitySlug` resueltos. */
         city: string | null;
         province: string | null;
         contactAddress: string | null;
@@ -136,8 +142,13 @@ export function ListingForm(props: ListingFormProps) {
   );
 
   // --- Ubicación ---
-  const [city, setCity] = React.useState(isEdit ? (props.defaultValues.city ?? "") : "");
-  const [province, setProvince] = React.useState(isEdit ? (props.defaultValues.province ?? "") : "");
+  const [provinceSlug, setProvinceSlug] = React.useState(isEdit ? (props.provinceSlug ?? "") : "");
+  const [localitySlug, setLocalitySlug] = React.useState(isEdit ? (props.localitySlug ?? "") : "");
+  const { provinces, localities } = useLocationTaxonomy(provinceSlug);
+  const selectedProvinceName =
+    provinces.find((p) => p.slug === provinceSlug)?.name ?? (isEdit ? (props.provinceName ?? "") : "");
+  const selectedLocalityName =
+    localities.find((l) => l.slug === localitySlug)?.name ?? (isEdit ? (props.localityName ?? "") : "");
 
   // --- Contacto ---
   const [contactAddress, setContactAddress] = React.useState(
@@ -346,8 +357,8 @@ export function ListingForm(props: ListingFormProps) {
     if (acceptsTrade) formData.set("acceptsTrade", "on");
     if (acceptsFinancing) formData.set("acceptsFinancing", "on");
     if (mileageUnit) formData.set("mileageKm", mileageKm);
-    formData.set("city", city);
-    formData.set("province", province);
+    formData.set("localitySlug", localitySlug);
+    formData.set("provinceSlug", provinceSlug);
     formData.set("contactAddress", contactAddress);
     formData.set("description", description);
     for (const { file } of photos) formData.append("images", file);
@@ -640,19 +651,56 @@ export function ListingForm(props: ListingFormProps) {
         {currentStep === "ubicacion" && (
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
-              <Label htmlFor="province">Provincia</Label>
-              <Select id="province" value={province} onChange={(e) => setProvince(e.target.value)}>
+              <Label htmlFor="provinceSlug">Provincia</Label>
+              <Select
+                id="provinceSlug"
+                value={provinceSlug}
+                onChange={(e) => {
+                  setProvinceSlug(e.target.value);
+                  setLocalitySlug("");
+                }}
+              >
                 <option value="">Elegí una provincia</option>
-                {PROVINCIAS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
+                {provinces.map((p) => (
+                  <option key={p.id} value={p.slug}>
+                    {p.name}
                   </option>
                 ))}
+                {isEdit && provinceSlug && !provinces.some((p) => p.slug === provinceSlug) && (
+                  <option value={provinceSlug}>{props.mode === "edit" ? (props.provinceName ?? "") : ""}</option>
+                )}
               </Select>
+              {isEdit && !provinceSlug && props.defaultValues.province && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Provincia actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.province}&quot;.
+                  Si aparece en la lista, elegila para dejarla vinculada.
+                </p>
+              )}
             </div>
             <div>
-              <Label htmlFor="city">Localidad</Label>
-              <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} />
+              <Label htmlFor="localitySlug">Localidad</Label>
+              <Select
+                id="localitySlug"
+                value={localitySlug}
+                onChange={(e) => setLocalitySlug(e.target.value)}
+                disabled={!provinceSlug}
+              >
+                <option value="">{provinceSlug ? "Elegí una localidad" : "Elegí primero una provincia"}</option>
+                {localities.map((l) => (
+                  <option key={l.id} value={l.slug}>
+                    {l.name}
+                  </option>
+                ))}
+                {isEdit && localitySlug && !localities.some((l) => l.slug === localitySlug) && (
+                  <option value={localitySlug}>{props.mode === "edit" ? (props.localityName ?? "") : ""}</option>
+                )}
+              </Select>
+              {isEdit && !localitySlug && props.defaultValues.city && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Localidad actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.city}&quot;.
+                  Si aparece en la lista, elegila para dejarla vinculada.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -873,7 +921,7 @@ export function ListingForm(props: ListingFormProps) {
             <p>
               <span className="text-muted-foreground">Ubicación:</span>{" "}
               <span className="font-medium text-foreground">
-                {[province, city].filter(Boolean).join(" - ") || "—"}
+                {[selectedProvinceName, selectedLocalityName].filter(Boolean).join(" - ") || "—"}
               </span>
             </p>
             <p>

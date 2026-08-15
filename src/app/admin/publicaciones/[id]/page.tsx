@@ -96,6 +96,8 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
           listing={listing}
           versions={versions}
           currentVersionSlug={listing.versionRef?.slug ?? null}
+          currentProvinceSlug={listing.provinceRef?.slug ?? null}
+          currentLocalitySlug={listing.localityRef?.slug ?? null}
         />
       </div>
 

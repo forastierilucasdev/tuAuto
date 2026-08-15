@@ -239,7 +239,7 @@ El cupo de publicaciones **es un solo pozo combinado, no tres cupos independient
   - `adminReorderListingImagesAction`: en vez de duplicar la validación de integridad (misma cantidad/IDs) que ya tiene `reorderListingImages()` del dueño, la reusa tal cual pasándole el `userId` **real** del dueño de la publicación — el chequeo de ownership pasa trivialmente porque es cierto, sin necesidad de una función paralela.
   - El wizard de admin nunca cambia `status` (eso sigue siendo trabajo de "Estado" en la página de detalle) — `isReactivation` se pasa siempre en `false`.
 
-### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 4/10 (Fase 9)
+### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 5/10 (Fase 9)
 
 Proyecto grande, planificado en modo plan y aprobado explícitamente antes de
 tocar código — dos secciones nuevas de admin ("Ubicación": provincias/
@@ -330,6 +330,46 @@ armado (se documenta en detalle a medida que cada fase se completa).
     mismo criterio de "arrays planos" que el resto del admin; las 4 pestañas
     cargan sus datos sin paginar (dataset chico: 7 tipos, ~20 marcas, ~60
     modelos).
+- **Fase 5**: `Province`/`Locality` (tablas nuevas, migración puramente
+  aditiva) — `Province.name`/`.slug` únicos, `Locality` con
+  `@@unique([provinceId, name])`. `Listing.provinceId`/`.localityId`
+  (FK nullables, `ON DELETE SET NULL`); `Listing.province`/`.city` (texto
+  libre histórico) se mantienen para siempre, sincronizados con
+  `provinceRef.name`/`localityRef.name` cuando el wizard resuelve una
+  ubicación real de la cascada — mismo criterio que `version`/`versionRef`
+  de la Fase 75.
+  - **`resolveLocationPatch()`** (`server/data/listings.ts`, exportada,
+    reusada por `updateOwnedListing` y `adminUpdateListing`): mismo
+    criterio que `resolveVersionPatch`, aplicado por separado a 2 niveles
+    (provincia y localidad) — cada uno distingue "nunca se resolvió y sigue
+    sin elegirse" (no toca nada) de "se deselecciona" (limpia) de "se elige
+    una nueva" (resuelve y sincroniza). La localidad, si se manda, se busca
+    dentro de la provincia recién resuelta (o la actual, si no se mandó una
+    provincia nueva).
+  - `/admin/ubicacion`: tabla de provincias + botón "Cargar provincias
+    registradas" (siembra idempotente, en un clic, las 24 provincias fijas
+    de `PROVINCIAS` en `constants.ts` — omite las que ya existen por
+    nombre) + modal alta/edición + dar de baja/reactivar.
+    `/admin/ubicacion/[id]`: localidades de esa provincia — alta una por
+    una, alta masiva por textarea (una localidad por línea, sin parser de
+    CSV en el proyecto), editar, dar de baja/reactivar. Mismos componentes
+    reusados de la Fase 4 (`EntityActiveToggle`, `AdminConfirmButton`).
+  - Wizard: Provincia (antes un `<select>` de lista fija) y Localidad (antes
+    un `<input>` de texto libre) pasan a una cascada real Provincia→Localidad
+    (mismo patrón de opción huérfana + párrafo informativo que Marca→Modelo→
+    Versión). El editor básico de admin (`ListingEditForm.tsx`) recibe el
+    mismo cambio, con una diferencia respecto a Versión: necesita su propio
+    estado de cascada (`useLocationTaxonomy`) porque la Provincia de una
+    publicación sí puede cambiarse libremente desde ese editor (a diferencia
+    de Versión, que queda fija al modelo ya cargado de la publicación).
+  - **Decisión de diseño deliberada**: el filtro del catálogo público
+    (`CatalogFilters.tsx`, `buildWhere()` en `server/data/listings.ts`) NO
+    se tocó en esta fase — sigue comparando contra el texto legado
+    (`province`/`city`), que queda sincronizado con el nombre real de
+    `Province`/`Locality` en cuanto el wizard resuelve una ubicación real,
+    así que el filtro sigue funcionando igual para publicaciones viejas y
+    nuevas sin ampliar el alcance de esta fase con un segundo camino de
+    filtrado relacional.
 
 ## 8. Despliegue
 

@@ -11,6 +11,13 @@ const CURRENT_YEAR = new Date().getFullYear();
 // `createListing`/`updateOwnedListing` en `server/data/listings.ts`).
 const versionSlugSchema = z.string().trim().optional();
 
+// Mismo criterio que `versionSlugSchema`: el wizard manda el slug de una
+// Provincia/Localidad ya cargada en el catálogo (cascada), no texto libre —
+// se resuelve server-side a partir de este slug (ver
+// `resolveLocationPatch` en `server/data/listings.ts`).
+const provinceSlugSchema = z.string().trim().optional();
+const localitySlugSchema = z.string().trim().optional();
+
 // "Observaciones": no obligatorio, sin longitud mínima.
 const descriptionSchema = z.string().trim().max(3000).optional();
 
@@ -23,8 +30,6 @@ const conditionSchema = z.enum(["NUEVO", "USADO"]);
 const transmissionSchema = z.enum(["MECANICA", "ASISTIDA"]).optional();
 
 const mileageKmSchema = z.coerce.number().int().nonnegative().optional();
-
-const optionalTextSchema = z.string().trim().max(80).optional();
 
 const contactAddressSchema = z.string().trim().max(160).optional();
 
@@ -66,8 +71,8 @@ export const createListingSchema = z.object({
   acceptsTrade: checkboxSchema,
   acceptsFinancing: checkboxSchema,
   mileageKm: mileageKmSchema,
-  city: optionalTextSchema,
-  province: optionalTextSchema,
+  localitySlug: localitySlugSchema,
+  provinceSlug: provinceSlugSchema,
   contactAddress: contactAddressSchema,
 });
 
@@ -82,8 +87,8 @@ export const updateListingSchema = z.object({
   acceptsTrade: checkboxSchema,
   acceptsFinancing: checkboxSchema,
   mileageKm: mileageKmSchema,
-  city: optionalTextSchema,
-  province: optionalTextSchema,
+  localitySlug: localitySlugSchema,
+  provinceSlug: provinceSlugSchema,
   contactAddress: contactAddressSchema,
 });
 

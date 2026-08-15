@@ -66,8 +66,8 @@ export async function createListingAction(
     acceptsTrade: raw.acceptsTrade,
     acceptsFinancing: raw.acceptsFinancing,
     mileageKm: raw.mileageKm || undefined,
-    city: raw.city || undefined,
-    province: raw.province || undefined,
+    localitySlug: raw.localitySlug || undefined,
+    provinceSlug: raw.provinceSlug || undefined,
     contactAddress: raw.contactAddress || undefined,
   });
   if (!parsed.success) {
@@ -120,8 +120,8 @@ export async function updateListingAction(
     acceptsTrade: raw.acceptsTrade,
     acceptsFinancing: raw.acceptsFinancing,
     mileageKm: raw.mileageKm || undefined,
-    city: raw.city || undefined,
-    province: raw.province || undefined,
+    localitySlug: raw.localitySlug || undefined,
+    provinceSlug: raw.provinceSlug || undefined,
     contactAddress: raw.contactAddress || undefined,
   });
   if (!parsed.success) {

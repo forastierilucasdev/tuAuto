@@ -491,8 +491,9 @@ export async function createListing(input: {
   acceptsTrade: boolean;
   acceptsFinancing: boolean;
   mileageKm?: number;
-  city?: string;
-  province?: string;
+  /** Slug de una `Locality`/`Province` ya cargada en el catálogo, resuelto server-side al nombre real (`city`/`province`, texto libre histórico) + `localityId`/`provinceId`. */
+  localitySlug?: string;
+  provinceSlug?: string;
   contactAddress?: string;
   /** "No, guardar como borrador" en el paso final del wizard. */
   asDraft?: boolean;
@@ -515,6 +516,10 @@ export async function createListing(input: {
   const version = input.versionSlug
     ? await prisma.version.findFirst({ where: { slug: input.versionSlug, modelId: model.id } })
     : null;
+  const locationPatch = await resolveLocationPatch(input.provinceSlug, input.localitySlug, {
+    provinceId: null,
+    localityId: null,
+  });
 
   // El título siempre se compone Marca + Modelo + Año, nunca es texto libre.
   const title = `${brand.name} ${model.name} ${input.year}`;
@@ -548,8 +553,7 @@ export async function createListing(input: {
     acceptsTrade: input.acceptsTrade,
     acceptsFinancing: input.acceptsFinancing,
     mileageKm: input.mileageKm,
-    city: input.city,
-    province: input.province,
+    ...locationPatch,
     contactAddress: input.contactAddress,
     ...(input.asDraft ? { status: "DRAFT" as const } : activationEffect!.listingPatch),
   };
@@ -653,6 +657,46 @@ export async function resolveVersionPatch(
   return {};
 }
 
+/**
+ * Resuelve `provinceSlug`/`localitySlug` de la cascada a sus nombres reales
+ * (`province`/`city`, texto libre histórico) + `provinceId`/`localityId` —
+ * mismo criterio que `resolveVersionPatch` para cada nivel por separado (no
+ * pisa el texto legado si nunca hubo una fila real resuelta y sigue sin
+ * elegirse una). La localidad, si se manda, se busca dentro de la provincia
+ * resuelta (o la actual, si no se mandó una provincia nueva).
+ */
+export async function resolveLocationPatch(
+  provinceSlug: string | undefined,
+  localitySlug: string | undefined,
+  current: { provinceId: string | null; localityId: string | null }
+): Promise<{ province?: string | null; provinceId?: string | null; city?: string | null; localityId?: string | null }> {
+  const patch: { province?: string | null; provinceId?: string | null; city?: string | null; localityId?: string | null } = {};
+  let resolvedProvinceId: string | null | undefined = provinceSlug ? undefined : current.provinceId;
+
+  if (provinceSlug) {
+    const resolvedProvince = await prisma.province.findFirst({ where: { slug: provinceSlug } });
+    patch.province = resolvedProvince?.name ?? null;
+    patch.provinceId = resolvedProvince?.id ?? null;
+    resolvedProvinceId = resolvedProvince?.id ?? null;
+  } else if (current.provinceId) {
+    patch.province = null;
+    patch.provinceId = null;
+  }
+
+  if (localitySlug) {
+    const resolvedLocality = await prisma.locality.findFirst({
+      where: { slug: localitySlug, ...(resolvedProvinceId ? { provinceId: resolvedProvinceId } : {}) },
+    });
+    patch.city = resolvedLocality?.name ?? null;
+    patch.localityId = resolvedLocality?.id ?? null;
+  } else if (current.localityId) {
+    patch.city = null;
+    patch.localityId = null;
+  }
+
+  return patch;
+}
+
 export async function updateOwnedListing(
   listingId: string,
   userId: string,
@@ -667,20 +711,24 @@ export async function updateOwnedListing(
     acceptsTrade: boolean;
     acceptsFinancing: boolean;
     mileageKm?: number;
-    city?: string;
-    province?: string;
+    localitySlug?: string;
+    provinceSlug?: string;
     contactAddress?: string;
   }
 ) {
   await assertOwnership(listingId, userId);
   const current = await prisma.listing.findUniqueOrThrow({
     where: { id: listingId },
-    select: { status: true, suspendedUntil: true, modelId: true, versionId: true },
+    select: { status: true, suspendedUntil: true, modelId: true, versionId: true, provinceId: true, localityId: true },
   });
   assertListingNotSuspended(current.suspendedUntil);
 
-  const { versionSlug, ...restData } = data;
+  const { versionSlug, provinceSlug, localitySlug, ...restData } = data;
   const versionPatch = await resolveVersionPatch(current.modelId, versionSlug, current.versionId);
+  const locationPatch = await resolveLocationPatch(provinceSlug, localitySlug, {
+    provinceId: current.provinceId,
+    localityId: current.localityId,
+  });
 
   // Guardar cambios en una publicación borrador/reservada/pausada/vencida la
   // vuelve a activar automáticamente ("¿conservar tus datos? Sí, editar" en
@@ -699,6 +747,7 @@ export async function updateOwnedListing(
       data: {
         ...restData,
         ...versionPatch,
+        ...locationPatch,
         ...(reactivating ? { ...activationEffect!.listingPatch, soldAt: null } : {}),
       },
     }),
@@ -773,7 +822,15 @@ export async function deleteOwnedListing(listingId: string, userId: string) {
 export async function getOwnedListingForEdit(listingId: string, userId: string) {
   return prisma.listing.findFirst({
     where: { id: listingId, userId, deletedAt: null },
-    include: { images: { orderBy: { order: "asc" } }, vehicleType: true, brand: true, model: true, versionRef: true },
+    include: {
+      images: { orderBy: { order: "asc" } },
+      vehicleType: true,
+      brand: true,
+      model: true,
+      versionRef: true,
+      provinceRef: true,
+      localityRef: true,
+    },
   });
 }
 

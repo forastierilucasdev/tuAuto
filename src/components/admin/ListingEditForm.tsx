@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useActionState } from "react";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
@@ -7,6 +8,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { adminUpdateListingAction, type AdminActionState } from "@/server/actions/admin/listings.actions";
+import { useLocationTaxonomy } from "@/hooks/useLocationTaxonomy";
 
 const initialState: AdminActionState = undefined;
 
@@ -16,11 +18,15 @@ export function ListingEditForm({
   listing,
   versions,
   currentVersionSlug,
+  currentProvinceSlug,
+  currentLocalitySlug,
 }: {
   listingId: string;
   disabled: boolean;
   versions: { slug: string; name: string }[];
   currentVersionSlug: string | null;
+  currentProvinceSlug: string | null;
+  currentLocalitySlug: string | null;
   listing: {
     version: string | null;
     condition: string;
@@ -39,6 +45,9 @@ export function ListingEditForm({
 }) {
   const action = adminUpdateListingAction.bind(null, listingId);
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [provinceSlug, setProvinceSlug] = React.useState(currentProvinceSlug ?? "");
+  const [localitySlug, setLocalitySlug] = React.useState(currentLocalitySlug ?? "");
+  const { provinces, localities } = useLocationTaxonomy(provinceSlug);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -72,12 +81,59 @@ export function ListingEditForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="province">Provincia</Label>
-          <Input id="province" name="province" defaultValue={listing.province ?? ""} disabled={disabled} />
+          <Label htmlFor="provinceSlug">Provincia</Label>
+          <Select
+            id="provinceSlug"
+            name="provinceSlug"
+            value={provinceSlug}
+            onChange={(e) => {
+              setProvinceSlug(e.target.value);
+              setLocalitySlug("");
+            }}
+            disabled={disabled}
+          >
+            <option value="">Sin provincia especificada</option>
+            {provinces.map((p) => (
+              <option key={p.id} value={p.slug}>
+                {p.name}
+              </option>
+            ))}
+            {provinceSlug && !provinces.some((p) => p.slug === provinceSlug) && (
+              <option value={provinceSlug}>{listing.province ?? provinceSlug}</option>
+            )}
+          </Select>
+          {!currentProvinceSlug && listing.province && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Provincia actual (texto libre, de antes de este catálogo): &quot;{listing.province}&quot;. Si aparece
+              en la lista, elegila para dejarla vinculada.
+            </p>
+          )}
         </div>
         <div>
-          <Label htmlFor="city">Localidad</Label>
-          <Input id="city" name="city" defaultValue={listing.city ?? ""} disabled={disabled} />
+          <Label htmlFor="localitySlug">Localidad</Label>
+          <Select
+            id="localitySlug"
+            name="localitySlug"
+            value={localitySlug}
+            onChange={(e) => setLocalitySlug(e.target.value)}
+            disabled={disabled || !provinceSlug}
+          >
+            <option value="">{provinceSlug ? "Sin localidad especificada" : "Elegí primero una provincia"}</option>
+            {localities.map((l) => (
+              <option key={l.id} value={l.slug}>
+                {l.name}
+              </option>
+            ))}
+            {localitySlug && !localities.some((l) => l.slug === localitySlug) && (
+              <option value={localitySlug}>{listing.city ?? localitySlug}</option>
+            )}
+          </Select>
+          {!currentLocalitySlug && listing.city && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Localidad actual (texto libre, de antes de este catálogo): &quot;{listing.city}&quot;. Si aparece en la
+              lista, elegila para dejarla vinculada.
+            </p>
+          )}
         </div>
       </div>
 

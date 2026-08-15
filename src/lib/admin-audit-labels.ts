@@ -45,6 +45,14 @@ export const ACTION_LABEL: Record<string, string> = {
   "version.create": "Creó una versión",
   "version.update": "Editó una versión",
   "version.toggleActive": "Dio de baja / reactivó una versión",
+  "province.seed": "Importó las provincias del listado fijo",
+  "province.create": "Creó una provincia",
+  "province.update": "Editó una provincia",
+  "province.toggleActive": "Dio de baja / reactivó una provincia",
+  "locality.create": "Creó una localidad",
+  "locality.bulkCreate": "Importó localidades en lote",
+  "locality.update": "Editó una localidad",
+  "locality.toggleActive": "Dio de baja / reactivó una localidad",
 };
 
 export const TARGET_TABLE_LABEL: Record<AdminAuditTargetTable, string> = {
@@ -57,6 +65,8 @@ export const TARGET_TABLE_LABEL: Record<AdminAuditTargetTable, string> = {
   Brand: "Marca",
   Model: "Modelo",
   Version: "Versión",
+  Province: "Provincia",
+  Locality: "Localidad",
 };
 
 export const TARGET_TABLES: AdminAuditTargetTable[] = [
@@ -69,4 +79,6 @@ export const TARGET_TABLES: AdminAuditTargetTable[] = [
   "Brand",
   "Model",
   "Version",
+  "Province",
+  "Locality",
 ];

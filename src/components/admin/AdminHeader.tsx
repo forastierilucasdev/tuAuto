@@ -21,6 +21,7 @@ const MOBILE_NAV = [
   { href: "/admin/suscripciones", label: "Suscripciones" },
   { href: "/admin/destacados", label: "Destacados" },
   { href: "/admin/vehiculos", label: "Vehículos" },
+  { href: "/admin/ubicacion", label: "Ubicación" },
   { href: "/admin/auditoria", label: "Auditoría" },
 ];
 

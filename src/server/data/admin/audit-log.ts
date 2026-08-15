@@ -12,7 +12,9 @@ export type AdminAuditTargetTable =
   | "VehicleTypeCatalog"
   | "Brand"
   | "Model"
-  | "Version";
+  | "Version"
+  | "Province"
+  | "Locality";
 
 /**
  * Se llama explícitamente al final de cada Server Action de admin que
@@ -190,6 +192,28 @@ export async function resolveAuditTargets(
     });
     for (const version of versions) {
       result.set(`Version:${version.id}`, { label: `${version.model.name} ${version.name}`, href: "/admin/vehiculos?tab=versiones" });
+    }
+  }
+
+  const provinceIds = [...(idsByTable.get("Province") ?? [])];
+  if (provinceIds.length > 0) {
+    const provinces = await prisma.province.findMany({ where: { id: { in: provinceIds } }, select: { id: true, name: true } });
+    for (const province of provinces) {
+      result.set(`Province:${province.id}`, { label: province.name, href: "/admin/ubicacion" });
+    }
+  }
+
+  const localityIds = [...(idsByTable.get("Locality") ?? [])];
+  if (localityIds.length > 0) {
+    const localities = await prisma.locality.findMany({
+      where: { id: { in: localityIds } },
+      select: { id: true, name: true, province: { select: { id: true, name: true } } },
+    });
+    for (const locality of localities) {
+      result.set(`Locality:${locality.id}`, {
+        label: `${locality.province.name} · ${locality.name}`,
+        href: `/admin/ubicacion/${locality.province.id}`,
+      });
     }
   }
 
