@@ -3,7 +3,16 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getClientIp } from "@/lib/rate-limit";
 
-export type AdminAuditTargetTable = "User" | "Listing" | "Payment" | "Plan" | "VerificationRequest" | "VehicleTypeCatalog";
+export type AdminAuditTargetTable =
+  | "User"
+  | "Listing"
+  | "Payment"
+  | "Plan"
+  | "VerificationRequest"
+  | "VehicleTypeCatalog"
+  | "Brand"
+  | "Model"
+  | "Version";
 
 /**
  * Se llama explícitamente al final de cada Server Action de admin que
@@ -151,6 +160,36 @@ export async function resolveAuditTargets(
     });
     for (const vehicleType of vehicleTypes) {
       result.set(`VehicleTypeCatalog:${vehicleType.id}`, { label: vehicleType.label, href: "/admin/vehiculos" });
+    }
+  }
+
+  const brandIds = [...(idsByTable.get("Brand") ?? [])];
+  if (brandIds.length > 0) {
+    const brands = await prisma.brand.findMany({ where: { id: { in: brandIds } }, select: { id: true, name: true } });
+    for (const brand of brands) {
+      result.set(`Brand:${brand.id}`, { label: brand.name, href: "/admin/vehiculos?tab=marcas" });
+    }
+  }
+
+  const modelIds = [...(idsByTable.get("Model") ?? [])];
+  if (modelIds.length > 0) {
+    const models = await prisma.model.findMany({
+      where: { id: { in: modelIds } },
+      select: { id: true, name: true, brand: { select: { name: true } } },
+    });
+    for (const model of models) {
+      result.set(`Model:${model.id}`, { label: `${model.brand.name} ${model.name}`, href: "/admin/vehiculos?tab=modelos" });
+    }
+  }
+
+  const versionIds = [...(idsByTable.get("Version") ?? [])];
+  if (versionIds.length > 0) {
+    const versions = await prisma.version.findMany({
+      where: { id: { in: versionIds } },
+      select: { id: true, name: true, model: { select: { name: true } } },
+    });
+    for (const version of versions) {
+      result.set(`Version:${version.id}`, { label: `${version.model.name} ${version.name}`, href: "/admin/vehiculos?tab=versiones" });
     }
   }
 

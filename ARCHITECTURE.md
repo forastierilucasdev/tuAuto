@@ -239,7 +239,7 @@ El cupo de publicaciones **es un solo pozo combinado, no tres cupos independient
   - `adminReorderListingImagesAction`: en vez de duplicar la validación de integridad (misma cantidad/IDs) que ya tiene `reorderListingImages()` del dueño, la reusa tal cual pasándole el `userId` **real** del dueño de la publicación — el chequeo de ownership pasa trivialmente porque es cierto, sin necesidad de una función paralela.
   - El wizard de admin nunca cambia `status` (eso sigue siendo trabajo de "Estado" en la página de detalle) — `isReactivation` se pasa siempre en `false`.
 
-### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 1/10 (Fase 9)
+### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 4/10 (Fase 9)
 
 Proyecto grande, planificado en modo plan y aprobado explícitamente antes de
 tocar código — dos secciones nuevas de admin ("Ubicación": provincias/
@@ -290,6 +290,46 @@ armado (se documenta en detalle a medida que cada fase se completa).
   `<select>` de Tipo en el wizard/filtros — un tipo nuevo creado desde
   `/admin/vehiculos` no es seleccionable todavía al publicar, eso queda para
   una fase siguiente (wire completo: leer tipos activos desde la tabla).
+- **Fase 4**: CRUD de Marca/Modelo en `/admin/vehiculos` (esas tablas ya
+  existían y ya alimentaban el catálogo público, solo faltaba su
+  administración) más `Brand.isActive`/`Model.isActive` (migración aditiva)
+  — dar de baja no borra, solo deja de ofrecerse como opción nueva; no afecta
+  publicaciones que ya la usan. Tabla `Version` nueva (`modelId`, `name`,
+  `slug`, `isActive`), con `Listing.versionId` nullable (`ON DELETE
+  SET NULL`) — Versión pasa de texto libre a un desplegable en cascada
+  (Tipo→Marca→Modelo→**Versión**→Año) en el wizard, igual que ya eran
+  Marca/Modelo. `Listing.version` (el texto libre histórico) se mantiene
+  **para siempre**, nunca se borra — cuando se resuelve una versión real vía
+  el desplegable, ese campo se sincroniza con el nombre de la fila
+  `Version` elegida, así todo el código de lectura existente (que sigue
+  leyendo `listing.version` como string plano) sigue funcionando sin cambios.
+  - **`resolveVersionPatch()`** (`server/data/listings.ts`, exportada,
+    reusada por `updateOwnedListing` y por `adminUpdateListing`): distingue
+    3 casos al recibir un `versionSlug` opcional — (a) el listing nunca tuvo
+    una versión resuelta (`versionId` null) y tampoco se elige ninguna ahora
+    → no toca nada (`{}`), preserva el texto legado intacto; (b) tenía una
+    versión resuelta y se deselecciona → limpia `version`/`versionId` a
+    `null`; (c) se elige una versión del desplegable → resuelve nombre + id
+    y sincroniza. Sin esta distinción, cualquier edición de un listing con
+    versión histórica de texto libre (anterior a la tabla `Version`) hubiera
+    borrado ese texto con solo tocar un campo no relacionado del formulario
+    — se identificó y evitó antes de escribir código, no fue un bug reportado.
+  - El editor básico de admin (`ListingEditForm.tsx`, usado por
+    `/admin/publicaciones/[id]`, distinto del wizard completo de la Fase 71)
+    tenía un `<Input name="version">` de texto libre que quedó roto en
+    silencio por el cambio de schema `version`→`versionSlug`: cualquier
+    valor tipeado ahí se descartaba sin error visible. Se corrigió como
+    parte de esta misma fase, convertido a `<Select name="versionSlug">`
+    poblado con las versiones del modelo actual de la publicación.
+  - `EntityActiveToggle.tsx` (nuevo, genérico) cubre los 3 toggles nuevos
+    (Brand/Model/Version) — `PlanActiveToggle`/`VehicleTypeActiveToggle`
+    (preexistentes, casi duplicados ahora) quedan sin tocar, fuera del
+    alcance de esta fase.
+  - `/admin/vehiculos` gana pestañas por query-param
+    (`?tab=tipos|marcas|modelos|versiones`) — sin componente de tabs nuevo,
+    mismo criterio de "arrays planos" que el resto del admin; las 4 pestañas
+    cargan sus datos sin paginar (dataset chico: 7 tipos, ~20 marcas, ~60
+    modelos).
 
 ## 8. Despliegue
 

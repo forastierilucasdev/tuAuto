@@ -8,6 +8,7 @@ import { getModulePermissions, requireAdminPermission } from "@/lib/admin-permis
 import { getListingForAdminDetail, isListingSuspended } from "@/server/data/admin/listings";
 import { listAuditLog } from "@/server/data/admin/audit-log";
 import { getAvailablePublications } from "@/server/data/listings";
+import { getVersionsForModel } from "@/server/data/taxonomy";
 import { ListingEditForm } from "@/components/admin/ListingEditForm";
 import { ListingStatusActions } from "@/components/admin/ListingStatusActions";
 import { AuditChangesModal } from "@/components/admin/AuditChangesModal";
@@ -26,9 +27,10 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
   if (!listing) notFound();
   const suspended = isListingSuspended(listing.suspendedUntil);
 
-  const [ownerAvailablePublications, { entries: auditEntries }] = await Promise.all([
+  const [ownerAvailablePublications, { entries: auditEntries }, versions] = await Promise.all([
     getAvailablePublications(listing.user.id),
     listAuditLog({ targetTable: "Listing", targetId: id }, 1),
+    getVersionsForModel(listing.model.slug, listing.brand.slug),
   ]);
 
   return (
@@ -88,7 +90,13 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
             </Link>
           )}
         </div>
-        <ListingEditForm listingId={listing.id} disabled={!permissions.canEdit} listing={listing} />
+        <ListingEditForm
+          listingId={listing.id}
+          disabled={!permissions.canEdit}
+          listing={listing}
+          versions={versions}
+          currentVersionSlug={listing.versionRef?.slug ?? null}
+        />
       </div>
 
       <div className="mt-6">

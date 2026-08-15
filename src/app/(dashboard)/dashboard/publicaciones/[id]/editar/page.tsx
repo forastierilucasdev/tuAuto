@@ -45,6 +45,8 @@ export default async function EditarPublicacionPage(props: PageProps<"/dashboard
         brandName={listing.brand.name}
         modelSlug={listing.model.slug}
         modelName={listing.model.name}
+        versionSlug={listing.versionRef?.slug ?? null}
+        versionName={listing.versionRef?.name ?? null}
         year={listing.year}
         seller={{
           fullName: profile.fullName,

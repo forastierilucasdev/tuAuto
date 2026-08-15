@@ -56,7 +56,7 @@ export async function createListingAction(
     brandSlug: raw.brandSlug,
     modelSlug: raw.modelSlug,
     year: raw.year,
-    version: raw.version || undefined,
+    versionSlug: raw.versionSlug || undefined,
     condition: raw.condition,
     transmission: raw.transmission || undefined,
     description: raw.description || undefined,
@@ -110,7 +110,7 @@ export async function updateListingAction(
 
   const raw = Object.fromEntries(formData);
   const parsed = updateListingSchema.safeParse({
-    version: raw.version || undefined,
+    versionSlug: raw.versionSlug || undefined,
     condition: raw.condition,
     transmission: raw.transmission || undefined,
     description: raw.description || undefined,

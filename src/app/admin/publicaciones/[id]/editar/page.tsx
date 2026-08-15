@@ -44,6 +44,8 @@ export default async function AdminListingEditWizardPage(props: { params: Promis
         brandName={listing.brand.name}
         modelSlug={listing.model.slug}
         modelName={listing.model.name}
+        versionSlug={listing.versionRef?.slug ?? null}
+        versionName={listing.versionRef?.name ?? null}
         year={listing.year}
         seller={{
           fullName: profile.fullName,

@@ -5,7 +5,11 @@ const CURRENT_YEAR = new Date().getFullYear();
 // El título de la publicación siempre se compone Marca + Modelo + Año en el
 // servidor (ver server/data/listings.ts) — nunca es texto libre del usuario.
 
-const versionSchema = z.string().trim().max(60).optional();
+// El wizard manda el slug de una versión ya cargada en el catálogo (cascada
+// Marca→Modelo→Versión), no texto libre — el nombre real (`version`, texto
+// histórico en `Listing`) se resuelve server-side a partir de este slug (ver
+// `createListing`/`updateOwnedListing` en `server/data/listings.ts`).
+const versionSlugSchema = z.string().trim().optional();
 
 // "Observaciones": no obligatorio, sin longitud mínima.
 const descriptionSchema = z.string().trim().max(3000).optional();
@@ -28,6 +32,11 @@ const contactAddressSchema = z.string().trim().max(160).optional();
 // la clave ni aparece en el FormData.
 const checkboxSchema = z.preprocess((value) => value === "on" || value === true, z.boolean());
 
+// Mismos 7 códigos que `VEHICLE_TYPES` en `lib/constants.ts` — el wizard
+// todavía ofrece solo esos como opciones (ver ARCHITECTURE.md 7.2.7,
+// "Fase 3"), así que un enum fijo acá sigue siendo válido. Si en una fase
+// futura el `<select>` de Tipo pasa a leer `VehicleTypeCatalog` completo,
+// esto tiene que volverse una validación dinámica contra esa tabla.
 export const vehicleTypeSchema = z.enum([
   "AUTO",
   "CAMIONETA",
@@ -47,7 +56,7 @@ export const createListingSchema = z.object({
     .int()
     .min(1950, { error: "Ingresá un año válido." })
     .max(CURRENT_YEAR + 1, { error: "Ingresá un año válido." }),
-  version: versionSchema,
+  versionSlug: versionSlugSchema,
   condition: conditionSchema,
   transmission: transmissionSchema,
   description: descriptionSchema,
@@ -63,7 +72,7 @@ export const createListingSchema = z.object({
 });
 
 export const updateListingSchema = z.object({
-  version: versionSchema,
+  versionSlug: versionSlugSchema,
   condition: conditionSchema,
   transmission: transmissionSchema,
   description: descriptionSchema,

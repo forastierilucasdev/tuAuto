@@ -14,9 +14,13 @@ export function ListingEditForm({
   listingId,
   disabled,
   listing,
+  versions,
+  currentVersionSlug,
 }: {
   listingId: string;
   disabled: boolean;
+  versions: { slug: string; name: string }[];
+  currentVersionSlug: string | null;
   listing: {
     version: string | null;
     condition: string;
@@ -78,8 +82,24 @@ export function ListingEditForm({
       </div>
 
       <div>
-        <Label htmlFor="version">Versión</Label>
-        <Input id="version" name="version" defaultValue={listing.version ?? ""} disabled={disabled} />
+        <Label htmlFor="versionSlug">Versión</Label>
+        <Select id="versionSlug" name="versionSlug" defaultValue={currentVersionSlug ?? ""} disabled={disabled}>
+          <option value="">Sin versión especificada</option>
+          {versions.map((v) => (
+            <option key={v.slug} value={v.slug}>
+              {v.name}
+            </option>
+          ))}
+          {currentVersionSlug && !versions.some((v) => v.slug === currentVersionSlug) && (
+            <option value={currentVersionSlug}>{listing.version ?? currentVersionSlug}</option>
+          )}
+        </Select>
+        {!currentVersionSlug && listing.version && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Versión actual (texto libre, de antes de este catálogo): &quot;{listing.version}&quot;. Si aparece en la
+            lista, elegila para dejarla vinculada.
+          </p>
+        )}
       </div>
 
       <div>

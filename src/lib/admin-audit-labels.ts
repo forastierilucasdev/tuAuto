@@ -36,6 +36,15 @@ export const ACTION_LABEL: Record<string, string> = {
   "vehicleType.create": "Creó un tipo de vehículo",
   "vehicleType.update": "Editó un tipo de vehículo",
   "vehicleType.toggleActive": "Dio de baja / reactivó un tipo de vehículo",
+  "brand.create": "Creó una marca",
+  "brand.update": "Editó una marca",
+  "brand.toggleActive": "Dio de baja / reactivó una marca",
+  "model.create": "Creó un modelo",
+  "model.update": "Editó un modelo",
+  "model.toggleActive": "Dio de baja / reactivó un modelo",
+  "version.create": "Creó una versión",
+  "version.update": "Editó una versión",
+  "version.toggleActive": "Dio de baja / reactivó una versión",
 };
 
 export const TARGET_TABLE_LABEL: Record<AdminAuditTargetTable, string> = {
@@ -45,6 +54,9 @@ export const TARGET_TABLE_LABEL: Record<AdminAuditTargetTable, string> = {
   Plan: "Plan",
   VerificationRequest: "Verificación de identidad",
   VehicleTypeCatalog: "Tipo de vehículo",
+  Brand: "Marca",
+  Model: "Modelo",
+  Version: "Versión",
 };
 
 export const TARGET_TABLES: AdminAuditTargetTable[] = [
@@ -54,4 +66,7 @@ export const TARGET_TABLES: AdminAuditTargetTable[] = [
   "Plan",
   "VerificationRequest",
   "VehicleTypeCatalog",
+  "Brand",
+  "Model",
+  "Version",
 ];

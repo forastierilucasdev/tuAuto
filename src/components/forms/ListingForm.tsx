@@ -56,8 +56,12 @@ type ListingFormProps = {
       brandName: string;
       modelSlug: string;
       modelName: string;
+      /** Slug de la versión ya resuelta (si la publicación tiene `versionId`) — `null` si es de antes de este catálogo o nunca se cargó una. */
+      versionSlug: string | null;
+      versionName: string | null;
       year: number;
       defaultValues: {
+        /** Texto libre histórico — solo se usa para el aviso cuando no hay `versionSlug` resuelto. */
         version: string | null;
         condition: VehicleCondition;
         transmission: "MECANICA" | "ASISTIDA" | null;
@@ -96,17 +100,19 @@ export function ListingForm(props: ListingFormProps) {
   const [vehicleType, setVehicleType] = React.useState(isEdit ? props.vehicleType : "");
   const [brandSlug, setBrandSlug] = React.useState(isEdit ? props.brandSlug : "");
   const [modelSlug, setModelSlug] = React.useState(isEdit ? props.modelSlug : "");
+  const [versionSlug, setVersionSlug] = React.useState(isEdit ? (props.versionSlug ?? "") : "");
   const [year, setYear] = React.useState(isEdit ? String(props.year) : "");
-  const [version, setVersion] = React.useState(isEdit ? (props.defaultValues.version ?? "") : "");
   const [transmission, setTransmission] = React.useState(
     isEdit ? (props.defaultValues.transmission ?? "") : ""
   );
   const [condition, setCondition] = React.useState(isEdit ? props.defaultValues.condition : "USADO");
-  const { brands, models } = useVehicleTaxonomy(vehicleType, brandSlug, modelSlug);
+  const { brands, models, versions } = useVehicleTaxonomy(vehicleType, brandSlug, modelSlug);
   const selectedBrandName =
     brands.find((b) => b.slug === brandSlug)?.name ?? (isEdit ? props.brandName : "");
   const selectedModelName =
     models.find((m) => m.slug === modelSlug)?.name ?? (isEdit ? props.modelName : "");
+  const selectedVersionName =
+    versions.find((v) => v.slug === versionSlug)?.name ?? (isEdit ? (props.versionName ?? "") : "");
   // El wizard se adapta según el tipo de vehículo: kilometraje solo en
   // autos/camionetas/monopatines, "horas de uso" en lanchas/barcos, y
   // transmisión solo en autos/camionetas (ver lib/constants.ts).
@@ -328,7 +334,7 @@ export function ListingForm(props: ListingFormProps) {
       if (status) formData.set("status", status);
     }
 
-    formData.set("version", version);
+    formData.set("versionSlug", versionSlug);
     // Solo se manda transmisión/kilometraje si el tipo de vehículo elegido
     // los usa — evita guardar un dato que no tiene sentido para ese tipo
     // (ej. transmisión en una moto, o km en una bicicleta).
@@ -476,7 +482,10 @@ export function ListingForm(props: ListingFormProps) {
                   id="modelSlug"
                   value={modelSlug}
                   aria-invalid={showInvalid(!modelSlug)}
-                  onChange={(e) => setModelSlug(e.target.value)}
+                  onChange={(e) => {
+                    setModelSlug(e.target.value);
+                    setVersionSlug("");
+                  }}
                   disabled={isEdit || !brandSlug}
                 >
                   <option value="">Elegí un modelo</option>
@@ -495,13 +504,29 @@ export function ListingForm(props: ListingFormProps) {
 
             <div className={cn("grid gap-5", showTransmission && "sm:grid-cols-2")}>
               <div>
-                <Label htmlFor="version">Versión (opcional)</Label>
-                <Input
-                  id="version"
-                  value={version}
-                  onChange={(e) => setVersion(e.target.value)}
-                  placeholder="Ej: XEI CVT"
-                />
+                <Label htmlFor="versionSlug">Versión (opcional)</Label>
+                <Select
+                  id="versionSlug"
+                  value={versionSlug}
+                  onChange={(e) => setVersionSlug(e.target.value)}
+                  disabled={!modelSlug}
+                >
+                  <option value="">Sin versión especificada</option>
+                  {versions.map((v) => (
+                    <option key={v.id} value={v.slug}>
+                      {v.name}
+                    </option>
+                  ))}
+                  {isEdit && versionSlug && !versions.some((v) => v.slug === versionSlug) && (
+                    <option value={versionSlug}>{props.mode === "edit" ? (props.versionName ?? "") : ""}</option>
+                  )}
+                </Select>
+                {isEdit && !versionSlug && props.defaultValues.version && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Versión actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.version}&quot;.
+                    Si aparece en la lista, elegila para dejarla vinculada.
+                  </p>
+                )}
               </div>
               {showTransmission && (
                 <div>
@@ -825,7 +850,7 @@ export function ListingForm(props: ListingFormProps) {
               <span className="text-muted-foreground">Vehículo:</span>{" "}
               <span className="font-medium text-foreground">
                 {vehicleTypeLabel(vehicleType)} {selectedBrandName} {selectedModelName} {year}
-                {version ? ` (${version})` : ""} · {conditionLabel(condition)}
+                {selectedVersionName ? ` (${selectedVersionName})` : ""} · {conditionLabel(condition)}
                 {showTransmission && transmission ? ` · ${transmissionLabel(transmission)}` : ""}
               </span>
             </p>

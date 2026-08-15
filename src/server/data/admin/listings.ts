@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { ListingStatus, Prisma } from "@/generated/prisma/client";
 import type { UpdateListingInput } from "@/lib/validations/listing";
+import { resolveVersionPatch } from "@/server/data/listings";
 
 export type AdminListingFilters = {
   search?: string;
@@ -81,6 +82,7 @@ export async function getListingForAdminDetail(listingId: string) {
       vehicleType: true,
       brand: true,
       model: true,
+      versionRef: true,
       user: { select: { id: true, email: true, fullName: true } },
     },
   });
@@ -88,7 +90,13 @@ export async function getListingForAdminDetail(listingId: string) {
 
 /** Edición de admin: NO es una "republicación" — no toca cupo/activationCount/expiresAt, a diferencia de `updateOwnedListing`. Tipo/marca/modelo/año quedan fuera (mismo límite que ya tiene el dueño, ver ARCHITECTURE.md). */
 export async function adminUpdateListing(listingId: string, data: UpdateListingInput) {
-  return prisma.listing.update({ where: { id: listingId }, data });
+  const current = await prisma.listing.findUniqueOrThrow({
+    where: { id: listingId },
+    select: { modelId: true, versionId: true },
+  });
+  const { versionSlug, ...rest } = data;
+  const versionPatch = await resolveVersionPatch(current.modelId, versionSlug, current.versionId);
+  return prisma.listing.update({ where: { id: listingId }, data: { ...rest, ...versionPatch } });
 }
 
 /**

@@ -1,6 +1,6 @@
 "use server";
 
-import { getAvailableYears, getBrandsForType, getModelsForBrand } from "@/server/data/taxonomy";
+import { getAvailableYears, getBrandsForType, getModelsForBrand, getVersionsForModel } from "@/server/data/taxonomy";
 
 export async function getBrandsForTypeAction(vehicleType?: string) {
   return getBrandsForType(vehicleType);
@@ -8,6 +8,10 @@ export async function getBrandsForTypeAction(vehicleType?: string) {
 
 export async function getModelsForBrandAction(brandSlug: string, vehicleType?: string) {
   return getModelsForBrand(brandSlug, vehicleType);
+}
+
+export async function getVersionsForModelAction(modelSlug: string, brandSlug: string) {
+  return getVersionsForModel(modelSlug, brandSlug);
 }
 
 export async function getAvailableYearsAction(filters: {

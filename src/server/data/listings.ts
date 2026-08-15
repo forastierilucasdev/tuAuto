@@ -480,7 +480,8 @@ export async function createListing(input: {
   brandSlug: string;
   modelSlug: string;
   year: number;
-  version?: string;
+  /** Slug de una `Version` ya cargada en el catálogo, resuelto server-side al nombre real (`version`, texto libre histórico) + `versionId`. */
+  versionSlug?: string;
   condition: VehicleCondition;
   transmission?: "MECANICA" | "ASISTIDA";
   description?: string;
@@ -509,6 +510,11 @@ export async function createListing(input: {
   const model = await prisma.model.findFirstOrThrow({
     where: { slug: input.modelSlug, brandId: brand.id, vehicleTypeId: vehicleTypeRow.id },
   });
+  // La versión es opcional — si se eligió una de la cascada, se resuelve acá
+  // y se sincroniza el texto libre histórico (`version`) con su nombre real.
+  const version = input.versionSlug
+    ? await prisma.version.findFirst({ where: { slug: input.versionSlug, modelId: model.id } })
+    : null;
 
   // El título siempre se compone Marca + Modelo + Año, nunca es texto libre.
   const title = `${brand.name} ${model.name} ${input.year}`;
@@ -531,7 +537,8 @@ export async function createListing(input: {
     modelId: model.id,
     year: input.year,
     title,
-    version: input.version,
+    version: version?.name,
+    versionId: version?.id,
     condition: input.condition,
     transmission: input.transmission,
     description: input.description,
@@ -626,11 +633,31 @@ function assertListingNotSuspended(suspendedUntil: Date | null) {
 
 const REACTIVATABLE_STATUSES: ListingStatus[] = ["RESERVADA", "PAUSADA", "EXPIRED", "DRAFT"];
 
+/**
+ * Resuelve un `versionSlug` de la cascada al nombre real (`version`, texto
+ * libre histórico) + `versionId` — compartido por `updateOwnedListing`
+ * (dueño) y `adminUpdateListing` (editor básico de admin) para no duplicar
+ * la regla de "no tocar nada si nunca hubo una versión resuelta y sigue sin
+ * elegirse una" (evita borrar el texto libre viejo por editar otro campo).
+ */
+export async function resolveVersionPatch(
+  modelId: string,
+  versionSlug: string | undefined,
+  currentVersionId: string | null
+): Promise<{ version?: string | null; versionId?: string | null }> {
+  if (versionSlug) {
+    const resolvedVersion = await prisma.version.findFirst({ where: { slug: versionSlug, modelId } });
+    return { version: resolvedVersion?.name ?? null, versionId: resolvedVersion?.id ?? null };
+  }
+  if (currentVersionId) return { version: null, versionId: null };
+  return {};
+}
+
 export async function updateOwnedListing(
   listingId: string,
   userId: string,
   data: {
-    version?: string;
+    versionSlug?: string;
     condition?: VehicleCondition;
     transmission?: "MECANICA" | "ASISTIDA";
     description?: string;
@@ -648,9 +675,12 @@ export async function updateOwnedListing(
   await assertOwnership(listingId, userId);
   const current = await prisma.listing.findUniqueOrThrow({
     where: { id: listingId },
-    select: { status: true, suspendedUntil: true },
+    select: { status: true, suspendedUntil: true, modelId: true, versionId: true },
   });
   assertListingNotSuspended(current.suspendedUntil);
+
+  const { versionSlug, ...restData } = data;
+  const versionPatch = await resolveVersionPatch(current.modelId, versionSlug, current.versionId);
 
   // Guardar cambios en una publicación borrador/reservada/pausada/vencida la
   // vuelve a activar automáticamente ("¿conservar tus datos? Sí, editar" en
@@ -667,7 +697,8 @@ export async function updateOwnedListing(
     prisma.listing.update({
       where: { id: listingId },
       data: {
-        ...data,
+        ...restData,
+        ...versionPatch,
         ...(reactivating ? { ...activationEffect!.listingPatch, soldAt: null } : {}),
       },
     }),
@@ -742,7 +773,7 @@ export async function deleteOwnedListing(listingId: string, userId: string) {
 export async function getOwnedListingForEdit(listingId: string, userId: string) {
   return prisma.listing.findFirst({
     where: { id: listingId, userId, deletedAt: null },
-    include: { images: { orderBy: { order: "asc" } }, vehicleType: true, brand: true, model: true },
+    include: { images: { orderBy: { order: "asc" } }, vehicleType: true, brand: true, model: true, versionRef: true },
   });
 }
 

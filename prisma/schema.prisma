@@ -200,6 +200,13 @@ model Brand {
   name      String
   slug      String   @unique
   logoUrl   String?
+  // "Eliminar" desde el admin es este toggle, no un DELETE físico — una
+  // marca con modelos/publicaciones reales no se puede borrar sin romper
+  // esas relaciones (Model tiene onDelete: Cascade contra Brand, pero
+  // Listing→Model es RESTRICT). Mismo criterio reversible que ya usan
+  // Plan/VehicleTypeCatalog. Dar de baja no afecta publicaciones existentes,
+  // solo deja de ofrecerse como opción nueva en el wizard/filtros.
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
   models   Model[]
@@ -214,12 +221,29 @@ model Model {
   vehicleType   VehicleTypeCatalog @relation(fields: [vehicleTypeId], references: [id])
   brandId       String
   brand         Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  isActive      Boolean            @default(true)
   createdAt     DateTime           @default(now())
 
+  versions Version[]
   listings Listing[]
 
   @@unique([brandId, vehicleTypeId, name])
   @@index([vehicleTypeId, brandId])
+}
+
+model Version {
+  id        String   @id @default(cuid())
+  modelId   String
+  model     Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  listings Listing[]
+
+  @@unique([modelId, name])
+  @@index([modelId])
 }
 
 model Listing {
@@ -236,8 +260,14 @@ model Listing {
   model         Model              @relation(fields: [modelId], references: [id])
   year          Int
 
-  title       String
+  title String
+  // Texto libre histórico — se mantiene sincronizado con `versionRef.name`
+  // cuando el wizard resuelve una versión real de la cascada, pero sigue
+  // existiendo solo, sin FK, para las publicaciones de antes de esta tabla
+  // (migración puramente aditiva, no se intentó vincular datos viejos).
   version     String?
+  versionId   String?
+  versionRef  Version? @relation(fields: [versionId], references: [id])
   description String?
 
   condition    VehicleCondition  @default(USADO)

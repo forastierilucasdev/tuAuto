@@ -5,6 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Catálogo administrable: Fase 4/10, CRUD Marca/Modelo + tabla Version + wizard en cascada
+`Brand`/`Model` ganan `isActive` (dar de baja deja de ofrecerlos sin afectar publicaciones existentes) y se agrega la tabla `Version`, con `Listing.versionId` nullable — Versión pasa de texto libre a un desplegable en cascada (Tipo→Marca→Modelo→Versión→Año) igual que Marca/Modelo, tanto en el wizard del dueño como en el editor básico de admin.
+
+- `server/data/admin/vehicles.ts` + `server/actions/admin/vehicles.actions.ts` (nuevos): CRUD completo de Brand/Model/Version, mismo patrón que el CRUD de Tipos (Fase 73). `/admin/vehiculos` pasa a tener 4 pestañas por query-param (Tipos/Marcas/Modelos/Versiones).
+- `resolveVersionPatch()` (nuevo, `server/data/listings.ts`, compartido por `updateOwnedListing` y `adminUpdateListing`): resuelve un `versionSlug` a la fila real de `Version` y decide si tocar `version`/`versionId` — distingue "nunca tuvo versión resuelta y sigue sin elegir ninguna" (no toca nada, preserva texto legado) de "tenía una y la deselecciona" (la limpia) de "elige una nueva" (resuelve y sincroniza). Se identificó y evitó, antes de que llegara a producción, un bug de pérdida silenciosa de datos: sin esta distinción, cualquier edición de un listing con versión de texto libre histórico (anterior a esta tabla) hubiera borrado ese texto con solo tocar un campo no relacionado.
+- **Regresión detectada y corregida en el mismo alcance**: el editor básico de admin (`ListingEditForm.tsx`, distinto del wizard completo) tenía un `<Input name="version">` de texto libre que había quedado silenciosamente roto por el cambio de schema `version`→`versionSlug` — cualquier valor tipeado ahí se hubiera descartado sin error visible. Se convirtió a `<Select name="versionSlug">`, poblado con las versiones del modelo actual de la publicación.
+- `EntityActiveToggle.tsx` (nuevo, genérico) para los 3 toggles nuevos (Brand/Model/Version) — los toggles existentes de Plan/Tipo de vehículo quedan sin tocar, no se refactorizan retroactivamente fuera del alcance de esta fase.
+- Auditoría extendida: `Brand`/`Model`/`Version` sumadas a `resolveAuditTargets()`/`admin-audit-labels.ts`.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable contra la base real: dedupe de Brand/Model/Version, toggle `isActive`, los 3 casos de `resolveVersionPatch()`, ciclo completo de un listing real con versión vinculada (crear → deseleccionar → confirmar limpieza) — revertido. Servidor de desarrollo: `/admin/vehiculos` (las 4 pestañas) sin errores de compilación.
+
 ### Added (2026-08-14) — Catálogo administrable: Fase 3/10, migrar Model/Listing del enum VehicleType a vehicleTypeId
 La fase de mayor riesgo del proyecto: `Model.vehicleType`/`Listing.vehicleType` pasan del enum fijo de Postgres a una FK real contra `VehicleTypeCatalog` (sembrada en la Fase 2). Backfill 100% determinístico, verificado contra la base real antes y después de aplicar (0 filas sin match; mismos totales — 60 Model, 38 Listing — después de migrar).
 
