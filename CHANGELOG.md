@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Catálogo administrable: Fase 8/10, colas de "Tareas pendientes" en admin
+`/admin/vehiculos/pendientes` y `/admin/ubicacion/pendientes`, calcadas del precedente de `/admin/identidad`: cola de solicitudes con "Aprobar" o "Dejar observación", nunca un rechazo duro. Una aprobación puede destrabar varias publicaciones de distintos usuarios a la vez.
+
+- "Aprobar" abre un mini-form que deja confirmar o corregir el nombre final tecleado por el usuario antes de crear la fila real del catálogo (Brand/Model/Version o Locality) — verificado que el nombre editado por el admin es el que se usa, no el original.
+- Nuevas Server Actions (`taxonomy-requests.actions.ts`/`locality-requests.actions.ts`) envuelven la capa de datos de la Fase 6 con permisos, auditoría y revalidación.
+- `/admin/vehiculos` y `/admin/ubicacion` muestran un link "Tareas pendientes" con badge de cantidad.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable contra la base real: conteo de publicaciones vinculadas, observación sin cambiar status, aprobación con nombre editado, y que aprobar la solicitud NO publica el listing (sigue pendiente hasta "Validar datos", Fase 9) — revertido.
+
 ### Added (2026-08-14) — Catálogo administrable: Fase 7/10, modales del wizard "no está en la lista"
 La parte visible del flujo de aprobación en dos pasos: en el wizard de publicar, "¿Tu vehículo no está en la lista?" y "¿No encontrás tu localidad?" abren un modal autocontenido con el texto explicativo literal pedido por el usuario, y al guardar reemplazan el bloque de selects normal por un resumen fijo (con opción de "Quitar" para volver atrás).
 

@@ -239,7 +239,7 @@ El cupo de publicaciones **es un solo pozo combinado, no tres cupos independient
   - `adminReorderListingImagesAction`: en vez de duplicar la validación de integridad (misma cantidad/IDs) que ya tiene `reorderListingImages()` del dueño, la reusa tal cual pasándole el `userId` **real** del dueño de la publicación — el chequeo de ownership pasa trivialmente porque es cierto, sin necesidad de una función paralela.
   - El wizard de admin nunca cambia `status` (eso sigue siendo trabajo de "Estado" en la página de detalle) — `isReactivation` se pasa siempre en `false`.
 
-### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 7/10 (Fase 9)
+### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 8/10 (Fase 9)
 
 Proyecto grande, planificado en modo plan y aprobado explícitamente antes de
 tocar código — dos secciones nuevas de admin ("Ubicación": provincias/
@@ -450,6 +450,28 @@ armado (se documenta en detalle a medida que cada fase se completa).
     con el mensaje literal pedido por el usuario) cuando hay datos
     pendientes — el resumen de Vehículo/Ubicación en ese paso también
     muestra el texto tecleado en vez de los slugs resueltos.
+- **Fase 8**: `/admin/vehiculos/pendientes` y `/admin/ubicacion/pendientes`
+  — el precedente exacto calcado es `/admin/identidad`
+  (`VerificationRowActions`): cola con "Aprobar" o "Dejar observación",
+  **nunca un rechazo duro**. A diferencia de Identidad, acá una sola
+  aprobación puede destrabar varias publicaciones de distintos usuarios a
+  la vez — cada tarjeta de la cola muestra cuántas tiene vinculadas
+  (`_count.listings`).
+  - "Aprobar" (`TaxonomyRequestRowActions`/`LocalityRequestRowActions`)
+    abre un mini-form pre-cargado con el texto que tecleó el usuario, pero
+    el admin puede **corregirlo** antes de confirmar — el nombre que
+    termina creándose en `Brand`/`Model`/`Version`/`Locality` es el que
+    queda en el form al aprobar, no necesariamente el original.
+  - Nuevas Server Actions (`server/actions/admin/taxonomy-requests.actions.ts`/
+    `locality-requests.actions.ts`) envuelven la capa de datos ya
+    construida en la Fase 6 (`approveTaxonomyRequest`/
+    `approveLocalityRequest`/`addTaxonomyRequestNote`/
+    `addLocalityRequestNote`) con `requireAdminPermission`, auditoría y
+    revalidación — sin lógica de negocio nueva en esta fase, es
+    puramente la UI que faltaba.
+  - `/admin/vehiculos` y `/admin/ubicacion` ganan un link "Tareas
+    pendientes" con badge de cantidad (solo visible si hay al menos una
+    solicitud `PENDING`).
 
 ## 8. Despliegue
 

@@ -14,7 +14,9 @@ export type AdminAuditTargetTable =
   | "Model"
   | "Version"
   | "Province"
-  | "Locality";
+  | "Locality"
+  | "TaxonomyRequest"
+  | "LocalityRequest";
 
 /**
  * Se llama explícitamente al final de cada Server Action de admin que
@@ -213,6 +215,34 @@ export async function resolveAuditTargets(
       result.set(`Locality:${locality.id}`, {
         label: `${locality.province.name} · ${locality.name}`,
         href: `/admin/ubicacion/${locality.province.id}`,
+      });
+    }
+  }
+
+  const taxonomyRequestIds = [...(idsByTable.get("TaxonomyRequest") ?? [])];
+  if (taxonomyRequestIds.length > 0) {
+    const requests = await prisma.taxonomyRequest.findMany({
+      where: { id: { in: taxonomyRequestIds } },
+      select: { id: true, brandName: true, modelName: true },
+    });
+    for (const request of requests) {
+      result.set(`TaxonomyRequest:${request.id}`, {
+        label: `${request.brandName} ${request.modelName}`,
+        href: "/admin/vehiculos/pendientes",
+      });
+    }
+  }
+
+  const localityRequestIds = [...(idsByTable.get("LocalityRequest") ?? [])];
+  if (localityRequestIds.length > 0) {
+    const requests = await prisma.localityRequest.findMany({
+      where: { id: { in: localityRequestIds } },
+      select: { id: true, name: true, province: { select: { name: true } } },
+    });
+    for (const request of requests) {
+      result.set(`LocalityRequest:${request.id}`, {
+        label: `${request.province.name} · ${request.name}`,
+        href: "/admin/ubicacion/pendientes",
       });
     }
   }

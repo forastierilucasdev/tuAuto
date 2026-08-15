@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getModulePermissions, requireAdminPermission } from "@/lib/admin-permissions";
 import { listVehicleTypesForAdmin } from "@/server/data/admin/vehicle-types";
 import { listBrandsForAdmin, listModelsForAdmin, listVersionsForAdmin } from "@/server/data/admin/vehicles";
+import { listTaxonomyRequests } from "@/server/data/admin/taxonomy-requests";
 import { Badge } from "@/components/ui/Badge";
 import { VehicleTypeFormModal } from "@/components/admin/VehicleTypeFormModal";
 import { VehicleTypeActiveToggle } from "@/components/admin/VehicleTypeActiveToggle";
@@ -37,20 +38,32 @@ export default async function AdminVehiculosPage(props: {
   const sp = await props.searchParams;
   const tab = (TABS.some((t) => t.key === param(sp, "tab")) ? param(sp, "tab") : "tipos") as TabKey;
 
-  const [types, brands, models, versions] = await Promise.all([
+  const [types, brands, models, versions, pendingRequests] = await Promise.all([
     listVehicleTypesForAdmin(),
     listBrandsForAdmin(),
     listModelsForAdmin(),
     listVersionsForAdmin(),
+    listTaxonomyRequests("PENDING"),
   ]);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy">Vehículos</h1>
-      <p className="mt-1 text-muted-foreground">
-        Tipos, marcas, modelos y versiones del catálogo. El wizard de publicar todavía usa la lista fija de
-        tipos — solo Marcas/Modelos/Versiones ya impactan directo en el sitio.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">Vehículos</h1>
+          <p className="mt-1 text-muted-foreground">
+            Tipos, marcas, modelos y versiones del catálogo. El wizard de publicar todavía usa la lista fija de
+            tipos — solo Marcas/Modelos/Versiones ya impactan directo en el sitio.
+          </p>
+        </div>
+        <Link
+          href="/admin/vehiculos/pendientes"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-navy hover:bg-surface-muted"
+        >
+          Tareas pendientes
+          {pendingRequests.length > 0 && <Badge variant="danger">{pendingRequests.length}</Badge>}
+        </Link>
+      </div>
 
       <div className="mt-4 flex gap-1 border-b border-border">
         {TABS.map((t) => (

@@ -53,6 +53,10 @@ export const ACTION_LABEL: Record<string, string> = {
   "locality.bulkCreate": "Importó localidades en lote",
   "locality.update": "Editó una localidad",
   "locality.toggleActive": "Dio de baja / reactivó una localidad",
+  "taxonomyRequest.approve": "Aprobó una solicitud de vehículo pendiente",
+  "taxonomyRequest.addNote": "Agregó una observación a una solicitud de vehículo",
+  "localityRequest.approve": "Aprobó una solicitud de localidad pendiente",
+  "localityRequest.addNote": "Agregó una observación a una solicitud de localidad",
 };
 
 export const TARGET_TABLE_LABEL: Record<AdminAuditTargetTable, string> = {
@@ -67,6 +71,8 @@ export const TARGET_TABLE_LABEL: Record<AdminAuditTargetTable, string> = {
   Version: "Versión",
   Province: "Provincia",
   Locality: "Localidad",
+  TaxonomyRequest: "Solicitud de vehículo pendiente",
+  LocalityRequest: "Solicitud de localidad pendiente",
 };
 
 export const TARGET_TABLES: AdminAuditTargetTable[] = [
@@ -81,4 +87,6 @@ export const TARGET_TABLES: AdminAuditTargetTable[] = [
   "Version",
   "Province",
   "Locality",
+  "TaxonomyRequest",
+  "LocalityRequest",
 ];

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getModulePermissions, requireAdminPermission } from "@/lib/admin-permissions";
 import { listProvincesForAdmin } from "@/server/data/admin/locations";
+import { listLocalityRequests } from "@/server/data/admin/locality-requests";
 import { Badge } from "@/components/ui/Badge";
 import { ProvinceFormModal } from "@/components/admin/ProvinceFormModal";
 import { SeedProvincesButton } from "@/components/admin/SeedProvincesButton";
@@ -14,15 +15,26 @@ export default async function AdminUbicacionPage() {
   const session = await requireAdminPermission("ubicacion", "read");
   const permissions = getModulePermissions(session.user.adminRole, "ubicacion");
 
-  const provinces = await listProvincesForAdmin();
+  const [provinces, pendingRequests] = await Promise.all([listProvincesForAdmin(), listLocalityRequests("PENDING")]);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy">Ubicación</h1>
-      <p className="mt-1 text-muted-foreground">
-        Provincias y localidades del catálogo. El wizard de publicar todavía usa la lista fija de provincias —
-        cargá primero las provincias registradas para poder administrar sus localidades.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">Ubicación</h1>
+          <p className="mt-1 text-muted-foreground">
+            Provincias y localidades del catálogo. El wizard de publicar todavía usa la lista fija de provincias —
+            cargá primero las provincias registradas para poder administrar sus localidades.
+          </p>
+        </div>
+        <Link
+          href="/admin/ubicacion/pendientes"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-navy hover:bg-surface-muted"
+        >
+          Tareas pendientes
+          {pendingRequests.length > 0 && <Badge variant="danger">{pendingRequests.length}</Badge>}
+        </Link>
+      </div>
 
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         <SeedProvincesButton canEdit={permissions.canEdit} />
