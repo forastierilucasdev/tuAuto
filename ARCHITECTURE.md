@@ -239,6 +239,28 @@ El cupo de publicaciones **es un solo pozo combinado, no tres cupos independient
   - `adminReorderListingImagesAction`: en vez de duplicar la validación de integridad (misma cantidad/IDs) que ya tiene `reorderListingImages()` del dueño, la reusa tal cual pasándole el `userId` **real** del dueño de la publicación — el chequeo de ownership pasa trivialmente porque es cierto, sin necesidad de una función paralela.
   - El wizard de admin nunca cambia `status` (eso sigue siendo trabajo de "Estado" en la página de detalle) — `isReactivation` se pasa siempre en `false`.
 
+### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 1/10 (Fase 9)
+
+Proyecto grande, planificado en modo plan y aprobado explícitamente antes de
+tocar código — dos secciones nuevas de admin ("Ubicación": provincias/
+localidades, "Vehículos": tipos/marcas/modelos/versiones administrables, hoy
+`VehicleType` es un enum fijo de Postgres y Provincia/Localidad son texto
+libre sin relación), con colas de "tareas pendientes" para cuando un usuario
+no encuentra su vehículo o localidad al publicar, un estado nuevo
+`PENDIENTE_APROBACION` que no descuenta cupo hasta que el admin valida los
+datos ("Validar datos" → recién ahí se publica y se descuenta el crédito).
+Se ejecuta en 10 fases separadas, cada una con su propio commit — el detalle
+completo de diseño (modelos nuevos, orden de migraciones, riesgos) quedó en
+el plan aprobado de la sesión, no se repite acá hasta que el catálogo esté
+armado (se documenta en detalle a medida que cada fase se completa).
+
+- **Fase 1 (esta)**: `buildActivationEffect()` en `server/data/listings.ts`
+  extrae la lógica de "pasar a ACTIVE + consumir cupo" que estaba triplicada
+  en `createListing`/`updateOwnedListing`/`reactivateListing` — refactor
+  puro, sin cambio de comportamiento, hecho primero porque la futura acción
+  de admin "Validar datos" va a reusar esta misma función en vez de
+  reimplementar la lógica de cupo por cuarta vez.
+
 ## 8. Despliegue
 
 - **Base de datos**: Supabase (Postgres).

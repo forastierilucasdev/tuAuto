@@ -421,6 +421,55 @@ function getReactivationCost(status: ListingStatus): { countsAsNewListing: boole
   return { countsAsNewListing: false, consumesQuota: false }; // RESERVADA / PAUSADA
 }
 
+type ActivationContext = Awaited<ReturnType<typeof loadActivationContext>>;
+
+/**
+ * Efecto de "pasar a ACTIVE" — reusado por `createListing`,
+ * `updateOwnedListing`, `reactivateListing` (dueño) y, más adelante,
+ * `validateAndActivateListing` (admin, "Validar datos" de una publicación
+ * pendiente de aprobación). Centralizar esto evita que alguna de las cuatro
+ * pueda divergir en qué campos toca al activar una publicación y consumir
+ * cupo — antes de este refactor la misma lógica estaba triplicada.
+ */
+type ActivationListingPatch = {
+  status: "ACTIVE";
+  expiresAt: Date;
+  publishedAt?: Date;
+  featured?: true;
+  featuredSince?: Date;
+  featuredUntil?: Date;
+};
+
+function buildActivationEffect(
+  activation: ActivationContext,
+  opts: { countsAsNewListing: boolean; consumesQuota: boolean }
+): { listingPatch: ActivationListingPatch; userPatch: Prisma.UserUpdateInput; shouldUpdateUser: boolean } {
+  const listingPatch: ActivationListingPatch = {
+    status: "ACTIVE",
+    expiresAt: activation.expiresAt,
+    ...(opts.countsAsNewListing ? { publishedAt: new Date() } : {}),
+    ...(activation.useFeaturedVoucher
+      ? {
+          featured: true,
+          featuredSince: new Date(),
+          featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000),
+        }
+      : {}),
+  };
+  const userPatch: Prisma.UserUpdateInput = {
+    ...(opts.consumesQuota ? { quotaConsumed: { increment: 1 } } : {}),
+    ...(opts.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
+    ...(activation.useFeaturedVoucher
+      ? { pendingFeaturedVouchers: { decrement: 1 }, featuredVouchersUsed: { increment: 1 } }
+      : {}),
+  };
+  return {
+    listingPatch,
+    userPatch,
+    shouldUpdateUser: opts.consumesQuota || opts.countsAsNewListing || activation.useFeaturedVoucher,
+  };
+}
+
 export async function createListing(input: {
   userId: string;
   vehicleType: VehicleType;
@@ -465,6 +514,10 @@ export async function createListing(input: {
     slug = `${baseSlug}-${attempt++}`;
   }
 
+  const activationEffect = activation
+    ? buildActivationEffect(activation, { countsAsNewListing: true, consumesQuota: true })
+    : null;
+
   const listingData = {
     slug,
     userId: input.userId,
@@ -486,20 +539,7 @@ export async function createListing(input: {
     city: input.city,
     province: input.province,
     contactAddress: input.contactAddress,
-    ...(input.asDraft
-      ? { status: "DRAFT" as const }
-      : {
-          status: "ACTIVE" as const,
-          publishedAt: new Date(),
-          expiresAt: activation!.expiresAt,
-          ...(activation!.useFeaturedVoucher
-            ? {
-                featured: true,
-                featuredSince: new Date(),
-                featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000),
-              }
-            : {}),
-        }),
+    ...(input.asDraft ? { status: "DRAFT" as const } : activationEffect!.listingPatch),
   };
 
   // Un borrador no "pasó por activa" todavía, así que no suma ni al contador
@@ -507,20 +547,7 @@ export async function createListing(input: {
   // de verdad.
   const [listing] = await prisma.$transaction([
     prisma.listing.create({ data: listingData }),
-    ...(activation
-      ? [
-          prisma.user.update({
-            where: { id: input.userId },
-            data: {
-              activationCount: { increment: 1 },
-              quotaConsumed: { increment: 1 },
-              ...(activation.useFeaturedVoucher
-                ? { pendingFeaturedVouchers: { decrement: 1 }, featuredVouchersUsed: { increment: 1 } }
-                : {}),
-            },
-          }),
-        ]
-      : []),
+    ...(activationEffect ? [prisma.user.update({ where: { id: input.userId }, data: activationEffect.userPatch })] : []),
   ]);
   return listing;
 }
@@ -629,42 +656,18 @@ export async function updateOwnedListing(
   const activation = reactivating ? await loadActivationContext(userId) : null;
   if (reactivating) assertNotSuspended(activation!.isSuspended);
   if (cost?.consumesQuota) assertAvailable(activation!.available);
+  const activationEffect = reactivating ? buildActivationEffect(activation!, cost!) : null;
 
   const [listing] = await prisma.$transaction([
     prisma.listing.update({
       where: { id: listingId },
       data: {
         ...data,
-        ...(reactivating
-          ? {
-              status: "ACTIVE" as const,
-              soldAt: null,
-              expiresAt: activation!.expiresAt,
-              ...(cost?.countsAsNewListing ? { publishedAt: new Date() } : {}),
-              ...(activation!.useFeaturedVoucher
-                ? {
-                    featured: true,
-                    featuredSince: new Date(),
-                    featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000),
-                  }
-                : {}),
-            }
-          : {}),
+        ...(reactivating ? { ...activationEffect!.listingPatch, soldAt: null } : {}),
       },
     }),
-    ...(reactivating && (cost?.consumesQuota || activation!.useFeaturedVoucher)
-      ? [
-          prisma.user.update({
-            where: { id: userId },
-            data: {
-              ...(cost?.consumesQuota ? { quotaConsumed: { increment: 1 } } : {}),
-              ...(cost?.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
-              ...(activation!.useFeaturedVoucher
-                ? { pendingFeaturedVouchers: { decrement: 1 }, featuredVouchersUsed: { increment: 1 } }
-                : {}),
-            },
-          }),
-        ]
+    ...(activationEffect?.shouldUpdateUser
+      ? [prisma.user.update({ where: { id: userId }, data: activationEffect.userPatch })]
       : []),
   ]);
   return { listing, reactivated: reactivating };
@@ -685,37 +688,15 @@ export async function reactivateListing(listingId: string, userId: string) {
   const activation = await loadActivationContext(userId);
   assertNotSuspended(activation.isSuspended);
   if (cost.consumesQuota) assertAvailable(activation.available);
+  const activationEffect = buildActivationEffect(activation, cost);
 
   const [listing] = await prisma.$transaction([
     prisma.listing.update({
       where: { id: listingId },
-      data: {
-        status: "ACTIVE",
-        soldAt: null,
-        expiresAt: activation.expiresAt,
-        ...(cost.countsAsNewListing ? { publishedAt: new Date() } : {}),
-        ...(activation.useFeaturedVoucher
-          ? {
-              featured: true,
-              featuredSince: new Date(),
-              featuredUntil: new Date(Date.now() + FEATURED_VOUCHER_DAYS * 24 * 60 * 60 * 1000),
-            }
-          : {}),
-      },
+      data: { ...activationEffect.listingPatch, soldAt: null },
     }),
-    ...(cost.consumesQuota || activation.useFeaturedVoucher
-      ? [
-          prisma.user.update({
-            where: { id: userId },
-            data: {
-              ...(cost.consumesQuota ? { quotaConsumed: { increment: 1 } } : {}),
-              ...(cost.countsAsNewListing ? { activationCount: { increment: 1 } } : {}),
-              ...(activation.useFeaturedVoucher
-                ? { pendingFeaturedVouchers: { decrement: 1 }, featuredVouchersUsed: { increment: 1 } }
-                : {}),
-            },
-          }),
-        ]
+    ...(activationEffect.shouldUpdateUser
+      ? [prisma.user.update({ where: { id: userId }, data: activationEffect.userPatch })]
       : []),
   ]);
   return listing;

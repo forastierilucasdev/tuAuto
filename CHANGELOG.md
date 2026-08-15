@@ -5,6 +5,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Catálogo administrable (Ubicación + Vehículos): Fase 1/10, refactor de calentamiento
+Primer paso de un proyecto grande, aprobado en modo plan: dos secciones nuevas de admin ("Ubicación": provincias/localidades, "Vehículos": tipos/marcas/modelos/versiones) con colas de "tareas pendientes" para cuando un usuario no encuentra su vehículo o localidad al publicar, un modal en el wizard para cargar esos datos a mano, un estado nuevo "pendiente de aprobación" que no descuenta cupo hasta que el admin valida los datos, y un botón "Validar datos" que recién ahí publica y descuenta. El plan completo (10 fases) quedó documentado y aprobado antes de tocar código — cada fase se commitea y verifica por separado.
+
+- `buildActivationEffect()` (nuevo, `server/data/listings.ts`): extrae la lógica de "pasar a ACTIVE + consumir cupo" que estaba triplicada en `createListing`/`updateOwnedListing`/`reactivateListing` — refactor puro, cero cambio de comportamiento. Se hace primero porque las fases siguientes (en particular el futuro "Validar datos" del admin) van a reusar esta misma función en vez de reimplementarla.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable contra la base real (pausar y reactivar una publicación real: el cupo no se toca para `PAUSADA→ACTIVE`, `expiresAt` se renueva, `publishedAt` no cambia — exactamente igual que antes del refactor), revertido al terminar.
+
 ### Added (2026-08-14) — Wizard completo de admin para editar publicaciones, con fotos
 Último ítem pendiente de la Fase 63 (deferido explícitamente en su momento por la ownership hardcodeada en `updateListingAction`/`deleteListingImageAction`/`reorderListingImagesAction`) — ya resuelto.
 
