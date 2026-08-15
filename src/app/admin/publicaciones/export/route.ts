@@ -2,7 +2,7 @@ import { requireAdminPermission } from "@/lib/admin-permissions";
 import { listAllListingsForAdmin } from "@/server/data/admin/listings";
 import { buildCsv, csvResponse } from "@/lib/csv";
 import { formatCurrency } from "@/lib/utils";
-import type { ListingStatus, VehicleType } from "@/generated/prisma/client";
+import type { ListingStatus } from "@/generated/prisma/client";
 
 export async function GET(request: Request) {
   await requireAdminPermission("publicaciones", "read");
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const listings = await listAllListingsForAdmin({
     search: searchParams.get("q") ?? undefined,
     status: (searchParams.get("estado") as ListingStatus) || undefined,
-    vehicleType: (searchParams.get("tipo") as VehicleType) || undefined,
+    vehicleType: searchParams.get("tipo") || undefined,
     showDeleted: searchParams.get("eliminadas") === "1",
   });
 

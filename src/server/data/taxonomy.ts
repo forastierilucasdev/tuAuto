@@ -1,35 +1,27 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import type { VehicleType } from "@/generated/prisma/client";
 
-export async function getBrandsForType(vehicleType?: VehicleType) {
+export async function getBrandsForType(vehicleTypeCode?: string) {
   return prisma.brand.findMany({
-    where: vehicleType ? { models: { some: { vehicleType } } } : undefined,
+    where: vehicleTypeCode ? { models: { some: { vehicleType: { code: vehicleTypeCode } } } } : undefined,
     orderBy: { name: "asc" },
     select: { id: true, name: true, slug: true },
   });
 }
 
-export async function getModelsForBrand(brandSlug: string, vehicleType?: VehicleType) {
+export async function getModelsForBrand(brandSlug: string, vehicleTypeCode?: string) {
   return prisma.model.findMany({
-    where: {
-      brand: { slug: brandSlug },
-      ...(vehicleType ? { vehicleType } : {}),
-    },
+    where: { brand: { slug: brandSlug }, ...(vehicleTypeCode ? { vehicleType: { code: vehicleTypeCode } } : {}) },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, slug: true, vehicleType: true },
+    select: { id: true, name: true, slug: true },
   });
 }
 
-export async function getAvailableYears(filters: {
-  vehicleType?: VehicleType;
-  brandSlug?: string;
-  modelSlug?: string;
-}) {
+export async function getAvailableYears(filters: { vehicleTypeCode?: string; brandSlug?: string; modelSlug?: string }) {
   const rows = await prisma.listing.findMany({
     where: {
       status: "ACTIVE",
-      ...(filters.vehicleType ? { vehicleType: filters.vehicleType } : {}),
+      ...(filters.vehicleTypeCode ? { vehicleType: { code: filters.vehicleTypeCode } } : {}),
       ...(filters.brandSlug ? { brand: { slug: filters.brandSlug } } : {}),
       ...(filters.modelSlug ? { model: { slug: filters.modelSlug } } : {}),
     },

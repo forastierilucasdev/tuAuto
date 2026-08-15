@@ -9,16 +9,14 @@ import { Button } from "@/components/ui/Button";
 import { VEHICLE_TYPES, CONDITION_OPTIONS, ACCOUNT_TYPE_OPTIONS, PROVINCIAS, mileageUnitFor } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
-import type { AccountType, VehicleType } from "@/generated/prisma/client";
+import type { AccountType } from "@/generated/prisma/client";
 
 export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [tipo, setTipo] = React.useState<VehicleType | "">(
-    (searchParams.get("tipo") as VehicleType | null) ?? ""
-  );
+  const [tipo, setTipo] = React.useState(searchParams.get("tipo") ?? "");
   const [marca, setMarca] = React.useState(searchParams.get("marca") ?? "");
   const [modelo, setModelo] = React.useState(searchParams.get("modelo") ?? "");
   const [anio, setAnio] = React.useState(searchParams.get("anio") ?? "");
@@ -85,7 +83,7 @@ export function CatalogFilters({ onApply }: { onApply?: () => void } = {}) {
           id="f-tipo"
           value={tipo}
           onChange={(e) => {
-            const nextTipo = e.target.value as VehicleType | "";
+            const nextTipo = e.target.value;
             setTipo(nextTipo);
             setMarca("");
             setModelo("");

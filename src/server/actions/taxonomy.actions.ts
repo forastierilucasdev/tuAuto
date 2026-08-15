@@ -1,20 +1,23 @@
 "use server";
 
-import type { VehicleType } from "@/generated/prisma/client";
 import { getAvailableYears, getBrandsForType, getModelsForBrand } from "@/server/data/taxonomy";
 
-export async function getBrandsForTypeAction(vehicleType?: VehicleType) {
+export async function getBrandsForTypeAction(vehicleType?: string) {
   return getBrandsForType(vehicleType);
 }
 
-export async function getModelsForBrandAction(brandSlug: string, vehicleType?: VehicleType) {
+export async function getModelsForBrandAction(brandSlug: string, vehicleType?: string) {
   return getModelsForBrand(brandSlug, vehicleType);
 }
 
 export async function getAvailableYearsAction(filters: {
-  vehicleType?: VehicleType;
+  vehicleType?: string;
   brandSlug?: string;
   modelSlug?: string;
 }) {
-  return getAvailableYears(filters);
+  return getAvailableYears({
+    vehicleTypeCode: filters.vehicleType,
+    brandSlug: filters.brandSlug,
+    modelSlug: filters.modelSlug,
+  });
 }

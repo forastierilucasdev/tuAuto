@@ -40,7 +40,7 @@ export default async function EditarPublicacionPage(props: PageProps<"/dashboard
         mode="edit"
         listingId={listing.id}
         isReactivation={REACTIVATABLE.has(listing.status)}
-        vehicleType={listing.vehicleType}
+        vehicleType={listing.vehicleType.code}
         brandSlug={listing.brand.slug}
         brandName={listing.brand.name}
         modelSlug={listing.model.slug}

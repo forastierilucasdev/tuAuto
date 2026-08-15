@@ -39,7 +39,7 @@ export default async function AdminListingEditWizardPage(props: { params: Promis
         mode="edit"
         listingId={listing.id}
         isReactivation={false}
-        vehicleType={listing.vehicleType}
+        vehicleType={listing.vehicleType.code}
         brandSlug={listing.brand.slug}
         brandName={listing.brand.name}
         modelSlug={listing.model.slug}

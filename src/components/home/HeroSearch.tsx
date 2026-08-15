@@ -6,11 +6,11 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { VEHICLE_TYPES, CONDITION_OPTIONS, ACCOUNT_TYPE_OPTIONS } from "@/lib/constants";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
-import type { AccountType, VehicleType } from "@/generated/prisma/client";
+import type { AccountType } from "@/generated/prisma/client";
 
 export function HeroSearch() {
   const router = useRouter();
-  const [tipo, setTipo] = React.useState<VehicleType | "">("");
+  const [tipo, setTipo] = React.useState("");
   const [marca, setMarca] = React.useState("");
   const [modelo, setModelo] = React.useState("");
   const [anio, setAnio] = React.useState("");
@@ -48,7 +48,7 @@ export function HeroSearch() {
           id="hero-tipo"
           value={tipo}
           onChange={(e) => {
-            setTipo(e.target.value as VehicleType | "");
+            setTipo(e.target.value);
             setMarca("");
             setModelo("");
           }}

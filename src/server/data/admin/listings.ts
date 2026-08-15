@@ -1,12 +1,13 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import type { ListingStatus, Prisma, VehicleType } from "@/generated/prisma/client";
+import type { ListingStatus, Prisma } from "@/generated/prisma/client";
 import type { UpdateListingInput } from "@/lib/validations/listing";
 
 export type AdminListingFilters = {
   search?: string;
   status?: ListingStatus;
-  vehicleType?: VehicleType;
+  /** Código de `VehicleTypeCatalog` (ej. "AUTO"). */
+  vehicleType?: string;
   showDeleted?: boolean;
 };
 
@@ -30,7 +31,7 @@ function buildListingWhere(filters: AdminListingFilters): Prisma.ListingWhereInp
     ];
   }
   if (filters.status) where.status = filters.status;
-  if (filters.vehicleType) where.vehicleType = filters.vehicleType;
+  if (filters.vehicleType) where.vehicleType = { code: filters.vehicleType };
 
   return where;
 }
@@ -77,6 +78,7 @@ export async function getListingForAdminDetail(listingId: string) {
     where: { id: listingId },
     include: {
       images: { orderBy: { order: "asc" } },
+      vehicleType: true,
       brand: true,
       model: true,
       user: { select: { id: true, email: true, fullName: true } },

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import type { VehicleType } from "@/generated/prisma/client";
 import {
   getAvailableYearsAction,
   getBrandsForTypeAction,
@@ -14,10 +13,12 @@ export type TaxonomyOption = { id: string; name: string; slug: string };
  * Cascada Tipo → Marca → Modelo → Año reutilizada por el buscador principal
  * (HeroSearch), los filtros del catálogo (CatalogFilters) y el formulario de
  * publicar (ListingForm). Centraliza el fetch vía Server Actions para no
- * duplicar la misma lógica de efectos en cada lugar.
+ * duplicar la misma lógica de efectos en cada lugar. `vehicleType` es el
+ * código de `VehicleTypeCatalog` (ej. "AUTO"), no un enum de Prisma —
+ * mismo criterio que `brandSlug`/`modelSlug`.
  */
 export function useVehicleTaxonomy(
-  vehicleType: VehicleType | "",
+  vehicleType: string,
   brandSlug: string,
   modelSlug: string
 ) {

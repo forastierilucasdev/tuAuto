@@ -3,12 +3,16 @@ import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import {
   PrismaClient,
-  type VehicleType,
   type Currency,
   type ListingStatus,
   type VehicleCondition,
   type TransmissionType,
 } from "../src/generated/prisma/client";
+
+// Códigos de `VehicleTypeCatalog` (ya no un enum de Prisma desde que se
+// migró a tabla real) — se resuelven a `vehicleTypeId` vía un lookup a la
+// base antes de sembrar Model/Listing (ver `vehicleTypeByCode` en `main()`).
+type VehicleTypeCode = "AUTO" | "CAMIONETA" | "MOTO" | "BICICLETA" | "MONOPATIN" | "LANCHA" | "BARCO";
 
 const adapter = new PrismaPg({ connectionString: process.env.DIRECT_URL ?? process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -23,7 +27,7 @@ function slugify(text: string) {
 }
 
 // --- Taxonomia: marca -> { tipo de vehiculo -> modelos } -------------------
-const TAXONOMY: Record<string, Partial<Record<VehicleType, string[]>>> = {
+const TAXONOMY: Record<string, Partial<Record<VehicleTypeCode, string[]>>> = {
   Toyota: { AUTO: ["Corolla", "Yaris"], CAMIONETA: ["Hilux", "SW4"] },
   Volkswagen: { AUTO: ["Gol", "Polo", "Vento"], CAMIONETA: ["Amarok", "Tiguan Allspace"] },
   Ford: { AUTO: ["Focus", "Fiesta", "Ka", "EcoSport"], CAMIONETA: ["Ranger"] },
@@ -114,7 +118,7 @@ const SELLERS = [
 ];
 
 type SeedListing = {
-  vehicleType: VehicleType;
+  vehicleType: VehicleTypeCode;
   brand: string;
   model: string;
   year: number;
@@ -241,6 +245,11 @@ async function main() {
   }
 
   console.log("Seed: taxonomia (marcas y modelos)...");
+  const vehicleTypeByCode = new Map<string, string>();
+  for (const vt of await prisma.vehicleTypeCatalog.findMany({ select: { id: true, code: true } })) {
+    vehicleTypeByCode.set(vt.code, vt.id);
+  }
+
   const modelByKey = new Map<string, string>(); // `${brand}::${vehicleType}::${model}` -> modelId
 
   for (const [brandName, byType] of Object.entries(TAXONOMY)) {
@@ -250,15 +259,19 @@ async function main() {
       create: { name: brandName, slug: slugify(brandName) },
     });
 
-    for (const [vehicleType, models] of Object.entries(byType) as [VehicleType, string[]][]) {
+    for (const [vehicleType, models] of Object.entries(byType) as [VehicleTypeCode, string[]][]) {
+      const vehicleTypeId = vehicleTypeByCode.get(vehicleType);
+      if (!vehicleTypeId) {
+        throw new Error(`VehicleTypeCatalog no tiene una fila para "${vehicleType}" — corré las migraciones antes del seed.`);
+      }
       for (const modelName of models) {
         const model = await prisma.model.upsert({
-          where: { brandId_vehicleType_name: { brandId: brand.id, vehicleType, name: modelName } },
+          where: { brandId_vehicleTypeId_name: { brandId: brand.id, vehicleTypeId, name: modelName } },
           update: {},
           create: {
             name: modelName,
             slug: slugify(modelName),
-            vehicleType,
+            vehicleTypeId,
             brandId: brand.id,
           },
         });
@@ -278,8 +291,11 @@ async function main() {
     const userId = userByKey.get(item.seller);
     if (!userId) throw new Error(`Vendedor no encontrado: ${item.seller}`);
 
+    const vehicleTypeId = vehicleTypeByCode.get(item.vehicleType);
+    if (!vehicleTypeId) throw new Error(`VehicleTypeCatalog no tiene una fila para "${item.vehicleType}".`);
+
     const sharedData = {
-      vehicleType: item.vehicleType,
+      vehicleTypeId,
       brandId: brand.id,
       modelId,
       year: item.year,

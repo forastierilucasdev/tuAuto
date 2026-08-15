@@ -5,6 +5,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Catálogo administrable: Fase 3/10, migrar Model/Listing del enum VehicleType a vehicleTypeId
+La fase de mayor riesgo del proyecto: `Model.vehicleType`/`Listing.vehicleType` pasan del enum fijo de Postgres a una FK real contra `VehicleTypeCatalog` (sembrada en la Fase 2). Backfill 100% determinístico, verificado contra la base real antes y después de aplicar (0 filas sin match; mismos totales — 60 Model, 38 Listing — después de migrar).
+
+- Migración manual en 8 pasos (columna nueva nullable → `UPDATE` por código → `NOT NULL` → recrear índices con los nombres exactos → drop de lo viejo → `DROP TYPE`) — el mismo procedimiento no interactivo de siempre, pero con el backfill intercalado a mano porque un `migrate diff` directo hubiera intentado poner la columna `NOT NULL` sin datos.
+- Filtros por tipo de vehículo (catálogo público, admin, cascada Tipo→Marca→Modelo→Año) pasan de comparar un valor crudo a un filtro de relación por `code` (`where.vehicleType = { code: "AUTO" }`) — mismo criterio que ya usan `brandSlug`/`modelSlug`, nunca se filtra por el `id` interno de la fila.
+- ~14 archivos actualizados (cascada de taxonomía, `createListing`, filtros del catálogo, el wizard, `prisma/seed.ts`) — ninguno tenía lógica condicional compleja sobre el valor, así que el cambio fue mecánico en casi todos los casos.
+- **Todavía no está completo el círculo**: el wizard sigue leyendo `VEHICLE_TYPES` (constante hardcodeada), no `VehicleTypeCatalog` — un tipo nuevo creado en `/admin/vehiculos` (Fase 2) no es seleccionable todavía al publicar. Queda para una fase siguiente.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado exhaustivamente: conteo pre-migración (0 filas sin match), migración aplicada, conteo post-migración idéntico, cascada de taxonomía + filtro de catálogo + ciclo completo de `createListing` contra datos reales (creado/verificado/borrado), y servidor de desarrollo con requests reales a home/catálogo con filtro de tipo/detalle de publicación/`/admin/vehiculos`.
+
 ### Added (2026-08-14) — Catálogo administrable: Fase 2/10, VehicleTypeCatalog + CRUD admin de Tipos
 - Nueva tabla `VehicleTypeCatalog` (migración aditiva), sembrada con los 7 valores actuales del enum `VehicleType` y su metadata de presentación/reglas (mismos datos que `VEHICLE_TYPES` en `constants.ts`: nombre, ícono, si usa kilómetros/horas, si tiene transmisión).
 - **Todavía no conectada al sitio en vivo**: `Model`/`Listing` siguen usando el enum viejo — esta fase solo prepara la tabla y su administración; la Fase 3 hace la migración real.

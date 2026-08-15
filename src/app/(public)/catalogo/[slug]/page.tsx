@@ -70,7 +70,7 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
   const businessName = listing.user.agencyProfile?.businessName;
   const contactAddress = listing.contactAddress ?? listing.user.agencyProfile?.address ?? null;
 
-  const mileageUnit = mileageUnitFor(listing.vehicleType);
+  const mileageUnit = mileageUnitFor(listing.vehicleType.code);
 
   const whatsappHref = buildWhatsAppLink(
     listing.user.phone,

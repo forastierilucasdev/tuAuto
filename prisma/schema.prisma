@@ -13,16 +13,6 @@ enum AccountType {
   CONCESIONARIA
 }
 
-enum VehicleType {
-  AUTO
-  CAMIONETA
-  MOTO
-  BICICLETA
-  MONOPATIN
-  LANCHA
-  BARCO
-}
-
 enum ListingStatus {
   DRAFT
   ACTIVE
@@ -200,6 +190,9 @@ model VehicleTypeCatalog {
   isActive         Boolean  @default(true)
   sortOrder        Int      @default(0)
   createdAt        DateTime @default(now())
+
+  models   Model[]
+  listings Listing[]
 }
 
 model Brand {
@@ -214,18 +207,19 @@ model Brand {
 }
 
 model Model {
-  id          String      @id @default(cuid())
-  name        String
-  slug        String
-  vehicleType VehicleType
-  brandId     String
-  brand       Brand       @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  createdAt   DateTime    @default(now())
+  id            String             @id @default(cuid())
+  name          String
+  slug          String
+  vehicleTypeId String
+  vehicleType   VehicleTypeCatalog @relation(fields: [vehicleTypeId], references: [id])
+  brandId       String
+  brand         Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt     DateTime           @default(now())
 
   listings Listing[]
 
-  @@unique([brandId, vehicleType, name])
-  @@index([vehicleType, brandId])
+  @@unique([brandId, vehicleTypeId, name])
+  @@index([vehicleTypeId, brandId])
 }
 
 model Listing {
@@ -234,12 +228,13 @@ model Listing {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  vehicleType VehicleType
-  brandId     String
-  brand       Brand       @relation(fields: [brandId], references: [id])
-  modelId     String
-  model       Model       @relation(fields: [modelId], references: [id])
-  year        Int
+  vehicleTypeId String
+  vehicleType   VehicleTypeCatalog @relation(fields: [vehicleTypeId], references: [id])
+  brandId       String
+  brand         Brand              @relation(fields: [brandId], references: [id])
+  modelId       String
+  model         Model              @relation(fields: [modelId], references: [id])
+  year          Int
 
   title       String
   version     String?
@@ -295,7 +290,7 @@ model Listing {
   updatedAt DateTime @updatedAt
 
   @@index([status, featured, createdAt])
-  @@index([vehicleType, brandId, modelId, year])
+  @@index([vehicleTypeId, brandId, modelId, year])
   @@index([condition])
   @@index([price])
   @@index([mileageKm])

@@ -32,7 +32,7 @@ import {
   updateListingAction,
   type ListingActionState,
 } from "@/server/actions/listing.actions";
-import type { VehicleCondition, VehicleType } from "@/generated/prisma/client";
+import type { VehicleCondition } from "@/generated/prisma/client";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 40 }, (_, i) => CURRENT_YEAR + 1 - i);
@@ -50,7 +50,8 @@ type ListingFormProps = {
       listingId: string;
       /** Si la publicación va a volver a estar activa al guardar (borrador/reservada/pausada/vencida). */
       isReactivation: boolean;
-      vehicleType: VehicleType;
+      /** Código de `VehicleTypeCatalog` (ej. "AUTO"). */
+      vehicleType: string;
       brandSlug: string;
       brandName: string;
       modelSlug: string;
@@ -92,7 +93,7 @@ export function ListingForm(props: ListingFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
 
   // --- Datos principales (bloqueados en modo "edit": vienen de la publicación existente) ---
-  const [vehicleType, setVehicleType] = React.useState<VehicleType | "">(isEdit ? props.vehicleType : "");
+  const [vehicleType, setVehicleType] = React.useState(isEdit ? props.vehicleType : "");
   const [brandSlug, setBrandSlug] = React.useState(isEdit ? props.brandSlug : "");
   const [modelSlug, setModelSlug] = React.useState(isEdit ? props.modelSlug : "");
   const [year, setYear] = React.useState(isEdit ? String(props.year) : "");
@@ -410,7 +411,7 @@ export function ListingForm(props: ListingFormProps) {
                   aria-invalid={showInvalid(!vehicleType)}
                   disabled={isEdit}
                   onChange={(e) => {
-                    setVehicleType(e.target.value as VehicleType | "");
+                    setVehicleType(e.target.value);
                     setBrandSlug("");
                     setModelSlug("");
                   }}

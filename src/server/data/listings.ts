@@ -1,12 +1,13 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import type { AccountType, Currency, ListingStatus, Prisma, VehicleCondition, VehicleType } from "@/generated/prisma/client";
+import type { AccountType, Currency, ListingStatus, Prisma, VehicleCondition } from "@/generated/prisma/client";
 import type { VehicleCardData } from "@/types/vehicle";
 import { FALLBACK_IMAGE } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
 
 export type CatalogFilters = {
-  vehicleType?: VehicleType;
+  /** Código de `VehicleTypeCatalog` (ej. "AUTO") — mismo criterio que `brandSlug`/`modelSlug`, nunca el `id` interno. */
+  vehicleType?: string;
   brandSlug?: string;
   modelSlug?: string;
   year?: number;
@@ -24,6 +25,7 @@ export type CatalogFilters = {
 const CARD_INCLUDE = {
   images: { orderBy: { order: "asc" as const }, take: 1 },
   user: { select: { accountType: true } },
+  vehicleType: { select: { code: true } },
 } satisfies Prisma.ListingInclude;
 
 type ListingWithCardData = Prisma.ListingGetPayload<{ include: typeof CARD_INCLUDE }>;
@@ -38,7 +40,7 @@ export function toVehicleCardData(listing: ListingWithCardData): VehicleCardData
     mileageKm: listing.mileageKm,
     imageUrl: listing.images[0]?.url ?? FALLBACK_IMAGE,
     featured: getEffectiveFeatured(listing.featured, listing.featuredUntil),
-    vehicleType: listing.vehicleType,
+    vehicleType: listing.vehicleType.code,
     condition: listing.condition,
     city: listing.city,
     province: listing.province,
@@ -117,7 +119,7 @@ function effectivelyFeaturedWhere(featured: boolean): Prisma.ListingWhereInput {
 function buildWhere(filters: CatalogFilters): Prisma.ListingWhereInput {
   const where: Prisma.ListingWhereInput = visibleStatusWhere();
 
-  if (filters.vehicleType) where.vehicleType = filters.vehicleType;
+  if (filters.vehicleType) where.vehicleType = { code: filters.vehicleType };
   if (filters.brandSlug) where.brand = { slug: filters.brandSlug };
   if (filters.modelSlug) where.model = { slug: filters.modelSlug };
   if (filters.year) where.year = filters.year;
@@ -212,6 +214,7 @@ export async function getListingBySlug(slug: string, viewerUserId?: string) {
     where: { slug },
     include: {
       images: { orderBy: { order: "asc" } },
+      vehicleType: true,
       brand: true,
       model: true,
       user: {
@@ -472,7 +475,8 @@ function buildActivationEffect(
 
 export async function createListing(input: {
   userId: string;
-  vehicleType: VehicleType;
+  /** Código de `VehicleTypeCatalog` (ej. "AUTO"), no el `id` interno. */
+  vehicleType: string;
   brandSlug: string;
   modelSlug: string;
   year: number;
@@ -500,9 +504,10 @@ export async function createListing(input: {
     assertAvailable(activation.available);
   }
 
+  const vehicleTypeRow = await prisma.vehicleTypeCatalog.findUniqueOrThrow({ where: { code: input.vehicleType } });
   const brand = await prisma.brand.findUniqueOrThrow({ where: { slug: input.brandSlug } });
   const model = await prisma.model.findFirstOrThrow({
-    where: { slug: input.modelSlug, brandId: brand.id, vehicleType: input.vehicleType },
+    where: { slug: input.modelSlug, brandId: brand.id, vehicleTypeId: vehicleTypeRow.id },
   });
 
   // El título siempre se compone Marca + Modelo + Año, nunca es texto libre.
@@ -521,7 +526,7 @@ export async function createListing(input: {
   const listingData = {
     slug,
     userId: input.userId,
-    vehicleType: input.vehicleType,
+    vehicleTypeId: vehicleTypeRow.id,
     brandId: brand.id,
     modelId: model.id,
     year: input.year,
@@ -737,7 +742,7 @@ export async function deleteOwnedListing(listingId: string, userId: string) {
 export async function getOwnedListingForEdit(listingId: string, userId: string) {
   return prisma.listing.findFirst({
     where: { id: listingId, userId, deletedAt: null },
-    include: { images: { orderBy: { order: "asc" } }, brand: true, model: true },
+    include: { images: { orderBy: { order: "asc" } }, vehicleType: true, brand: true, model: true },
   });
 }
 

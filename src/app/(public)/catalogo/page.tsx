@@ -6,7 +6,7 @@ import { CatalogFiltersDrawer } from "@/components/vehicles/CatalogFiltersDrawer
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import { VehicleRequestCta } from "@/components/vehicles/VehicleRequestCta";
 import { getCatalogResults } from "@/server/data/listings";
-import type { AccountType, Currency, VehicleCondition, VehicleType } from "@/generated/prisma/client";
+import type { AccountType, Currency, VehicleCondition } from "@/generated/prisma/client";
 
 export const metadata: Metadata = { title: "Catálogo" };
 
@@ -25,7 +25,7 @@ export default async function CatalogoPage(props: PageProps<"/catalogo">) {
   const sp = await props.searchParams;
 
   const filters = {
-    vehicleType: param(sp, "tipo") as VehicleType | undefined,
+    vehicleType: param(sp, "tipo"),
     brandSlug: param(sp, "marca"),
     modelSlug: param(sp, "modelo"),
     year: paramNumber(sp, "anio"),

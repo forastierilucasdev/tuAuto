@@ -274,6 +274,22 @@ armado (se documenta en detalle a medida que cada fase se completa).
   admin elige un nombre de un `<select>` contra ese whitelist, nunca se
   importa un ícono dinámicamente por string (cero riesgo de ejecutar código
   arbitrario); si el string guardado no matchea (dato corrupto), cae a `Car`.
+- **Fase 3 (la de mayor riesgo)**: `Model.vehicleType`/`Listing.vehicleType`
+  pasan del enum a una FK real contra `VehicleTypeCatalog` — mismo criterio
+  que ya tienen `brandId`/`modelId`. Migración con backfill manual (columna
+  nueva nullable → `UPDATE ... WHERE code = vehicleType::text` → `NOT NULL`
+  → recrear `@@unique`/`@@index` con los nombres exactos que Prisma espera
+  → drop de la columna/índices viejos → `DROP TYPE`), verificada contra la
+  base real antes (0 filas sin match) y después (mismos totales) de aplicar.
+  Todo filtro por tipo de vehículo (catálogo público, admin, cascada de
+  taxonomía) pasa de comparar un valor crudo a un filtro de relación por
+  `code` (`where.vehicleType = { code: "AUTO" }`) — igual que ya hacían
+  `brandSlug`/`modelSlug` contra sus tablas, nunca se filtra por el `id`
+  interno de `VehicleTypeCatalog`. **Todavía no está completo el círculo**:
+  `VEHICLE_TYPES` (`constants.ts`) sigue siendo la fuente que alimenta el
+  `<select>` de Tipo en el wizard/filtros — un tipo nuevo creado desde
+  `/admin/vehiculos` no es seleccionable todavía al publicar, eso queda para
+  una fase siguiente (wire completo: leer tipos activos desde la tabla).
 
 ## 8. Despliegue
 
