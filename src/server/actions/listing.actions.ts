@@ -53,8 +53,11 @@ export async function createListingAction(
   const raw = Object.fromEntries(formData);
   const parsed = createListingSchema.safeParse({
     vehicleType: raw.vehicleType,
-    brandSlug: raw.brandSlug,
-    modelSlug: raw.modelSlug,
+    brandSlug: raw.brandSlug || undefined,
+    modelSlug: raw.modelSlug || undefined,
+    pendingBrandName: raw.pendingBrandName || undefined,
+    pendingModelName: raw.pendingModelName || undefined,
+    pendingVersionName: raw.pendingVersionName || undefined,
     year: raw.year,
     versionSlug: raw.versionSlug || undefined,
     condition: raw.condition,
@@ -68,6 +71,7 @@ export async function createListingAction(
     mileageKm: raw.mileageKm || undefined,
     localitySlug: raw.localitySlug || undefined,
     provinceSlug: raw.provinceSlug || undefined,
+    pendingLocalityName: raw.pendingLocalityName || undefined,
     contactAddress: raw.contactAddress || undefined,
   });
   if (!parsed.success) {

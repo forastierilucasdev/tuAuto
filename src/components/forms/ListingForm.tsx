@@ -24,6 +24,8 @@ import {
 } from "@/lib/constants";
 import { useVehicleTaxonomy } from "@/hooks/useVehicleTaxonomy";
 import { useLocationTaxonomy } from "@/hooks/useLocationTaxonomy";
+import { VehicleNotListedModal, type PendingVehicle } from "@/components/forms/VehicleNotListedModal";
+import { LocalityNotListedModal, type PendingLocality } from "@/components/forms/LocalityNotListedModal";
 import { cn, formatCurrency, formatKm } from "@/lib/utils";
 import {
   createListingAction,
@@ -119,11 +121,20 @@ export function ListingForm(props: ListingFormProps) {
     models.find((m) => m.slug === modelSlug)?.name ?? (isEdit ? props.modelName : "");
   const selectedVersionName =
     versions.find((v) => v.slug === versionSlug)?.name ?? (isEdit ? (props.versionName ?? "") : "");
+  // "¿Tu vehículo no está en la lista?" — solo tiene sentido al publicar
+  // (nunca en modo edición, una publicación pendiente no se edita con el
+  // wizard hasta que se apruebe, ver la página que lo renderiza). Mientras
+  // esté seteado, reemplaza el bloque Tipo/Marca/Modelo/Versión/Año normal
+  // por un resumen fijo (ver el paso "datos" más abajo).
+  const [pendingVehicle, setPendingVehicle] = React.useState<PendingVehicle | null>(null);
+  // El tipo "efectivo" alimenta las reglas de km/transmisión aunque el
+  // vehículo esté pendiente (su Tipo sigue siendo real, elegido en el modal).
+  const effectiveVehicleType = pendingVehicle ? pendingVehicle.vehicleType : vehicleType;
   // El wizard se adapta según el tipo de vehículo: kilometraje solo en
   // autos/camionetas/monopatines, "horas de uso" en lanchas/barcos, y
   // transmisión solo en autos/camionetas (ver lib/constants.ts).
-  const mileageUnit = mileageUnitFor(vehicleType);
-  const showTransmission = usesTransmission(vehicleType);
+  const mileageUnit = mileageUnitFor(effectiveVehicleType);
+  const showTransmission = usesTransmission(effectiveVehicleType);
 
   // --- Precio ---
   const [price, setPrice] = React.useState(isEdit ? String(props.defaultValues.price) : "");
@@ -149,6 +160,8 @@ export function ListingForm(props: ListingFormProps) {
     provinces.find((p) => p.slug === provinceSlug)?.name ?? (isEdit ? (props.provinceName ?? "") : "");
   const selectedLocalityName =
     localities.find((l) => l.slug === localitySlug)?.name ?? (isEdit ? (props.localityName ?? "") : "");
+  // "¿No encontrás tu localidad?" — mismo criterio que `pendingVehicle`.
+  const [pendingLocality, setPendingLocality] = React.useState<PendingLocality | null>(null);
 
   // --- Contacto ---
   const [contactAddress, setContactAddress] = React.useState(
@@ -263,7 +276,7 @@ export function ListingForm(props: ListingFormProps) {
   const precioStepIndex = STEPS.findIndex((s) => s.id === "precio");
   const fotosStepIndex = STEPS.findIndex((s) => s.id === "fotos");
 
-  if (!isEdit) {
+  if (!isEdit && !pendingVehicle) {
     if (!vehicleType) missingFields.push({ stepIndex: datosStepIndex, stepLabel: "Datos principales", fieldLabel: "Tipo de vehículo" });
     if (!brandSlug) missingFields.push({ stepIndex: datosStepIndex, stepLabel: "Datos principales", fieldLabel: "Marca" });
     if (!modelSlug) missingFields.push({ stepIndex: datosStepIndex, stepLabel: "Datos principales", fieldLabel: "Modelo" });
@@ -274,12 +287,17 @@ export function ListingForm(props: ListingFormProps) {
     missingFields.push({ stepIndex: fotosStepIndex, stepLabel: "Fotos", fieldLabel: "Al menos una foto" });
   }
 
+  // Con datos cargados a mano (vehículo y/o localidad), la publicación
+  // queda pendiente de aprobación en vez de publicarse directo — ver el
+  // aviso en el paso "revisar" y el modal de confirmación más abajo.
+  const hasPendingData = Boolean(pendingVehicle) || Boolean(pendingLocality);
+
   const showInvalid = (missing: boolean) => hasReachedReview && missing;
 
   function canProceed(): boolean {
     switch (currentStep) {
       case "datos":
-        return Boolean(vehicleType && brandSlug && modelSlug && year);
+        return pendingVehicle ? true : Boolean(vehicleType && brandSlug && modelSlug && year);
       case "precio":
         return Boolean(price);
       case "fotos":
@@ -338,14 +356,21 @@ export function ListingForm(props: ListingFormProps) {
     if (isEdit) {
       formData.set("listingId", props.listingId);
     } else {
-      formData.set("vehicleType", vehicleType);
-      formData.set("brandSlug", brandSlug);
-      formData.set("modelSlug", modelSlug);
-      formData.set("year", year);
+      formData.set("vehicleType", effectiveVehicleType);
+      if (pendingVehicle) {
+        formData.set("pendingBrandName", pendingVehicle.brandName);
+        formData.set("pendingModelName", pendingVehicle.modelName);
+        formData.set("pendingVersionName", pendingVehicle.versionName);
+        formData.set("year", pendingVehicle.year);
+      } else {
+        formData.set("brandSlug", brandSlug);
+        formData.set("modelSlug", modelSlug);
+        formData.set("year", year);
+      }
       if (status) formData.set("status", status);
     }
 
-    formData.set("versionSlug", versionSlug);
+    if (!pendingVehicle) formData.set("versionSlug", versionSlug);
     // Solo se manda transmisión/kilometraje si el tipo de vehículo elegido
     // los usa — evita guardar un dato que no tiene sentido para ese tipo
     // (ej. transmisión en una moto, o km en una bicicleta).
@@ -357,8 +382,13 @@ export function ListingForm(props: ListingFormProps) {
     if (acceptsTrade) formData.set("acceptsTrade", "on");
     if (acceptsFinancing) formData.set("acceptsFinancing", "on");
     if (mileageUnit) formData.set("mileageKm", mileageKm);
-    formData.set("localitySlug", localitySlug);
-    formData.set("provinceSlug", provinceSlug);
+    if (pendingLocality) {
+      formData.set("provinceSlug", pendingLocality.provinceSlug);
+      formData.set("pendingLocalityName", pendingLocality.localityName);
+    } else {
+      formData.set("localitySlug", localitySlug);
+      formData.set("provinceSlug", provinceSlug);
+    }
     formData.set("contactAddress", contactAddress);
     formData.set("description", description);
     for (const { file } of photos) formData.append("images", file);
@@ -419,140 +449,169 @@ export function ListingForm(props: ListingFormProps) {
                 usándose para publicar un vehículo distinto.
               </p>
             )}
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="vehicleType">Tipo de vehículo</Label>
-                <Select
-                  id="vehicleType"
-                  value={vehicleType}
-                  aria-invalid={showInvalid(!vehicleType)}
-                  disabled={isEdit}
-                  onChange={(e) => {
-                    setVehicleType(e.target.value);
-                    setBrandSlug("");
-                    setModelSlug("");
-                  }}
+            {pendingVehicle ? (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                <p className="font-medium text-primary">Vehículo cargado a mano (pendiente de aprobación)</p>
+                <p className="mt-1 text-foreground">
+                  {pendingVehicle.vehicleTypeLabel} — {pendingVehicle.brandName} {pendingVehicle.modelName}{" "}
+                  {pendingVehicle.versionName} ({pendingVehicle.year})
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setPendingVehicle(null)}
+                  className="mt-2 text-xs font-medium text-primary hover:underline"
                 >
-                  <option value="">Elegí un tipo</option>
-                  {VEHICLE_TYPES.map((t) => (
+                  Quitar y elegir de la lista
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="vehicleType">Tipo de vehículo</Label>
+                    <Select
+                      id="vehicleType"
+                      value={vehicleType}
+                      aria-invalid={showInvalid(!vehicleType)}
+                      disabled={isEdit}
+                      onChange={(e) => {
+                        setVehicleType(e.target.value);
+                        setBrandSlug("");
+                        setModelSlug("");
+                      }}
+                    >
+                      <option value="">Elegí un tipo</option>
+                      {VEHICLE_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <FieldError messages={state?.fieldErrors?.vehicleType} />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="year">Año</Label>
+                    <Select
+                      id="year"
+                      value={year}
+                      aria-invalid={showInvalid(!year)}
+                      disabled={isEdit}
+                      onChange={(e) => setYear(e.target.value)}
+                    >
+                      <option value="">Elegí un año</option>
+                      {YEARS.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </Select>
+                    <FieldError messages={state?.fieldErrors?.year} />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="brandSlug">Marca</Label>
+                    <Select
+                      id="brandSlug"
+                      value={brandSlug}
+                      aria-invalid={showInvalid(!brandSlug)}
+                      onChange={(e) => {
+                        setBrandSlug(e.target.value);
+                        setModelSlug("");
+                      }}
+                      disabled={isEdit || !vehicleType}
+                    >
+                      <option value="">Elegí una marca</option>
+                      {brands.map((b) => (
+                        <option key={b.id} value={b.slug}>
+                          {b.name}
+                        </option>
+                      ))}
+                      {isEdit && !brands.some((b) => b.slug === brandSlug) && (
+                        <option value={brandSlug}>{props.mode === "edit" ? props.brandName : ""}</option>
+                      )}
+                    </Select>
+                    <FieldError messages={state?.fieldErrors?.brandSlug} />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="modelSlug">Modelo</Label>
+                    <Select
+                      id="modelSlug"
+                      value={modelSlug}
+                      aria-invalid={showInvalid(!modelSlug)}
+                      onChange={(e) => {
+                        setModelSlug(e.target.value);
+                        setVersionSlug("");
+                      }}
+                      disabled={isEdit || !brandSlug}
+                    >
+                      <option value="">Elegí un modelo</option>
+                      {models.map((m) => (
+                        <option key={m.id} value={m.slug}>
+                          {m.name}
+                        </option>
+                      ))}
+                      {isEdit && !models.some((m) => m.slug === modelSlug) && (
+                        <option value={modelSlug}>{props.mode === "edit" ? props.modelName : ""}</option>
+                      )}
+                    </Select>
+                    <FieldError messages={state?.fieldErrors?.modelSlug} />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="versionSlug">Versión (opcional)</Label>
+                  <Select
+                    id="versionSlug"
+                    value={versionSlug}
+                    onChange={(e) => setVersionSlug(e.target.value)}
+                    disabled={!modelSlug}
+                  >
+                    <option value="">Sin versión especificada</option>
+                    {versions.map((v) => (
+                      <option key={v.id} value={v.slug}>
+                        {v.name}
+                      </option>
+                    ))}
+                    {isEdit && versionSlug && !versions.some((v) => v.slug === versionSlug) && (
+                      <option value={versionSlug}>{props.mode === "edit" ? (props.versionName ?? "") : ""}</option>
+                    )}
+                  </Select>
+                  {isEdit && !versionSlug && props.defaultValues.version && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Versión actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.version}
+                      &quot;. Si aparece en la lista, elegila para dejarla vinculada.
+                    </p>
+                  )}
+                </div>
+
+                {!isEdit && (
+                  <VehicleNotListedModal
+                    onSave={(data) => {
+                      setPendingVehicle(data);
+                      setBrandSlug("");
+                      setModelSlug("");
+                      setVersionSlug("");
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {showTransmission && (
+              <div>
+                <Label htmlFor="transmission">Transmisión</Label>
+                <Select id="transmission" value={transmission} onChange={(e) => setTransmission(e.target.value)}>
+                  <option value="">No especifica</option>
+                  {TRANSMISSION_OPTIONS.map((t) => (
                     <option key={t.value} value={t.value}>
                       {t.label}
                     </option>
                   ))}
                 </Select>
-                <FieldError messages={state?.fieldErrors?.vehicleType} />
               </div>
-
-              <div>
-                <Label htmlFor="year">Año</Label>
-                <Select
-                  id="year"
-                  value={year}
-                  aria-invalid={showInvalid(!year)}
-                  disabled={isEdit}
-                  onChange={(e) => setYear(e.target.value)}
-                >
-                  <option value="">Elegí un año</option>
-                  {YEARS.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </Select>
-                <FieldError messages={state?.fieldErrors?.year} />
-              </div>
-
-              <div>
-                <Label htmlFor="brandSlug">Marca</Label>
-                <Select
-                  id="brandSlug"
-                  value={brandSlug}
-                  aria-invalid={showInvalid(!brandSlug)}
-                  onChange={(e) => {
-                    setBrandSlug(e.target.value);
-                    setModelSlug("");
-                  }}
-                  disabled={isEdit || !vehicleType}
-                >
-                  <option value="">Elegí una marca</option>
-                  {brands.map((b) => (
-                    <option key={b.id} value={b.slug}>
-                      {b.name}
-                    </option>
-                  ))}
-                  {isEdit && !brands.some((b) => b.slug === brandSlug) && (
-                    <option value={brandSlug}>{props.mode === "edit" ? props.brandName : ""}</option>
-                  )}
-                </Select>
-                <FieldError messages={state?.fieldErrors?.brandSlug} />
-              </div>
-
-              <div>
-                <Label htmlFor="modelSlug">Modelo</Label>
-                <Select
-                  id="modelSlug"
-                  value={modelSlug}
-                  aria-invalid={showInvalid(!modelSlug)}
-                  onChange={(e) => {
-                    setModelSlug(e.target.value);
-                    setVersionSlug("");
-                  }}
-                  disabled={isEdit || !brandSlug}
-                >
-                  <option value="">Elegí un modelo</option>
-                  {models.map((m) => (
-                    <option key={m.id} value={m.slug}>
-                      {m.name}
-                    </option>
-                  ))}
-                  {isEdit && !models.some((m) => m.slug === modelSlug) && (
-                    <option value={modelSlug}>{props.mode === "edit" ? props.modelName : ""}</option>
-                  )}
-                </Select>
-                <FieldError messages={state?.fieldErrors?.modelSlug} />
-              </div>
-            </div>
-
-            <div className={cn("grid gap-5", showTransmission && "sm:grid-cols-2")}>
-              <div>
-                <Label htmlFor="versionSlug">Versión (opcional)</Label>
-                <Select
-                  id="versionSlug"
-                  value={versionSlug}
-                  onChange={(e) => setVersionSlug(e.target.value)}
-                  disabled={!modelSlug}
-                >
-                  <option value="">Sin versión especificada</option>
-                  {versions.map((v) => (
-                    <option key={v.id} value={v.slug}>
-                      {v.name}
-                    </option>
-                  ))}
-                  {isEdit && versionSlug && !versions.some((v) => v.slug === versionSlug) && (
-                    <option value={versionSlug}>{props.mode === "edit" ? (props.versionName ?? "") : ""}</option>
-                  )}
-                </Select>
-                {isEdit && !versionSlug && props.defaultValues.version && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Versión actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.version}&quot;.
-                    Si aparece en la lista, elegila para dejarla vinculada.
-                  </p>
-                )}
-              </div>
-              {showTransmission && (
-                <div>
-                  <Label htmlFor="transmission">Transmisión</Label>
-                  <Select id="transmission" value={transmission} onChange={(e) => setTransmission(e.target.value)}>
-                    <option value="">No especifica</option>
-                    {TRANSMISSION_OPTIONS.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-              )}
-            </div>
+            )}
 
             <div className={cn("grid gap-5", mileageUnit && "sm:grid-cols-2")}>
               {mileageUnit && (
@@ -649,59 +708,87 @@ export function ListingForm(props: ListingFormProps) {
         )}
 
         {currentStep === "ubicacion" && (
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="provinceSlug">Provincia</Label>
-              <Select
-                id="provinceSlug"
-                value={provinceSlug}
-                onChange={(e) => {
-                  setProvinceSlug(e.target.value);
-                  setLocalitySlug("");
-                }}
-              >
-                <option value="">Elegí una provincia</option>
-                {provinces.map((p) => (
-                  <option key={p.id} value={p.slug}>
-                    {p.name}
-                  </option>
-                ))}
-                {isEdit && provinceSlug && !provinces.some((p) => p.slug === provinceSlug) && (
-                  <option value={provinceSlug}>{props.mode === "edit" ? (props.provinceName ?? "") : ""}</option>
-                )}
-              </Select>
-              {isEdit && !provinceSlug && props.defaultValues.province && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Provincia actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.province}&quot;.
-                  Si aparece en la lista, elegila para dejarla vinculada.
+          <div className="space-y-5">
+            {pendingLocality ? (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                <p className="font-medium text-primary">Localidad cargada a mano (pendiente de aprobación)</p>
+                <p className="mt-1 text-foreground">
+                  {pendingLocality.provinceName} — {pendingLocality.localityName}
                 </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="localitySlug">Localidad</Label>
-              <Select
-                id="localitySlug"
-                value={localitySlug}
-                onChange={(e) => setLocalitySlug(e.target.value)}
-                disabled={!provinceSlug}
-              >
-                <option value="">{provinceSlug ? "Elegí una localidad" : "Elegí primero una provincia"}</option>
-                {localities.map((l) => (
-                  <option key={l.id} value={l.slug}>
-                    {l.name}
-                  </option>
-                ))}
-                {isEdit && localitySlug && !localities.some((l) => l.slug === localitySlug) && (
-                  <option value={localitySlug}>{props.mode === "edit" ? (props.localityName ?? "") : ""}</option>
+                <button
+                  type="button"
+                  onClick={() => setPendingLocality(null)}
+                  className="mt-2 text-xs font-medium text-primary hover:underline"
+                >
+                  Quitar y elegir de la lista
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="provinceSlug">Provincia</Label>
+                    <Select
+                      id="provinceSlug"
+                      value={provinceSlug}
+                      onChange={(e) => {
+                        setProvinceSlug(e.target.value);
+                        setLocalitySlug("");
+                      }}
+                    >
+                      <option value="">Elegí una provincia</option>
+                      {provinces.map((p) => (
+                        <option key={p.id} value={p.slug}>
+                          {p.name}
+                        </option>
+                      ))}
+                      {isEdit && provinceSlug && !provinces.some((p) => p.slug === provinceSlug) && (
+                        <option value={provinceSlug}>{props.mode === "edit" ? (props.provinceName ?? "") : ""}</option>
+                      )}
+                    </Select>
+                    {isEdit && !provinceSlug && props.defaultValues.province && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Provincia actual (texto libre, de antes de este catálogo): &quot;
+                        {props.defaultValues.province}&quot;. Si aparece en la lista, elegila para dejarla vinculada.
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="localitySlug">Localidad</Label>
+                    <Select
+                      id="localitySlug"
+                      value={localitySlug}
+                      onChange={(e) => setLocalitySlug(e.target.value)}
+                      disabled={!provinceSlug}
+                    >
+                      <option value="">{provinceSlug ? "Elegí una localidad" : "Elegí primero una provincia"}</option>
+                      {localities.map((l) => (
+                        <option key={l.id} value={l.slug}>
+                          {l.name}
+                        </option>
+                      ))}
+                      {isEdit && localitySlug && !localities.some((l) => l.slug === localitySlug) && (
+                        <option value={localitySlug}>{props.mode === "edit" ? (props.localityName ?? "") : ""}</option>
+                      )}
+                    </Select>
+                    {isEdit && !localitySlug && props.defaultValues.city && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Localidad actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.city}
+                        &quot;. Si aparece en la lista, elegila para dejarla vinculada.
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {!isEdit && (
+                  <LocalityNotListedModal
+                    onSave={(data) => {
+                      setPendingLocality(data);
+                      setLocalitySlug("");
+                    }}
+                  />
                 )}
-              </Select>
-              {isEdit && !localitySlug && props.defaultValues.city && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Localidad actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.city}&quot;.
-                  Si aparece en la lista, elegila para dejarla vinculada.
-                </p>
-              )}
-            </div>
+              </>
+            )}
           </div>
         )}
 
@@ -894,11 +981,31 @@ export function ListingForm(props: ListingFormProps) {
                 </ul>
               </div>
             )}
+            {hasPendingData && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-primary">
+                <p className="font-semibold">Esta publicación quedará pendiente de revisión</p>
+                <p className="mt-1">
+                  Cargaste datos que todavía no están en nuestro catálogo. Se publicará a la brevedad, luego de
+                  aprobados los datos ingresados — mientras tanto quedará inactiva y no se descontará ninguna
+                  publicación disponible de tu cuenta.
+                </p>
+              </div>
+            )}
             <p>
               <span className="text-muted-foreground">Vehículo:</span>{" "}
               <span className="font-medium text-foreground">
-                {vehicleTypeLabel(vehicleType)} {selectedBrandName} {selectedModelName} {year}
-                {selectedVersionName ? ` (${selectedVersionName})` : ""} · {conditionLabel(condition)}
+                {pendingVehicle ? (
+                  <>
+                    {pendingVehicle.vehicleTypeLabel} {pendingVehicle.brandName} {pendingVehicle.modelName}{" "}
+                    {pendingVehicle.year} ({pendingVehicle.versionName})
+                  </>
+                ) : (
+                  <>
+                    {vehicleTypeLabel(vehicleType)} {selectedBrandName} {selectedModelName} {year}
+                    {selectedVersionName ? ` (${selectedVersionName})` : ""}
+                  </>
+                )}{" "}
+                · {conditionLabel(condition)}
                 {showTransmission && transmission ? ` · ${transmissionLabel(transmission)}` : ""}
               </span>
             </p>
@@ -921,7 +1028,9 @@ export function ListingForm(props: ListingFormProps) {
             <p>
               <span className="text-muted-foreground">Ubicación:</span>{" "}
               <span className="font-medium text-foreground">
-                {[selectedProvinceName, selectedLocalityName].filter(Boolean).join(" - ") || "—"}
+                {pendingLocality
+                  ? `${pendingLocality.provinceName} - ${pendingLocality.localityName}`
+                  : [selectedProvinceName, selectedLocalityName].filter(Boolean).join(" - ") || "—"}
               </span>
             </p>
             <p>
@@ -990,10 +1099,18 @@ export function ListingForm(props: ListingFormProps) {
       <Modal
         open={confirmPublishOpen}
         onClose={() => setConfirmPublishOpen(false)}
-        title="¿Desea publicar tu anuncio?"
+        title={hasPendingData ? "¿Confirmás el envío a revisión?" : "¿Desea publicar tu anuncio?"}
       >
         <div className="space-y-3 text-sm">
-          <p className="text-muted-foreground">¿Querés revisar los datos antes de publicar?</p>
+          {hasPendingData ? (
+            <p className="text-muted-foreground">
+              Los datos ingresados serán validados por el administrador, una vez aprobados, la publicación será
+              visible en el catálogo del sitio, mientras tanto estará inactiva y no te descontará publicaciones
+              disponibles.
+            </p>
+          ) : (
+            <p className="text-muted-foreground">¿Querés revisar los datos antes de publicar?</p>
+          )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="primary" onClick={() => setConfirmPublishOpen(false)}>
               Sí, revisar
@@ -1006,7 +1123,7 @@ export function ListingForm(props: ListingFormProps) {
                 submitListing("ACTIVE");
               }}
             >
-              Publicar
+              {hasPendingData ? "Enviar a revisión" : "Publicar"}
             </Button>
           </div>
         </div>

@@ -52,29 +52,61 @@ export const vehicleTypeSchema = z.enum([
   "BARCO",
 ]);
 
-export const createListingSchema = z.object({
-  vehicleType: vehicleTypeSchema,
-  brandSlug: z.string().min(1, { error: "Elegí una marca." }),
-  modelSlug: z.string().min(1, { error: "Elegí un modelo." }),
-  year: z.coerce
-    .number()
-    .int()
-    .min(1950, { error: "Ingresá un año válido." })
-    .max(CURRENT_YEAR + 1, { error: "Ingresá un año válido." }),
-  versionSlug: versionSlugSchema,
-  condition: conditionSchema,
-  transmission: transmissionSchema,
-  description: descriptionSchema,
-  price: priceSchema,
-  currency: currencySchema,
-  priceNegotiable: checkboxSchema,
-  acceptsTrade: checkboxSchema,
-  acceptsFinancing: checkboxSchema,
-  mileageKm: mileageKmSchema,
-  localitySlug: localitySlugSchema,
-  provinceSlug: provinceSlugSchema,
-  contactAddress: contactAddressSchema,
-});
+// Texto tecleado a mano en el modal "¿Tu vehículo no está en la lista?"
+// (wizard) — mutuamente excluyente con `brandSlug`/`modelSlug` (nunca
+// ambos, nunca ninguno). El Tipo nunca es "pendiente", siempre se elige de
+// la lista fija — solo Marca/Modelo/Versión pueden faltar en el catálogo.
+const pendingVehicleTextSchema = z.string().trim().min(1).max(80).optional();
+
+// Mismo criterio para el modal "¿No encontrás tu localidad?" — mutuamente
+// excluyente con `localitySlug`, y exige una Provincia real (siempre se
+// elige de la lista fija de 24, nunca es texto libre).
+const pendingLocalityTextSchema = z.string().trim().min(1).max(80).optional();
+
+export const createListingSchema = z
+  .object({
+    vehicleType: vehicleTypeSchema,
+    brandSlug: z.string().trim().optional(),
+    modelSlug: z.string().trim().optional(),
+    pendingBrandName: pendingVehicleTextSchema,
+    pendingModelName: pendingVehicleTextSchema,
+    pendingVersionName: pendingVehicleTextSchema,
+    year: z.coerce
+      .number()
+      .int()
+      .min(1950, { error: "Ingresá un año válido." })
+      .max(CURRENT_YEAR + 1, { error: "Ingresá un año válido." }),
+    versionSlug: versionSlugSchema,
+    condition: conditionSchema,
+    transmission: transmissionSchema,
+    description: descriptionSchema,
+    price: priceSchema,
+    currency: currencySchema,
+    priceNegotiable: checkboxSchema,
+    acceptsTrade: checkboxSchema,
+    acceptsFinancing: checkboxSchema,
+    mileageKm: mileageKmSchema,
+    localitySlug: localitySlugSchema,
+    provinceSlug: provinceSlugSchema,
+    pendingLocalityName: pendingLocalityTextSchema,
+    contactAddress: contactAddressSchema,
+  })
+  .refine((data) => Boolean(data.brandSlug && data.modelSlug) !== Boolean(data.pendingBrandName), {
+    error: "Elegí una marca/modelo de la lista, o cargalos a mano desde \"¿Tu vehículo no está en la lista?\".",
+    path: ["brandSlug"],
+  })
+  .refine((data) => !data.pendingBrandName || Boolean(data.pendingModelName && data.pendingVersionName), {
+    error: "Completá marca, modelo y versión en el modal de carga manual.",
+    path: ["pendingModelName"],
+  })
+  .refine((data) => !(data.localitySlug && data.pendingLocalityName), {
+    error: "Elegí una localidad de la lista, o cargala a mano — no las dos a la vez.",
+    path: ["localitySlug"],
+  })
+  .refine((data) => !data.pendingLocalityName || Boolean(data.provinceSlug), {
+    error: "Elegí la provincia antes de cargar una localidad a mano.",
+    path: ["provinceSlug"],
+  });
 
 export const updateListingSchema = z.object({
   versionSlug: versionSlugSchema,

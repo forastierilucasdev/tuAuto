@@ -239,7 +239,7 @@ El cupo de publicaciones **es un solo pozo combinado, no tres cupos independient
   - `adminReorderListingImagesAction`: en vez de duplicar la validación de integridad (misma cantidad/IDs) que ya tiene `reorderListingImages()` del dueño, la reusa tal cual pasándole el `userId` **real** del dueño de la publicación — el chequeo de ownership pasa trivialmente porque es cierto, sin necesidad de una función paralela.
   - El wizard de admin nunca cambia `status` (eso sigue siendo trabajo de "Estado" en la página de detalle) — `isReactivation` se pasa siempre en `false`.
 
-### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 6/10 (Fase 9)
+### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 7/10 (Fase 9)
 
 Proyecto grande, planificado en modo plan y aprobado explícitamente antes de
 tocar código — dos secciones nuevas de admin ("Ubicación": provincias/
@@ -420,6 +420,36 @@ armado (se documenta en detalle a medida que cada fase se completa).
     vinculados a esa solicitud — una aprobación puede destrabar varios
     listings de distintos usuarios a la vez. **No tocan `status`** — eso
     es "Validar datos" (Fase 9), un paso deliberadamente separado.
+- **Fase 7**: los modales que conectan el wizard con la Fase 6 —
+  `VehicleNotListedModal.tsx`/`LocalityNotListedModal.tsx`
+  (`components/forms/`), disparados por "¿Tu vehículo no está en la
+  lista?"/"¿No encontrás tu localidad?" debajo del bloque de selects
+  correspondiente en `ListingForm.tsx`.
+  - Cada modal es **autocontenido**: el de vehículo tiene su propio Tipo
+    (select, real) y Año (select, real) además de Marca/Modelo/Versión
+    (texto libre); el de localidad tiene su propia Provincia (select,
+    real) además de Localidad (texto libre) — ninguno reusa el estado del
+    paso principal del wizard. Al guardar, `ListingForm` reemplaza el
+    bloque de selects normal por un resumen fijo con un botón "Quitar y
+    elegir de la lista" para volver atrás.
+  - **"Guardar" del modal no llama a ningún Server Action** — solo junta
+    los datos en el estado local del wizard (`pendingVehicle`/
+    `pendingLocality`). El `TaxonomyRequest`/`LocalityRequest` real recién
+    se crea dentro de `createListing`, y solo si el usuario efectivamente
+    termina publicando — así abandonar el wizard a mitad de camino nunca
+    deja una solicitud huérfana en la cola de pendientes.
+  - `createListingSchema` (`lib/validations/listing.ts`) gana 4
+    `.refine()`: la cascada normal (`brandSlug`+`modelSlug`) y el camino
+    manual (`pendingBrandName`+`pendingModelName`+`pendingVersionName`)
+    son mutuamente excluyentes (nunca los dos, nunca ninguno); mismo
+    criterio para `localitySlug` vs. `pendingLocalityName`, con la
+    salvedad de que `pendingLocalityName` exige un `provinceSlug` real
+    (la Provincia nunca es "pendiente").
+  - El paso "revisar" y el modal de confirmación final muestran una
+    variante de texto ("Esta publicación quedará pendiente de revisión",
+    con el mensaje literal pedido por el usuario) cuando hay datos
+    pendientes — el resumen de Vehículo/Ubicación en ese paso también
+    muestra el texto tecleado en vez de los slugs resueltos.
 
 ## 8. Despliegue
 

@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Catálogo administrable: Fase 7/10, modales del wizard "no está en la lista"
+La parte visible del flujo de aprobación en dos pasos: en el wizard de publicar, "¿Tu vehículo no está en la lista?" y "¿No encontrás tu localidad?" abren un modal autocontenido con el texto explicativo literal pedido por el usuario, y al guardar reemplazan el bloque de selects normal por un resumen fijo (con opción de "Quitar" para volver atrás).
+
+- `VehicleNotListedModal.tsx`/`LocalityNotListedModal.tsx` (nuevos): no llaman a ningún Server Action al guardar — solo juntan los datos en memoria; el `TaxonomyRequest`/`LocalityRequest` real recién se crea dentro de `createListing` si el usuario termina publicando, evitando solicitudes huérfanas.
+- `createListingSchema` gana 4 reglas `.refine()` para que la cascada normal y el camino "tecleado a mano" sean mutuamente excluyentes (marca/modelo y localidad, cada uno por separado).
+- Paso "revisar" y modal de confirmación final del wizard muestran una variante de texto ("quedará pendiente de revisión", con el mismo mensaje literal) cuando hay datos pendientes.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable: las 8 combinaciones del `.refine()` del schema, y el camino "pendiente" de `createListing()` contra la base real (título compuesto, sin cupo consumido, dedupe real entre 2 listings con el mismo pedido) — revertido.
+
 ### Added (2026-08-14) — Catálogo administrable: Fase 6/10, estado PENDIENTE_APROBACION + TaxonomyRequest/LocalityRequest + validateAndActivateListing
 Capa de datos para el flujo de aprobación en dos pasos (sin UI todavía — los modales del wizard son la Fase 7, las colas de admin la Fase 8): `TaxonomyRequest`/`LocalityRequest` (con `dedupeKey` para que 2 usuarios pidiendo lo mismo no dupliquen la solicitud), `ListingStatus.PENDIENTE_APROBACION` (migración aislada, `ALTER TYPE` en su propio `db execute`), `Listing.brandId`/`.modelId` nullable + campos `pending*`.
 
