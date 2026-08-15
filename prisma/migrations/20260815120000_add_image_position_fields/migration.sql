@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "AgencyProfile" ADD COLUMN     "logoPositionX" INTEGER NOT NULL DEFAULT 50,
+ADD COLUMN     "logoPositionY" INTEGER NOT NULL DEFAULT 50;
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "avatarPositionX" INTEGER NOT NULL DEFAULT 50,
+ADD COLUMN     "avatarPositionY" INTEGER NOT NULL DEFAULT 50;

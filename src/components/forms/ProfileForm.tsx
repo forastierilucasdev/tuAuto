@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
+import { ImagePositionPicker } from "@/components/ui/ImagePositionPicker";
 import { getInitials } from "@/lib/utils";
 import type { AccountTypeValue } from "@/lib/constants";
 
@@ -20,6 +21,8 @@ type ProfileFormProps = {
   fullName: string;
   phone: string;
   avatarUrl: string | null;
+  avatarPositionX: number;
+  avatarPositionY: number;
   // Los datos de negocio (razón social, CUIT, ciudad, etc.) ya no se editan
   // acá — viven en la pantalla "Tipo de cuenta" — pero igual hay que
   // reenviarlos sin cambios en cada guardado, porque `updateProfileAction`
@@ -44,12 +47,16 @@ export function ProfileForm({
   fullName,
   phone,
   avatarUrl,
+  avatarPositionX,
+  avatarPositionY,
   agency,
   onSaved,
 }: ProfileFormProps) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
 
   const [preview, setPreview] = React.useState<string | null>(avatarUrl);
+  const [positionX, setPositionX] = React.useState(avatarPositionX);
+  const [positionY, setPositionY] = React.useState(avatarPositionY);
   const [nameForInitials, setNameForInitials] = React.useState(fullName);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -60,7 +67,12 @@ export function ProfileForm({
 
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) setPreview(URL.createObjectURL(file));
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+      // Una foto nueva empieza centrada — la posición vieja era para la imagen anterior.
+      setPositionX(50);
+      setPositionY(50);
+    }
   }
 
   return (
@@ -81,30 +93,36 @@ export function ProfileForm({
       <div>
         <Label>Foto de perfil</Label>
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-full border border-border bg-primary/10"
-          >
-            {preview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={preview}
-                alt="Foto de perfil"
-                className="h-full w-full object-cover object-center"
-              />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center text-2xl font-semibold text-primary">
-                {getInitials(nameForInitials) || "?"}
-              </span>
-            )}
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white">
-              <Camera className="h-6 w-6" />
-            </span>
-          </button>
+          <div className="relative h-24 w-24 shrink-0">
+            <ImagePositionPicker
+              src={preview}
+              x={positionX}
+              y={positionY}
+              onChange={(x, y) => {
+                setPositionX(x);
+                setPositionY(y);
+              }}
+              shape="circle"
+              className="h-24 w-24 bg-primary/10"
+              alt="Foto de perfil"
+              placeholder={
+                <span className="flex h-full w-full items-center justify-center text-2xl font-semibold text-primary">
+                  {getInitials(nameForInitials) || "?"}
+                </span>
+              }
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="Cambiar foto de perfil"
+              className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-foreground shadow-card hover:bg-surface-muted"
+            >
+              <Camera className="h-4 w-4" />
+            </button>
+          </div>
           <div className="text-xs text-muted-foreground">
-            <p>Click en el círculo para cambiar la foto.</p>
-            <p>La imagen se centra y recorta automáticamente.</p>
+            <p>Click en la cámara para cambiar la foto.</p>
+            <p>Arrastrá la imagen para centrarla a tu gusto.</p>
           </div>
         </div>
         <input
@@ -115,6 +133,8 @@ export function ProfileForm({
           className="hidden"
           onChange={handleAvatarChange}
         />
+        <input type="hidden" name="avatarPositionX" value={positionX} />
+        <input type="hidden" name="avatarPositionY" value={positionY} />
       </div>
 
       <div>

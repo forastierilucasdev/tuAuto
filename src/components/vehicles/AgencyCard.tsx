@@ -24,6 +24,7 @@ export function AgencyCard({ agency }: { agency: Agency }) {
               fill
               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 100vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
+              style={{ objectPosition: `${agency.logoPositionX}% ${agency.logoPositionY}%` }}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-primary/10 text-primary">

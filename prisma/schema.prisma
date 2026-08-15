@@ -77,6 +77,12 @@ model User {
   dni          String      @unique
   phone        String
   avatarUrl    String?
+  // Punto de anclaje del recorte (`object-position`, 0-100) que el usuario
+  // elige arrastrando la imagen en el selector — la foto siempre se muestra
+  // con `object-fit: cover`, esto solo mueve qué parte queda visible.
+  // Default 50/50 = centrado, mismo comportamiento que antes de esta función.
+  avatarPositionX Int      @default(50)
+  avatarPositionY Int      @default(50)
   isActive     Boolean     @default(true)
   lastLoginAt  DateTime?
 
@@ -172,6 +178,10 @@ model AgencyProfile {
   cuit         String   @unique
   description  String?
   logoUrl      String?
+  // Mismo criterio que `User.avatarPositionX/Y` — punto de anclaje del
+  // recorte que el usuario elige arrastrando la imagen.
+  logoPositionX Int     @default(50)
+  logoPositionY Int     @default(50)
   address      String?
   city         String?
   province     String?

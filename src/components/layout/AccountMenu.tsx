@@ -100,7 +100,13 @@ export const AccountMenu = React.forwardRef<AccountMenuHandle, AccountMenuProps>
           aria-label="Mi cuenta"
           className="inline-flex items-center justify-center rounded-full hover:opacity-80"
         >
-          <UserAvatar avatarUrl={profile?.avatarUrl} fullName={displayName} size={avatarSize} />
+          <UserAvatar
+            avatarUrl={profile?.avatarUrl}
+            positionX={profile?.avatarPositionX}
+            positionY={profile?.avatarPositionY}
+            fullName={displayName}
+            size={avatarSize}
+          />
         </button>
       </div>
 

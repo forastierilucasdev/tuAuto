@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
+import { ImagePositionPicker } from "@/components/ui/ImagePositionPicker";
 import { ACCOUNT_TYPE_OPTIONS, isBusinessAccountType, type AccountTypeValue } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,8 @@ type AccountTypeFormProps = {
     province: string | null;
     description: string | null;
     logoUrl: string | null;
+    logoPositionX: number;
+    logoPositionY: number;
     address: string | null;
     website: string | null;
   } | null;
@@ -44,11 +47,18 @@ export function AccountTypeForm({ accountType: initialAccountType, fullName, dni
   const isBusiness = isBusinessAccountType(accountType);
 
   const [logoPreview, setLogoPreview] = React.useState<string | null>(agency?.logoUrl ?? null);
+  const [logoPositionX, setLogoPositionX] = React.useState(agency?.logoPositionX ?? 50);
+  const [logoPositionY, setLogoPositionY] = React.useState(agency?.logoPositionY ?? 50);
   const logoInputRef = React.useRef<HTMLInputElement>(null);
 
   function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) setLogoPreview(URL.createObjectURL(file));
+    if (file) {
+      setLogoPreview(URL.createObjectURL(file));
+      // Una foto nueva empieza centrada — la posición vieja era para la imagen anterior.
+      setLogoPositionX(50);
+      setLogoPositionY(50);
+    }
   }
 
   if (state?.success) {
@@ -137,29 +147,36 @@ export function AccountTypeForm({ accountType: initialAccountType, fullName, dni
             <div>
               <Label>Foto de portada</Label>
               <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  className="group relative h-20 w-32 shrink-0 overflow-hidden rounded-xl border border-border bg-surface"
-                >
-                  {logoPreview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={logoPreview}
-                      alt="Foto de portada"
-                      className="h-full w-full object-cover object-center"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-muted-foreground">
-                      <ImagePlus className="h-6 w-6" />
-                    </span>
-                  )}
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-transparent transition-colors group-hover:bg-black/40 group-hover:text-white">
-                    <Camera className="h-5 w-5" />
-                  </span>
-                </button>
+                <div className="relative h-20 w-32 shrink-0">
+                  <ImagePositionPicker
+                    src={logoPreview}
+                    x={logoPositionX}
+                    y={logoPositionY}
+                    onChange={(x, y) => {
+                      setLogoPositionX(x);
+                      setLogoPositionY(y);
+                    }}
+                    shape="rounded"
+                    className="h-20 w-32"
+                    alt="Foto de portada"
+                    placeholder={
+                      <span className="flex h-full w-full items-center justify-center text-muted-foreground">
+                        <ImagePlus className="h-6 w-6" />
+                      </span>
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    aria-label="Cambiar foto de portada"
+                    className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-foreground shadow-card hover:bg-surface-muted"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Se muestra en la tarjeta y en el encabezado de tu página pública.
+                  Se muestra en la tarjeta y en el encabezado de tu página pública. Arrastrá la imagen para
+                  centrarla a tu gusto.
                 </p>
               </div>
               <input
@@ -170,6 +187,8 @@ export function AccountTypeForm({ accountType: initialAccountType, fullName, dni
                 className="hidden"
                 onChange={handleLogoChange}
               />
+              <input type="hidden" name="logoPositionX" value={logoPositionX} />
+              <input type="hidden" name="logoPositionY" value={logoPositionY} />
             </div>
 
             <div>

@@ -34,7 +34,14 @@ export default async function ConcesionariaDetailPage(props: PageProps<"/concesi
       <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative h-28 w-44 shrink-0 overflow-hidden rounded-2xl bg-surface-muted">
           {profile.logoUrl ? (
-            <Image src={profile.logoUrl} alt={profile.businessName} fill sizes="176px" className="object-cover" />
+            <Image
+              src={profile.logoUrl}
+              alt={profile.businessName}
+              fill
+              sizes="176px"
+              className="object-cover"
+              style={{ objectPosition: `${profile.logoPositionX}% ${profile.logoPositionY}%` }}
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-primary/10 text-primary">
               <Building2 className="h-10 w-10" />

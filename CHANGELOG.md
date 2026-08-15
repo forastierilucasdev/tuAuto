@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-15) — Reposicionar foto de perfil y foto de portada de agencia
+La foto de perfil y la foto de portada de agencia/concesionaria dejan de centrarse automáticamente — el usuario arrastra la imagen (sin cambiar el zoom) para elegir qué parte queda visible.
+
+- `ImagePositionPicker.tsx` (nuevo, reutilizable): la imagen siempre cubre el marco vía `object-fit: cover`, arrastrar solo mueve el `object-position` — funciona con mouse y touch.
+- `User.avatarPositionX/Y`/`AgencyProfile.logoPositionX/Y` (migración aditiva, default 50/50 = centrado, sin cambio de comportamiento para fotos ya cargadas).
+- Aplicado en todos los lugares donde se muestran ambas fotos: menú de cuenta, detalle de publicación (info del vendedor), tarjeta y página pública de agencia/concesionaria.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable contra la base real (default en filas existentes, guardar/leer una posición nueva en `User` y en un `AgencyProfile` de prueba) — revertido. La interacción de arrastre en sí no se pudo probar de forma interactiva en un navegador real desde esta sesión.
+
 ### Added (2026-08-15) — Catálogo administrable: Fase 10/10, limpieza y documentación (cierra la iniciativa de 10 fases)
 Sin código funcional nuevo — verificación final de lo construido en las 9 fases anteriores y documentación de cierre.
 

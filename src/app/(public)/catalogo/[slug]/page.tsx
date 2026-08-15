@@ -162,6 +162,8 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
           <div className="flex shrink-0 flex-col items-center gap-2">
             <UserAvatar
               avatarUrl={isBusiness ? listing.user.agencyProfile?.logoUrl : listing.user.avatarUrl}
+              positionX={isBusiness ? listing.user.agencyProfile?.logoPositionX : listing.user.avatarPositionX}
+              positionY={isBusiness ? listing.user.agencyProfile?.logoPositionY : listing.user.avatarPositionY}
               fullName={businessName ?? listing.user.fullName}
               size="lg"
             />

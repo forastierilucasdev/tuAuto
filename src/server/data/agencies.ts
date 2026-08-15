@@ -30,6 +30,8 @@ async function loadAgencies(where: Prisma.AgencyProfileWhereInput) {
       city: p.city,
       province: p.province,
       logoUrl: p.logoUrl,
+      logoPositionX: p.logoPositionX,
+      logoPositionY: p.logoPositionY,
       description: p.description,
       address: p.address,
       website: p.website,

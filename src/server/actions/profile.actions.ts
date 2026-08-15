@@ -24,6 +24,22 @@ export type ProfileActionState =
 
 const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024;
 
+/**
+ * `avatarPositionX/Y`/`logoPositionX/Y` viajan fuera del schema de zod
+ * (mismo criterio que `avatarUrl`/`logoUrl`, resueltos directo del
+ * FormData): cada pantalla (ProfileForm/AccountTypeForm) solo manda la
+ * posición de la imagen que le corresponde, la otra queda `undefined`
+ * (no se toca). `undefined` si el campo no vino o no es un número 0-100
+ * válido — nunca tira, nunca corrompe el punto de anclaje guardado.
+ */
+function readPositionField(formData: FormData, name: string): number | undefined {
+  const raw = formData.get(name);
+  if (typeof raw !== "string" || raw === "") return undefined;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) return undefined;
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
 export async function getMyProfileAction() {
   const session = await auth();
   if (!session?.user) return null;
@@ -59,6 +75,8 @@ export async function updateProfileAction(
     if (error) return { error };
   }
   const avatarUrl = hasNewAvatar ? await uploadAvatarImage(avatarFile, session.user.id) : undefined;
+  const avatarPositionX = readPositionField(formData, "avatarPositionX");
+  const avatarPositionY = readPositionField(formData, "avatarPositionY");
 
   const logoFile = formData.get("logo");
   const hasNewLogo = logoFile instanceof File && logoFile.size > 0;
@@ -67,6 +85,8 @@ export async function updateProfileAction(
     if (error) return { error };
   }
   const logoUrl = hasNewLogo ? await uploadAgencyLogo(logoFile, session.user.id) : undefined;
+  const logoPositionX = readPositionField(formData, "logoPositionX");
+  const logoPositionY = readPositionField(formData, "logoPositionY");
 
   if (await dniExists(parsed.data.dni, session.user.id)) {
     return { fieldErrors: { dni: ["Ya existe una cuenta registrada con ese DNI."] } };
@@ -81,9 +101,11 @@ export async function updateProfileAction(
         dni: parsed.data.dni,
         phone: parsed.data.phone,
         avatarUrl,
+        avatarPositionX,
+        avatarPositionY,
       });
     } else {
-      await updateProfile(session.user.id, { ...parsed.data, avatarUrl });
+      await updateProfile(session.user.id, { ...parsed.data, avatarUrl, avatarPositionX, avatarPositionY });
     }
   } else {
     if (await cuitExists(parsed.data.cuit, session.user.id)) {
@@ -96,12 +118,16 @@ export async function updateProfileAction(
         dni: parsed.data.dni,
         phone: parsed.data.phone,
         avatarUrl,
+        avatarPositionX,
+        avatarPositionY,
         businessName: parsed.data.businessName,
         cuit: parsed.data.cuit,
         city: parsed.data.city,
         province: parsed.data.province,
         description: parsed.data.description,
         logoUrl,
+        logoPositionX,
+        logoPositionY,
         address: parsed.data.address,
         website: parsed.data.website,
       });
@@ -111,6 +137,8 @@ export async function updateProfileAction(
         dni: parsed.data.dni,
         phone: parsed.data.phone,
         avatarUrl,
+        avatarPositionX,
+        avatarPositionY,
         accountType: parsed.data.accountType,
         agencyProfile: {
           businessName: parsed.data.businessName,
@@ -119,6 +147,8 @@ export async function updateProfileAction(
           province: parsed.data.province,
           description: parsed.data.description,
           logoUrl,
+          logoPositionX,
+          logoPositionY,
           address: parsed.data.address,
           website: parsed.data.website,
         },
