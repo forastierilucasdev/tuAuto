@@ -183,6 +183,25 @@ model AgencyProfile {
   updatedAt    DateTime @updatedAt
 }
 
+// Catálogo administrable de tipos de vehículo — Fase 1 de la migración del
+// enum `VehicleType` a tabla real (ver ARCHITECTURE.md 7.2.7). En esta fase
+// convive en paralelo con el enum: `Model`/`Listing` todavía usan
+// `VehicleType`, no `VehicleTypeCatalog` — se conecta recién en la fase
+// siguiente. `code` espeja los valores del enum viejo para que esa
+// migración pueda resolver cada fila por código sin ambigüedad.
+model VehicleTypeCatalog {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  label            String
+  labelPlural      String
+  icon             String
+  mileageUnit      String?
+  usesTransmission Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+}
+
 model Brand {
   id        String   @id @default(cuid())
   name      String

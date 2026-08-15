@@ -1,13 +1,40 @@
 import {
   Bike,
+  Bus,
   Car,
+  HelpCircle,
   Motorbike,
   Sailboat,
   Scooter,
   Ship,
+  Tractor,
   Truck,
   type LucideIcon,
 } from "lucide-react";
+
+/**
+ * Whitelist fijo de íconos seleccionables al crear/editar un tipo de
+ * vehículo desde el panel admin — nunca se importa un ícono dinámicamente
+ * por string (no hay forma de ejecutar código arbitrario). Si el ícono
+ * guardado en la base no está acá (dato corrupto/versión vieja), se cae a
+ * `Car`, ver `vehicleTypeIconFromName()`.
+ */
+export const ADMIN_SELECTABLE_ICONS: Record<string, LucideIcon> = {
+  Car,
+  Truck,
+  Motorbike,
+  Bike,
+  Scooter,
+  Sailboat,
+  Ship,
+  Bus,
+  Tractor,
+  HelpCircle,
+};
+
+export function vehicleTypeIconFromName(name: string): LucideIcon {
+  return ADMIN_SELECTABLE_ICONS[name] ?? Car;
+}
 
 /**
  * Tipos de vehículo soportados por el catálogo. Coincide 1 a 1 con el enum

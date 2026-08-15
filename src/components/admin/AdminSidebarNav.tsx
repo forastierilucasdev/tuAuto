@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-// Los 3 roles leen los 6 módulos (ver `lib/admin-permissions.ts` — todos
+// Los 3 roles leen todos los módulos (ver `lib/admin-permissions.ts` — todos
 // tienen al menos "read" en todo) — no hace falta filtrar el nav por rol.
 const NAV = [
   { href: "/admin/usuarios", label: "Usuarios" },
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/admin/publicaciones", label: "Publicaciones" },
   { href: "/admin/suscripciones", label: "Suscripciones y Pagos" },
   { href: "/admin/destacados", label: "Destacados" },
+  { href: "/admin/vehiculos", label: "Vehículos" },
   { href: "/admin/auditoria", label: "Auditoría" },
 ];
 

@@ -33,6 +33,9 @@ export const ACTION_LABEL: Record<string, string> = {
   "user.suspend": "Suspendió la cuenta",
   "user.unsuspend": "Reactivó la cuenta suspendida",
   "user.setAdminRole": "Cambió el rol de administrador",
+  "vehicleType.create": "Creó un tipo de vehículo",
+  "vehicleType.update": "Editó un tipo de vehículo",
+  "vehicleType.toggleActive": "Dio de baja / reactivó un tipo de vehículo",
 };
 
 export const TARGET_TABLE_LABEL: Record<AdminAuditTargetTable, string> = {
@@ -41,6 +44,14 @@ export const TARGET_TABLE_LABEL: Record<AdminAuditTargetTable, string> = {
   Payment: "Pago",
   Plan: "Plan",
   VerificationRequest: "Verificación de identidad",
+  VehicleTypeCatalog: "Tipo de vehículo",
 };
 
-export const TARGET_TABLES: AdminAuditTargetTable[] = ["User", "Listing", "Payment", "Plan", "VerificationRequest"];
+export const TARGET_TABLES: AdminAuditTargetTable[] = [
+  "User",
+  "Listing",
+  "Payment",
+  "Plan",
+  "VerificationRequest",
+  "VehicleTypeCatalog",
+];

@@ -13,6 +13,8 @@ export const ADMIN_MODULES = [
   "destacados",
   "identidad",
   "auditoria",
+  "vehiculos",
+  "ubicacion",
 ] as const;
 export type AdminModule = (typeof ADMIN_MODULES)[number];
 export type AdminAction = "read" | "edit" | "delete";
@@ -25,6 +27,8 @@ const ROLE_PERMISSIONS: Record<AdminRole, Record<AdminModule, AdminAction[]>> = 
     destacados: ["read"],
     identidad: ["read"],
     auditoria: ["read"],
+    vehiculos: ["read"],
+    ubicacion: ["read"],
   },
   EDITOR: {
     usuarios: ["read", "edit"],
@@ -36,6 +40,10 @@ const ROLE_PERMISSIONS: Record<AdminRole, Record<AdminModule, AdminAction[]>> = 
     // (ver `assignAdminRoleAction`/`resolveVerificationAction`).
     identidad: ["read"],
     auditoria: ["read"],
+    // Catálogo de bajo riesgo y 100% reversible (a diferencia de
+    // identidad) — mismo criterio que suscripciones/destacados.
+    vehiculos: ["read", "edit"],
+    ubicacion: ["read", "edit"],
   },
   SUPERADMIN: {
     usuarios: ["read", "edit", "delete"],
@@ -44,6 +52,8 @@ const ROLE_PERMISSIONS: Record<AdminRole, Record<AdminModule, AdminAction[]>> = 
     destacados: ["read", "edit", "delete"],
     identidad: ["read", "edit"],
     auditoria: ["read"],
+    vehiculos: ["read", "edit", "delete"],
+    ubicacion: ["read", "edit", "delete"],
   },
 };
 

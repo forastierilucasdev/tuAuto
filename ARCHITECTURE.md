@@ -254,12 +254,26 @@ completo de diseño (modelos nuevos, orden de migraciones, riesgos) quedó en
 el plan aprobado de la sesión, no se repite acá hasta que el catálogo esté
 armado (se documenta en detalle a medida que cada fase se completa).
 
-- **Fase 1 (esta)**: `buildActivationEffect()` en `server/data/listings.ts`
-  extrae la lógica de "pasar a ACTIVE + consumir cupo" que estaba triplicada
-  en `createListing`/`updateOwnedListing`/`reactivateListing` — refactor
-  puro, sin cambio de comportamiento, hecho primero porque la futura acción
-  de admin "Validar datos" va a reusar esta misma función en vez de
+- **Fase 1**: `buildActivationEffect()` en `server/data/listings.ts` extrae
+  la lógica de "pasar a ACTIVE + consumir cupo" que estaba triplicada en
+  `createListing`/`updateOwnedListing`/`reactivateListing` — refactor puro,
+  sin cambio de comportamiento, hecho primero porque la futura acción de
+  admin "Validar datos" va a reusar esta misma función en vez de
   reimplementar la lógica de cupo por cuarta vez.
+- **Fase 2**: `VehicleTypeCatalog` (tabla nueva, migración aditiva),
+  sembrada con los 7 valores actuales del enum `VehicleType` y su metadata
+  de presentación/reglas (`label`, `labelPlural`, `icon`, `mileageUnit`,
+  `usesTransmission`, `sortOrder`) — mismos datos que `VEHICLE_TYPES` en
+  `constants.ts`. **Convive en paralelo con el enum**: `Model`/`Listing`
+  siguen usando `VehicleType` hasta la Fase 3, así que el CRUD nuevo en
+  `/admin/vehiculos` (alta/edición/baja) todavía no tiene efecto en el sitio
+  público — se conecta en la fase siguiente. `code` es la clave estable
+  (nunca editable después de creado) que esa migración va a usar para
+  resolver cada `Model`/`Listing` existente a su fila correspondiente.
+  Íconos: whitelist fijo `ADMIN_SELECTABLE_ICONS` (`constants.ts`) — el
+  admin elige un nombre de un `<select>` contra ese whitelist, nunca se
+  importa un ícono dinámicamente por string (cero riesgo de ejecutar código
+  arbitrario); si el string guardado no matchea (dato corrupto), cae a `Car`.
 
 ## 8. Despliegue
 

@@ -5,6 +5,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Catálogo administrable: Fase 2/10, VehicleTypeCatalog + CRUD admin de Tipos
+- Nueva tabla `VehicleTypeCatalog` (migración aditiva), sembrada con los 7 valores actuales del enum `VehicleType` y su metadata de presentación/reglas (mismos datos que `VEHICLE_TYPES` en `constants.ts`: nombre, ícono, si usa kilómetros/horas, si tiene transmisión).
+- **Todavía no conectada al sitio en vivo**: `Model`/`Listing` siguen usando el enum viejo — esta fase solo prepara la tabla y su administración; la Fase 3 hace la migración real.
+- `/admin/vehiculos`: alta/edición/baja de tipos de vehículo, con un whitelist fijo de íconos (`ADMIN_SELECTABLE_ICONS`) para que el admin elija sin poder inyectar nada dinámico.
+- Nuevos módulos de permisos `vehiculos`/`ubicacion` (el segundo, adelantado para la Fase 5) en la matriz de roles — mismo criterio que suscripciones/destacados.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable contra la base real (alta, edición, baja/reactivación, código duplicado rechazado, borrado) y servidor de desarrollo.
+
 ### Added (2026-08-14) — Catálogo administrable (Ubicación + Vehículos): Fase 1/10, refactor de calentamiento
 Primer paso de un proyecto grande, aprobado en modo plan: dos secciones nuevas de admin ("Ubicación": provincias/localidades, "Vehículos": tipos/marcas/modelos/versiones) con colas de "tareas pendientes" para cuando un usuario no encuentra su vehículo o localidad al publicar, un modal en el wizard para cargar esos datos a mano, un estado nuevo "pendiente de aprobación" que no descuenta cupo hasta que el admin valida los datos, y un botón "Validar datos" que recién ahí publica y descuenta. El plan completo (10 fases) quedó documentado y aprobado antes de tocar código — cada fase se commitea y verifica por separado.
 

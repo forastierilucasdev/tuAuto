@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getClientIp } from "@/lib/rate-limit";
 
-export type AdminAuditTargetTable = "User" | "Listing" | "Payment" | "Plan" | "VerificationRequest";
+export type AdminAuditTargetTable = "User" | "Listing" | "Payment" | "Plan" | "VerificationRequest" | "VehicleTypeCatalog";
 
 /**
  * Se llama explícitamente al final de cada Server Action de admin que
@@ -140,6 +140,17 @@ export async function resolveAuditTargets(
         label: `Identidad de ${request.user.fullName}`,
         href: `/admin/usuarios/${request.user.id}`,
       });
+    }
+  }
+
+  const vehicleTypeIds = [...(idsByTable.get("VehicleTypeCatalog") ?? [])];
+  if (vehicleTypeIds.length > 0) {
+    const vehicleTypes = await prisma.vehicleTypeCatalog.findMany({
+      where: { id: { in: vehicleTypeIds } },
+      select: { id: true, label: true },
+    });
+    for (const vehicleType of vehicleTypes) {
+      result.set(`VehicleTypeCatalog:${vehicleType.id}`, { label: vehicleType.label, href: "/admin/vehiculos" });
     }
   }
 
