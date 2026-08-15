@@ -239,20 +239,21 @@ El cupo de publicaciones **es un solo pozo combinado, no tres cupos independient
   - `adminReorderListingImagesAction`: en vez de duplicar la validación de integridad (misma cantidad/IDs) que ya tiene `reorderListingImages()` del dueño, la reusa tal cual pasándole el `userId` **real** del dueño de la publicación — el chequeo de ownership pasa trivialmente porque es cierto, sin necesidad de una función paralela.
   - El wizard de admin nunca cambia `status` (eso sigue siendo trabajo de "Estado" en la página de detalle) — `isReactivation` se pasa siempre en `false`.
 
-### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 9/10 (Fase 9)
+### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — completo, 10/10 (Fase 9)
 
 Proyecto grande, planificado en modo plan y aprobado explícitamente antes de
 tocar código — dos secciones nuevas de admin ("Ubicación": provincias/
-localidades, "Vehículos": tipos/marcas/modelos/versiones administrables, hoy
-`VehicleType` es un enum fijo de Postgres y Provincia/Localidad son texto
-libre sin relación), con colas de "tareas pendientes" para cuando un usuario
-no encuentra su vehículo o localidad al publicar, un estado nuevo
-`PENDIENTE_APROBACION` que no descuenta cupo hasta que el admin valida los
-datos ("Validar datos" → recién ahí se publica y se descuenta el crédito).
-Se ejecuta en 10 fases separadas, cada una con su propio commit — el detalle
-completo de diseño (modelos nuevos, orden de migraciones, riesgos) quedó en
-el plan aprobado de la sesión, no se repite acá hasta que el catálogo esté
-armado (se documenta en detalle a medida que cada fase se completa).
+localidades, "Vehículos": tipos/marcas/modelos/versiones administrables; el
+enum fijo `VehicleType` se convirtió en tabla real y Provincia/Localidad
+pasaron de texto libre sin relación a tablas administrables), con colas de
+"tareas pendientes" para cuando un usuario no encuentra su vehículo o
+localidad al publicar, un estado nuevo `PENDIENTE_APROBACION` que no
+descuenta cupo hasta que el admin valida los datos ("Validar datos" →
+recién ahí se publica y se descuenta el crédito). Ejecutado en 10 fases
+separadas, cada una con su propio commit + verificación contra la base real
+— el detalle completo de diseño (modelos nuevos, orden de migraciones,
+riesgos) quedó en el plan aprobado de la sesión; acá se documenta el
+resultado final de cada fase.
 
 - **Fase 1**: `buildActivationEffect()` en `server/data/listings.ts` extrae
   la lógica de "pasar a ACTIVE + consumir cupo" que estaba triplicada en
@@ -483,6 +484,24 @@ armado (se documenta en detalle a medida que cada fase se completa).
   + auditoría (mismo `action: "listing.setStatus"` que "Marcar Activa") +
   traducción de `QuotaExceededError`/`AccountSuspendedError`/
   `TaxonomyPendingError` a mensajes legibles — sin lógica de negocio nueva.
+- **Fase 10** (limpieza y documentación, sin código funcional nuevo):
+  revisión final de que la auditoría (`AdminAuditTargetTable`,
+  `resolveAuditTargets()`, `admin-audit-labels.ts`) y el sidebar
+  (`AdminSidebarNav.tsx` + el `MOBILE_NAV` de `AdminHeader.tsx`) quedaron
+  completos para las 8 tablas nuevas de esta iniciativa (ya se habían ido
+  extendiendo fase a fase, no en un solo tirón al final); `ERRORES.md`
+  actualizado (la limitación vieja de "sin gestión del catálogo de
+  marcas/modelos" ya no aplica — se reemplazó por la limitación real que
+  queda: el `<select>` de Tipo del wizard/filtros todavía lee la constante
+  `VEHICLE_TYPES`, no `VehicleTypeCatalog`); `tsc --noEmit`/`eslint` limpios
+  en todo `src/`, no solo en los archivos tocados por la última fase.
+
+**Qué quedó fuera de las 10 fases, a propósito** (documentado en
+`ERRORES.md`, no es un olvido): el `<select>` de Tipo de vehículo en el
+wizard de publicar y en los filtros del catálogo todavía lee `VEHICLE_TYPES`
+(`constants.ts`), no `VehicleTypeCatalog` — un tipo nuevo creado desde
+`/admin/vehiculos` no es seleccionable todavía al publicar. Marca, Modelo,
+Versión, Provincia y Localidad sí impactan de punta a punta.
 
 ## 8. Despliegue
 

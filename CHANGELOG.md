@@ -5,6 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-15) — Catálogo administrable: Fase 10/10, limpieza y documentación (cierra la iniciativa de 10 fases)
+Sin código funcional nuevo — verificación final de lo construido en las 9 fases anteriores y documentación de cierre.
+
+- Auditoría y sidebar admin revisados: ya estaban completos (se fueron extendiendo fase a fase durante toda la iniciativa).
+- `ERRORES.md` actualizado: la limitación vieja sobre el catálogo de marcas/modelos ya no aplica; se documentó la única limitación real que queda a propósito fuera de alcance (el Tipo de vehículo del wizard/filtros sigue leyendo la lista fija `VEHICLE_TYPES`, no `VehicleTypeCatalog` — Marca/Modelo/Versión/Provincia/Localidad sí funcionan de punta a punta).
+- `ARCHITECTURE.md` §7.2.7 actualizado a "completo, 10/10".
+- `tsc --noEmit`/`eslint` corridos sobre todo `src/` — limpios.
+
+**Resumen de la iniciativa completa (Fases 1-10, 2026-08-14/15)**: el pedido original del usuario — secciones administrables de Ubicación y Vehículos con colas de "tareas pendientes", modales en el wizard para cargar vehículos/localidades no listados, y aprobación en dos pasos que no descuenta cupo hasta validar los datos — quedó implementado de punta a punta: `VehicleType` pasó de enum a tabla real; Marca/Modelo ganaron CRUD y Versión pasó a tabla nueva; Provincia/Localidad pasaron de texto libre a tablas administrables con seed y alta masiva; el wizard tiene los modales "¿no está en la lista?" con el texto literal pedido; las colas de pendientes en admin permiten aprobar (nunca rechazar) con opción de corregir el nombre antes de crear los datos reales; y "Validar datos" cierra el círculo, publicando y descontando el crédito recién cuando corresponde.
+
 ### Added (2026-08-14) — Catálogo administrable: Fase 9/10, botón "Validar datos" en /admin/publicaciones/[id]
 Cierra el flujo de aprobación en dos pasos: en el detalle de cada publicación, "Validar datos" (visible solo si está `PENDIENTE_APROBACION`) recién ahí la pasa a `ACTIVE` y descuenta 1 cupo del dueño — deshabilitado mientras la solicitud de catálogo/ubicación vinculada no esté aprobada.
 
