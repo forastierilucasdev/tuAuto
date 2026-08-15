@@ -163,7 +163,7 @@ export default async function AdminVehiculosPage(props: {
                           canEdit={permissions.canEdit}
                           offMessage="La marca deja de ofrecerse como opción nueva en el wizard/filtros. Las publicaciones que ya la usan no se ven afectadas."
                           onMessage="La marca vuelve a estar disponible."
-                          onToggle={(next) => toggleBrandActiveAction(brand.id, next)}
+                          onToggle={toggleBrandActiveAction.bind(null, brand.id)}
                         />
                       </div>
                     </td>
@@ -224,7 +224,7 @@ export default async function AdminVehiculosPage(props: {
                           canEdit={permissions.canEdit}
                           offMessage="El modelo deja de ofrecerse como opción nueva en el wizard/filtros. Las publicaciones que ya lo usan no se ven afectadas."
                           onMessage="El modelo vuelve a estar disponible."
-                          onToggle={(next) => toggleModelActiveAction(model.id, next)}
+                          onToggle={toggleModelActiveAction.bind(null, model.id)}
                         />
                       </div>
                     </td>
@@ -285,7 +285,7 @@ export default async function AdminVehiculosPage(props: {
                           canEdit={permissions.canEdit}
                           offMessage="La versión deja de ofrecerse como opción nueva en el wizard. Las publicaciones que ya la usan no se ven afectadas."
                           onMessage="La versión vuelve a estar disponible."
-                          onToggle={(next) => toggleVersionActiveAction(version.id, next)}
+                          onToggle={toggleVersionActiveAction.bind(null, version.id)}
                         />
                       </div>
                     </td>

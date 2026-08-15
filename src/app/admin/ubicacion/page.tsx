@@ -74,7 +74,7 @@ export default async function AdminUbicacionPage() {
                       canEdit={permissions.canEdit}
                       offMessage="La provincia deja de ofrecerse como opción nueva en el wizard/filtros. Las publicaciones que ya la usan no se ven afectadas."
                       onMessage="La provincia vuelve a estar disponible."
-                      onToggle={(next) => toggleProvinceActiveAction(province.id, next)}
+                      onToggle={toggleProvinceActiveAction.bind(null, province.id)}
                     />
                   </div>
                 </td>

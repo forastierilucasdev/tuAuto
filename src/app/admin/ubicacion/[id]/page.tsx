@@ -60,7 +60,7 @@ export default async function AdminProvinceDetailPage(props: { params: Promise<{
                       canEdit={permissions.canEdit}
                       offMessage="La localidad deja de ofrecerse como opción nueva en el wizard/filtros. Las publicaciones que ya la usan no se ven afectadas."
                       onMessage="La localidad vuelve a estar disponible."
-                      onToggle={(next) => toggleLocalityActiveAction(locality.id, next)}
+                      onToggle={toggleLocalityActiveAction.bind(null, locality.id)}
                     />
                   </div>
                 </td>
