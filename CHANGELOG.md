@@ -5,6 +5,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Catálogo administrable: Fase 9/10, botón "Validar datos" en /admin/publicaciones/[id]
+Cierra el flujo de aprobación en dos pasos: en el detalle de cada publicación, "Validar datos" (visible solo si está `PENDIENTE_APROBACION`) recién ahí la pasa a `ACTIVE` y descuenta 1 cupo del dueño — deshabilitado mientras la solicitud de catálogo/ubicación vinculada no esté aprobada.
+
+- `validateAndActivateListingAction` envuelve la función de datos ya construida en la Fase 6, con permisos, auditoría y mensajes de error legibles (cupo agotado, cuenta suspendida, referencias sin resolver).
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable contra la base real, el caso completo: bloqueado con las 2 referencias sin resolver, sigue bloqueado con solo 1 aprobada, pasa a ACTIVE recién con las 2 aprobadas (cupo descontado en ese momento, no antes), y rechaza un segundo intento sobre un listing ya activo — revertido.
+
 ### Added (2026-08-14) — Catálogo administrable: Fase 8/10, colas de "Tareas pendientes" en admin
 `/admin/vehiculos/pendientes` y `/admin/ubicacion/pendientes`, calcadas del precedente de `/admin/identidad`: cola de solicitudes con "Aprobar" o "Dejar observación", nunca un rechazo duro. Una aprobación puede destrabar varias publicaciones de distintos usuarios a la vez.
 

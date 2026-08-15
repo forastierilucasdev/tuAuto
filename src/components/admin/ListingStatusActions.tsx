@@ -11,21 +11,28 @@ import {
   adminSoftDeleteListingAction,
   adminSuspendListingAction,
   adminUnsuspendListingAction,
+  validateAndActivateListingAction,
 } from "@/server/actions/admin/listings.actions";
+import type { ListingStatus } from "@/generated/prisma/client";
 
 export function ListingStatusActions({
   listingId,
+  status,
   deletedAt,
   isSuspended,
   ownerAvailablePublications,
+  hasPendingReferences,
   canEdit,
   canDelete,
 }: {
   listingId: string;
+  status: ListingStatus;
   deletedAt: Date | null;
   isSuspended: boolean;
   /** Cupo disponible del dueño (ver `getAvailablePublications`) — solo para avisar antes de "Marcar Activa", nunca bloquea ni se consume acá (`adminSetListingStatus` no toca cupo a propósito). */
   ownerAvailablePublications: number;
+  /** `true` si todavía tiene `pendingTaxonomyRequestId`/`pendingLocalityRequestId` sin resolver — bloquea "Validar datos" hasta que se apruebe esa solicitud en la cola de pendientes. */
+  hasPendingReferences: boolean;
   canEdit: boolean;
   canDelete: boolean;
 }) {
@@ -33,6 +40,21 @@ export function ListingStatusActions({
 
   return (
     <div className="flex flex-wrap gap-2">
+      {status === "PENDIENTE_APROBACION" && !deletedAt && (
+        <AdminConfirmButton
+          label="Validar datos"
+          variant="success"
+          disabled={!canEdit || hasPendingReferences}
+          confirmMessage={
+            ownerAvailablePublications > 0
+              ? "La publicación pasa a Activa y se descuenta 1 publicación disponible del dueño."
+              : "Atención: el dueño no tiene publicaciones disponibles — la validación va a fallar por falta de cupo. Otorgale cupo manualmente si corresponde antes de reintentar."
+          }
+          onConfirm={() => validateAndActivateListingAction(listingId)}
+          onSuccess={() => router.refresh()}
+        />
+      )}
+
       {!deletedAt && (
         <AdminConfirmButton
           label="Marcar Activa"

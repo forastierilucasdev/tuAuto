@@ -12,9 +12,17 @@ import {
   restoreListing,
   softDeleteListing,
   suspendListing,
+  TaxonomyPendingError,
   unsuspendListing,
+  validateAndActivateListing,
 } from "@/server/data/admin/listings";
-import { attachListingImages, ImageMismatchError, reorderListingImages } from "@/server/data/listings";
+import {
+  AccountSuspendedError,
+  attachListingImages,
+  ImageMismatchError,
+  QuotaExceededError,
+  reorderListingImages,
+} from "@/server/data/listings";
 import { updateListingSchema } from "@/lib/validations/listing";
 import { uploadListingImage } from "@/lib/supabase-storage";
 import { validateImageFile } from "@/lib/image-validation";
@@ -72,6 +80,42 @@ export async function adminSetListingStatusAction(listingId: string, status: Lis
     targetTable: "Listing",
     targetId: listingId,
     changes: { before: { status: before.status }, after: { status } },
+  });
+
+  revalidatePath("/admin/publicaciones");
+  revalidatePath(`/admin/publicaciones/${listingId}`);
+  revalidatePath("/catalogo");
+  return { success: true };
+}
+
+/**
+ * "Validar datos" — paso SEPARADO de aprobar la solicitud de catálogo/
+ * ubicación (`/admin/vehiculos/pendientes`, `/admin/ubicacion/pendientes`),
+ * a propósito: recién acá se revisa la publicación puntual, pasa a ACTIVE y
+ * se descuenta 1 cupo del dueño (ver `validateAndActivateListing` en
+ * `server/data/admin/listings.ts`, que reusa `buildActivationEffect`).
+ */
+export async function validateAndActivateListingAction(listingId: string): Promise<AdminActionState> {
+  const session = await requireAdminPermission("publicaciones", "edit");
+  const before = await getListingForAdminDetail(listingId);
+  if (!before) return { error: "Publicación no encontrada." };
+
+  try {
+    await validateAndActivateListing(listingId);
+  } catch (error) {
+    if (error instanceof QuotaExceededError || error instanceof AccountSuspendedError || error instanceof TaxonomyPendingError) {
+      return { error: error.message };
+    }
+    if (error instanceof Error) return { error: error.message };
+    throw error;
+  }
+
+  await logAdminAction({
+    adminId: session.user.id,
+    action: "listing.setStatus",
+    targetTable: "Listing",
+    targetId: listingId,
+    changes: { before: { status: before.status }, after: { status: "ACTIVE" } },
   });
 
   revalidatePath("/admin/publicaciones");

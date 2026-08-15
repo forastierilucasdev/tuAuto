@@ -92,9 +92,11 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
         <h2 className="mb-3 text-sm font-bold text-navy">Estado</h2>
         <ListingStatusActions
           listingId={listing.id}
+          status={listing.status}
           deletedAt={listing.deletedAt}
           isSuspended={suspended}
           ownerAvailablePublications={ownerAvailablePublications}
+          hasPendingReferences={Boolean(listing.pendingTaxonomyRequestId || listing.pendingLocalityRequestId)}
           canEdit={permissions.canEdit}
           canDelete={permissions.canDelete}
         />

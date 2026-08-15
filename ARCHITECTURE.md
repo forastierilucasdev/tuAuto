@@ -239,7 +239,7 @@ El cupo de publicaciones **es un solo pozo combinado, no tres cupos independient
   - `adminReorderListingImagesAction`: en vez de duplicar la validación de integridad (misma cantidad/IDs) que ya tiene `reorderListingImages()` del dueño, la reusa tal cual pasándole el `userId` **real** del dueño de la publicación — el chequeo de ownership pasa trivialmente porque es cierto, sin necesidad de una función paralela.
   - El wizard de admin nunca cambia `status` (eso sigue siendo trabajo de "Estado" en la página de detalle) — `isReactivation` se pasa siempre en `false`.
 
-### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 8/10 (Fase 9)
+### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 9/10 (Fase 9)
 
 Proyecto grande, planificado en modo plan y aprobado explícitamente antes de
 tocar código — dos secciones nuevas de admin ("Ubicación": provincias/
@@ -472,6 +472,17 @@ armado (se documenta en detalle a medida que cada fase se completa).
   - `/admin/vehiculos` y `/admin/ubicacion` ganan un link "Tareas
     pendientes" con badge de cantidad (solo visible si hay al menos una
     solicitud `PENDING`).
+- **Fase 9**: botón "Validar datos" en `ListingStatusActions.tsx`
+  (`/admin/publicaciones/[id]`) — cierra el círculo del flujo en dos pasos.
+  Visible solo si `status === "PENDIENTE_APROBACION"`, y **deshabilitado**
+  mientras `pendingTaxonomyRequestId`/`pendingLocalityRequestId` sigan sin
+  resolver (el admin tiene que aprobar la solicitud correspondiente en
+  "Tareas pendientes" primero — el aviso de la Fase 6 ya se lo indica en la
+  misma página). `validateAndActivateListingAction` es una envoltura fina
+  sobre `validateAndActivateListing` (ya construida en la Fase 6): permisos
+  + auditoría (mismo `action: "listing.setStatus"` que "Marcar Activa") +
+  traducción de `QuotaExceededError`/`AccountSuspendedError`/
+  `TaxonomyPendingError` a mensajes legibles — sin lógica de negocio nueva.
 
 ## 8. Despliegue
 
