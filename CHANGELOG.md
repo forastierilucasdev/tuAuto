@@ -5,6 +5,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-14) — Catálogo administrable: Fase 6/10, estado PENDIENTE_APROBACION + TaxonomyRequest/LocalityRequest + validateAndActivateListing
+Capa de datos para el flujo de aprobación en dos pasos (sin UI todavía — los modales del wizard son la Fase 7, las colas de admin la Fase 8): `TaxonomyRequest`/`LocalityRequest` (con `dedupeKey` para que 2 usuarios pidiendo lo mismo no dupliquen la solicitud), `ListingStatus.PENDIENTE_APROBACION` (migración aislada, `ALTER TYPE` en su propio `db execute`), `Listing.brandId`/`.modelId` nullable + campos `pending*`.
+
+- `createListing()` acepta datos pendientes de marca/modelo/versión/localidad: crea (o reusa) la solicitud correspondiente, deja el listing en `PENDIENTE_APROBACION` sin consumir cupo ni bloquear por suspensión (mismo trato que un borrador).
+- `validateAndActivateListing()` (futuro botón "Validar datos", Fase 9) y `approveTaxonomyRequest()`/`approveLocalityRequest()` (futuras colas de admin, Fase 8) — dos pasos separados por decisión explícita del usuario: aprobar la solicitud de catálogo resuelve el dato para TODOS los listings vinculados sin publicarlos; "Validar datos" revisa cada publicación puntual y recién ahí descuenta el crédito.
+- `buildActivationEffect`/`assertAvailable`/`assertNotSuspended` pasan de privadas a exportadas en `server/data/listings.ts` para que la nueva función de admin las reuse.
+- Ripple de `brandId`/`modelId` nullable revisado y corregido en los puntos reales que asumían `.brand.name`/`.model.name` no nulos.
+- `tsc --noEmit`, `eslint`, `npm run build` limpios. Verificado con script desechable contra la base real: dedupe real de solicitudes, "Validar datos" rechazado si quedan referencias pendientes, una aprobación destraba varios listings a la vez, cupo descontado recién al validar (no al crear) — revertido.
+
 ### Added (2026-08-14) — Catálogo administrable: Fase 5/10, Province/Locality administrables + wizard en cascada
 Provincia/Localidad dejan de ser un `<select>` de lista fija + texto libre y pasan a ser tablas reales administrables (`Province`/`Locality`), con `Listing.provinceId`/`.localityId` nullable — migración puramente aditiva, las publicaciones viejas conservan su texto libre sin vincularlas retroactivamente.
 

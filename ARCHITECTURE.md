@@ -239,7 +239,7 @@ El cupo de publicaciones **es un solo pozo combinado, no tres cupos independient
   - `adminReorderListingImagesAction`: en vez de duplicar la validación de integridad (misma cantidad/IDs) que ya tiene `reorderListingImages()` del dueño, la reusa tal cual pasándole el `userId` **real** del dueño de la publicación — el chequeo de ownership pasa trivialmente porque es cierto, sin necesidad de una función paralela.
   - El wizard de admin nunca cambia `status` (eso sigue siendo trabajo de "Estado" en la página de detalle) — `isReactivation` se pasa siempre en `false`.
 
-### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 5/10 (Fase 9)
+### 7.2.7. Catálogo administrable (Ubicación + Vehículos) — en construcción, Fase 6/10 (Fase 9)
 
 Proyecto grande, planificado en modo plan y aprobado explícitamente antes de
 tocar código — dos secciones nuevas de admin ("Ubicación": provincias/
@@ -370,6 +370,56 @@ armado (se documenta en detalle a medida que cada fase se completa).
     así que el filtro sigue funcionando igual para publicaciones viejas y
     nuevas sin ampliar el alcance de esta fase con un segundo camino de
     filtrado relacional.
+- **Fase 6** (capa de datos, sin UI todavía — los modales del wizard son la
+  Fase 7, las colas de admin la Fase 8, el botón "Validar datos" la Fase 9):
+  - `ListingStatus.PENDIENTE_APROBACION`: migración aislada de
+    `ALTER TYPE ... ADD VALUE`, en su propio `db execute` — nunca junto con
+    el resto del schema en la misma transacción (mismo cuidado que ya se
+    tuvo con `SUSPENDIDA`).
+  - `TaxonomyRequest`/`LocalityRequest` (tablas nuevas): reusan
+    `VerificationStatus` pero **nunca escriben `REJECTED`** — el precedente
+    de Identidad es "aprobar" o "dejar pendiente con nota", nunca un
+    rechazo duro. `dedupeKey` (único, vía `slugify()` sobre los campos
+    normalizados) evita que dos usuarios pidiendo lo mismo generen dos
+    solicitudes — la segunda simplemente se linkea a la ya pendiente vía
+    `upsert`.
+  - `Listing.brandId`/`.modelId` pasan a **nullable** (antes `NOT NULL`) +
+    `pendingBrandName`/`pendingModelName`/`pendingVersionName`/
+    `pendingTaxonomyRequestId`. La Provincia siempre es real (lista fija de
+    24, siempre sembrada) — solo la Localidad puede quedar pendiente
+    (`pendingLocalityName`/`pendingLocalityRequestId`).
+  - Aflojar ese invariante (`brandId`/`modelId` ya no siempre completos)
+    tuvo un ripple acotado: se revisaron y corrigieron los ~5 puntos reales
+    del código que asumían `.brand.name`/`.model.name` no nulos (detalle
+    público del catálogo, ambos wizards de edición completos —
+    dueño/admin—, editor básico de admin). Los wizards de edición completos
+    muestran un aviso en vez de la cascada normal cuando el listing está
+    pendiente, ya que no hay slugs reales todavía contra los que armar
+    Marca→Modelo→Versión.
+  - `createListing()` gana un camino alternativo: en vez de
+    `brandSlug`/`modelSlug`/`versionSlug`, acepta
+    `pendingBrandName`/`pendingModelName`/`pendingVersionName` (los 3
+    juntos, mutuamente excluyentes con la cascada normal) y, para
+    ubicación, `pendingLocalityName` (mutuamente excluyente con
+    `localitySlug`, exige `provinceSlug` real). Hace *find-or-create* de la
+    solicitud correspondiente por `dedupeKey` y guarda el listing en
+    `PENDIENTE_APROBACION` — mismo trato que un borrador: no consume cupo
+    ni bloquea por suspensión.
+  - `buildActivationEffect`/`assertAvailable`/`assertNotSuspended` (antes
+    privadas de `server/data/listings.ts`) pasan a **exportadas** para que
+    `validateAndActivateListing` (nueva, `server/data/admin/listings.ts`)
+    las reuse sin reimplementar la lógica de cupo por quinta vez. Esta
+    función rechaza si el listing no está `PENDIENTE_APROBACION` o si
+    todavía tiene `pendingTaxonomyRequestId`/`pendingLocalityRequestId` sin
+    resolver (`TaxonomyPendingError`) — recién si pasa a `ACTIVE` y
+    descuenta 1 cupo.
+  - `approveTaxonomyRequest()`/`approveLocalityRequest()` (nuevas,
+    `server/data/admin/taxonomy-requests.ts`/`locality-requests.ts`): crean
+    o reusan (por nombre, `upsert`) las filas reales de Brand/Model/Version
+    o Locality, y con un solo `updateMany` actualizan TODOS los listings
+    vinculados a esa solicitud — una aprobación puede destrabar varios
+    listings de distintos usuarios a la vez. **No tocan `status`** — eso
+    es "Validar datos" (Fase 9), un paso deliberadamente separado.
 
 ## 8. Despliegue
 

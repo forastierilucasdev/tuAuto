@@ -24,6 +24,13 @@ enum ListingStatus {
   // en esta columna, es un valor 100% computado por `getEffectiveStatus()`
   // (mismo criterio que ya usa EXPIRED), ver `server/data/listings.ts`.
   SUSPENDIDA
+  // Tiene marca/modelo/versión y/o localidad tecleados a mano (no están en
+  // el catálogo todavía, ver `TaxonomyRequest`/`LocalityRequest`) — inactiva,
+  // invisible en el catálogo, no consume cupo. El admin aprueba la solicitud
+  // de catálogo (deja los datos reales resueltos) y después "Valida datos"
+  // esta publicación puntual (dos pasos separados) para que recién ahí pase
+  // a ACTIVE y se descuente el crédito — ver `validateAndActivateListing`.
+  PENDIENTE_APROBACION
 }
 
 enum VerificationStatus {
@@ -191,8 +198,9 @@ model VehicleTypeCatalog {
   sortOrder        Int      @default(0)
   createdAt        DateTime @default(now())
 
-  models   Model[]
-  listings Listing[]
+  models           Model[]
+  listings         Listing[]
+  taxonomyRequests TaxonomyRequest[]
 }
 
 model Brand {
@@ -209,8 +217,9 @@ model Brand {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  models   Model[]
-  listings Listing[]
+  models           Model[]
+  listings         Listing[]
+  taxonomyRequests TaxonomyRequest[]
 }
 
 model Model {
@@ -259,8 +268,9 @@ model Province {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 
-  localities Locality[]
-  listings   Listing[]
+  localities       Locality[]
+  listings         Listing[]
+  localityRequests LocalityRequest[]
 }
 
 model Locality {
@@ -278,6 +288,53 @@ model Locality {
   @@index([provinceId])
 }
 
+// Solicitud de catálogo: el usuario tipeó a mano una marca/modelo/versión que
+// no está en la lista, desde el modal del wizard (Fase 7). `dedupeKey`
+// (marca+modelo+versión+año normalizados: sin acentos, minúsculas, trim)
+// evita que dos usuarios pidiendo lo mismo generen dos filas — la segunda
+// simplemente se linkea a la solicitud ya pendiente. `brandId` se completa
+// solo si la marca tecleada coincide con una ya existente (falta el
+// modelo/versión nada más); si no, es `null` y se crea todo al aprobar.
+// Reusa `VerificationStatus` (nunca `REJECTED` acá — el precedente de
+// Identidad es "aprobar" o "dejar pendiente con nota", nunca un rechazo duro).
+model TaxonomyRequest {
+  id            String             @id @default(cuid())
+  vehicleTypeId String
+  vehicleType   VehicleTypeCatalog @relation(fields: [vehicleTypeId], references: [id])
+  brandId       String?
+  brand         Brand?             @relation(fields: [brandId], references: [id])
+  brandName     String
+  modelName     String
+  versionName   String
+  year          Int
+  dedupeKey     String             @unique
+  status        VerificationStatus @default(PENDING)
+  adminNote     String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  listings Listing[]
+
+  @@index([status])
+}
+
+/** Mismo criterio que `TaxonomyRequest`, para localidades tipeadas a mano en el modal de Ubicación del wizard. */
+model LocalityRequest {
+  id         String             @id @default(cuid())
+  provinceId String
+  province   Province           @relation(fields: [provinceId], references: [id])
+  name       String
+  dedupeKey  String             @unique
+  status     VerificationStatus @default(PENDING)
+  adminNote  String?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  listings Listing[]
+
+  @@index([status])
+}
+
 model Listing {
   id     String @id @default(cuid())
   slug   String @unique
@@ -286,10 +343,15 @@ model Listing {
 
   vehicleTypeId String
   vehicleType   VehicleTypeCatalog @relation(fields: [vehicleTypeId], references: [id])
-  brandId       String
-  brand         Brand              @relation(fields: [brandId], references: [id])
-  modelId       String
-  model         Model              @relation(fields: [modelId], references: [id])
+  // Nullable: una publicación con datos de catálogo pendientes de aprobación
+  // (Fase 6/7) no tiene marca/modelo reales todavía — ver
+  // `pendingBrandName`/`pendingModelName`/`pendingTaxonomyRequestId` más
+  // abajo. Toda publicación NO pendiente sigue teniendo estos dos siempre
+  // completos (se valida en la capa de datos, no acá).
+  brandId       String?
+  brand         Brand?             @relation(fields: [brandId], references: [id])
+  modelId       String?
+  model         Model?             @relation(fields: [modelId], references: [id])
   year          Int
 
   title String
@@ -323,6 +385,24 @@ model Listing {
   localityId     String?
   localityRef    Locality? @relation(fields: [localityId], references: [id])
   contactAddress String?
+
+  // Snapshot de texto tecleado a mano en el modal "no está en la lista"
+  // (Fase 7) para una marca/modelo/versión que todavía no existe en el
+  // catálogo — solo tiene valor mientras `status = PENDIENTE_APROBACION` y
+  // `pendingTaxonomyRequestId` no es null. Al aprobarse la solicitud
+  // (`approveTaxonomyRequest`), se resuelve `brandId`/`modelId`/`versionId`
+  // reales y estos campos dejan de usarse (no se borran, quedan de rastro).
+  pendingBrandName         String?
+  pendingModelName         String?
+  pendingVersionName       String?
+  pendingTaxonomyRequestId String?
+  pendingTaxonomyRequest   TaxonomyRequest? @relation(fields: [pendingTaxonomyRequestId], references: [id])
+
+  // Mismo criterio que el bloque anterior, para una localidad tecleada a
+  // mano que todavía no existe en el catálogo.
+  pendingLocalityName      String?
+  pendingLocalityRequestId String?
+  pendingLocalityRequest   LocalityRequest? @relation(fields: [pendingLocalityRequestId], references: [id])
 
   status        ListingStatus @default(ACTIVE)
   featured      Boolean       @default(false)

@@ -20,6 +20,26 @@ export default async function EditarPublicacionPage(props: PageProps<"/dashboard
   ]);
   if (!listing || !profile) notFound();
 
+  // Pendiente de aprobación: todavía no tiene marca/modelo reales (ver
+  // `pendingBrandName`/`pendingModelName`), el wizard completo (que arma la
+  // cascada Marca→Modelo→Versión con slugs reales) no aplica hasta que el
+  // admin apruebe la solicitud de catálogo.
+  if (listing.status === "PENDIENTE_APROBACION" || !listing.brand || !listing.model) {
+    return (
+      <div>
+        <div className="flex justify-end">
+          <BackButton href="/dashboard/publicaciones" />
+        </div>
+        <h1 className="mt-2 text-2xl font-bold text-navy">Editar publicación</h1>
+        <p className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-primary">
+          Esta publicación tiene datos pendientes de aprobación ({listing.pendingBrandName} {listing.pendingModelName}
+          ). Todavía no se puede editar — vas a poder hacerlo una vez que el equipo de Motoresya valide los datos
+          cargados.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-end">

@@ -84,8 +84,8 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
       icon: <Info className="h-4 w-4 shrink-0" />,
       content: (
         <dl className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
-          <Field label="Marca" value={listing.brand.name} />
-          <Field label="Modelo" value={listing.model.name} />
+          <Field label="Marca" value={listing.brand?.name ?? listing.pendingBrandName} />
+          <Field label="Modelo" value={listing.model?.name ?? listing.pendingModelName} />
           <Field label="Año" value={listing.year} />
           {listing.version && <Field label="Versión" value={listing.version} />}
           {listing.transmission && (

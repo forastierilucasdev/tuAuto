@@ -30,6 +30,7 @@ const STATUS_LABEL: Record<OwnerListingData["status"], string> = {
   EXPIRED: "Vencida",
   SOLD: "Vendida",
   SUSPENDIDA: "Suspendida",
+  PENDIENTE_APROBACION: "Pendiente de aprobación",
 };
 
 const STATUS_BADGE_VARIANT: Record<OwnerListingData["status"], "success" | "info" | "default" | "danger"> = {
@@ -40,6 +41,7 @@ const STATUS_BADGE_VARIANT: Record<OwnerListingData["status"], "success" | "info
   EXPIRED: "danger",
   SOLD: "default",
   SUSPENDIDA: "danger",
+  PENDIENTE_APROBACION: "info",
 };
 
 const REACTIVATABLE: OwnerListingData["status"][] = ["RESERVADA", "PAUSADA", "EXPIRED", "DRAFT"];

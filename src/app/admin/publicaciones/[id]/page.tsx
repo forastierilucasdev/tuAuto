@@ -27,10 +27,12 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
   if (!listing) notFound();
   const suspended = isListingSuspended(listing.suspendedUntil);
 
+  // Pendiente de aprobación: todavía no tiene marca/modelo reales, no hay
+  // versiones que ofrecer hasta que se apruebe la solicitud de catálogo.
   const [ownerAvailablePublications, { entries: auditEntries }, versions] = await Promise.all([
     getAvailablePublications(listing.user.id),
     listAuditLog({ targetTable: "Listing", targetId: id }, 1),
-    getVersionsForModel(listing.model.slug, listing.brand.slug),
+    listing.model && listing.brand ? getVersionsForModel(listing.model.slug, listing.brand.slug) : Promise.resolve([]),
   ]);
 
   return (
@@ -57,6 +59,23 @@ export default async function AdminListingDetailPage(props: { params: Promise<{ 
           Suspendida hasta el {new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(listing.suspendedUntil!)}
           {listing.suspensionReason && <> — Motivo: {listing.suspensionReason}</>}
         </p>
+      )}
+      {listing.status === "PENDIENTE_APROBACION" && (
+        <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
+          <p className="font-medium">Tiene datos de catálogo pendientes de aprobación:</p>
+          <ul className="mt-1 list-disc pl-5">
+            {listing.pendingBrandName && (
+              <li>
+                Vehículo: {listing.pendingBrandName} {listing.pendingModelName} {listing.pendingVersionName} ({listing.year})
+              </li>
+            )}
+            {listing.pendingLocalityName && <li>Localidad: {listing.pendingLocalityName}</li>}
+          </ul>
+          <p className="mt-1">
+            Aprobá la solicitud correspondiente en &quot;Vehículos&quot;/&quot;Ubicación&quot; → Tareas pendientes, y
+            después usá &quot;Validar datos&quot; acá para publicarla y descontar el crédito del dueño.
+          </p>
+        </div>
       )}
 
       {listing.images.length > 0 && (

@@ -24,6 +24,24 @@ export default async function AdminListingEditWizardPage(props: { params: Promis
   const profile = await getFullProfile(listing.user.id);
   if (!profile) notFound();
 
+  // Pendiente de aprobación: todavía no tiene marca/modelo reales, el wizard
+  // completo no aplica hasta que se apruebe la solicitud de catálogo — ver
+  // el mismo guard en la versión del dueño.
+  if (listing.status === "PENDIENTE_APROBACION" || !listing.brand || !listing.model) {
+    return (
+      <div>
+        <div className="flex justify-end">
+          <BackButton href={`/admin/publicaciones/${id}`} />
+        </div>
+        <h1 className="mt-2 text-2xl font-bold text-navy">Editar publicación (wizard completo)</h1>
+        <p className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-primary">
+          Esta publicación tiene datos pendientes de aprobación ({listing.pendingBrandName} {listing.pendingModelName}
+          ). Aprobá primero la solicitud de catálogo correspondiente antes de poder editarla con el wizard completo.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-end">

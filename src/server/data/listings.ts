@@ -314,12 +314,19 @@ export async function getOwnerListingGroups(userId: string) {
       .filter((l) => l.status === "ACTIVE" && !getEffectiveFeatured(l.listing.featured, l.listing.featuredUntil))
       .map((l) => toOwnerListingData(l.listing)),
     reservadas: withEffectiveStatus.filter((l) => l.status === "RESERVADA").map((l) => toOwnerListingData(l.listing)),
-    // Borrador, pausada, vencida y suspendida: en las cuatro se dejó de
-    // operar el anuncio con normalidad. El badge de cada card indica el
-    // estado real y las acciones disponibles varían según corresponda (ver
-    // OwnerListingCard).
+    // Borrador, pausada, vencida, suspendida y pendiente de aprobación: en
+    // las cinco se dejó de operar el anuncio con normalidad. El badge de
+    // cada card indica el estado real y las acciones disponibles varían
+    // según corresponda (ver OwnerListingCard).
     inactivas: withEffectiveStatus
-      .filter((l) => l.status === "DRAFT" || l.status === "PAUSADA" || l.status === "EXPIRED" || l.status === "SUSPENDIDA")
+      .filter(
+        (l) =>
+          l.status === "DRAFT" ||
+          l.status === "PAUSADA" ||
+          l.status === "EXPIRED" ||
+          l.status === "SUSPENDIDA" ||
+          l.status === "PENDIENTE_APROBACION"
+      )
       .map((l) => toOwnerListingData(l.listing)),
     vendidas: withEffectiveStatus.filter((l) => l.status === "SOLD").map((l) => toOwnerListingData(l.listing)),
   };
@@ -400,11 +407,11 @@ export async function getAvailablePublications(userId: string) {
   return (await loadActivationContext(userId)).available;
 }
 
-function assertAvailable(available: number) {
+export function assertAvailable(available: number) {
   if (available <= 0) throw new QuotaExceededError();
 }
 
-function assertNotSuspended(isSuspended: boolean) {
+export function assertNotSuspended(isSuspended: boolean) {
   if (isSuspended) throw new AccountSuspendedError();
 }
 
@@ -443,7 +450,7 @@ type ActivationListingPatch = {
   featuredUntil?: Date;
 };
 
-function buildActivationEffect(
+export function buildActivationEffect(
   activation: ActivationContext,
   opts: { countsAsNewListing: boolean; consumesQuota: boolean }
 ): { listingPatch: ActivationListingPatch; userPatch: Prisma.UserUpdateInput; shouldUpdateUser: boolean } {
@@ -477,11 +484,16 @@ export async function createListing(input: {
   userId: string;
   /** Código de `VehicleTypeCatalog` (ej. "AUTO"), no el `id` interno. */
   vehicleType: string;
-  brandSlug: string;
-  modelSlug: string;
-  year: number;
+  /** Cascada normal — mutuamente excluyente con `pendingBrandName`/`pendingModelName`/`pendingVersionName`. */
+  brandSlug?: string;
+  modelSlug?: string;
   /** Slug de una `Version` ya cargada en el catálogo, resuelto server-side al nombre real (`version`, texto libre histórico) + `versionId`. */
   versionSlug?: string;
+  /** Modal "¿Tu vehículo no está en la lista?" del wizard (Fase 7) — los 3 juntos, mutuamente excluyentes con `brandSlug`/`modelSlug`/`versionSlug`. Genera (o reusa) un `TaxonomyRequest` y deja el listing en `PENDIENTE_APROBACION`. */
+  pendingBrandName?: string;
+  pendingModelName?: string;
+  pendingVersionName?: string;
+  year: number;
   condition: VehicleCondition;
   transmission?: "MECANICA" | "ASISTIDA";
   description?: string;
@@ -493,36 +505,95 @@ export async function createListing(input: {
   mileageKm?: number;
   /** Slug de una `Locality`/`Province` ya cargada en el catálogo, resuelto server-side al nombre real (`city`/`province`, texto libre histórico) + `localityId`/`provinceId`. */
   localitySlug?: string;
+  /** Provincia siempre real (lista fija de 24) — solo la Localidad puede quedar pendiente. */
   provinceSlug?: string;
+  /** Modal "¿No encontrás tu localidad?" del wizard (Fase 7) — mutuamente excluyente con `localitySlug`, requiere `provinceSlug`. */
+  pendingLocalityName?: string;
   contactAddress?: string;
   /** "No, guardar como borrador" en el paso final del wizard. */
   asDraft?: boolean;
 }) {
-  // Guardar como borrador nunca consume cupo ni está bloqueado por
-  // suspensión; publicar de una sí.
-  const activation = input.asDraft ? null : await loadActivationContext(input.userId);
+  const hasPendingVehicle = Boolean(input.pendingBrandName);
+  const hasPendingLocality = Boolean(input.pendingLocalityName);
+  // Datos pendientes de aprobación: mismo trato que un borrador (no bloquea
+  // por suspensión, no consume cupo) hasta que el admin valide los datos —
+  // ver `validateAndActivateListing` en `server/data/admin/listings.ts`.
+  const pendingReview = !input.asDraft && (hasPendingVehicle || hasPendingLocality);
+
+  const activation = input.asDraft || pendingReview ? null : await loadActivationContext(input.userId);
   if (activation) {
     assertNotSuspended(activation.isSuspended);
     assertAvailable(activation.available);
   }
 
   const vehicleTypeRow = await prisma.vehicleTypeCatalog.findUniqueOrThrow({ where: { code: input.vehicleType } });
-  const brand = await prisma.brand.findUniqueOrThrow({ where: { slug: input.brandSlug } });
-  const model = await prisma.model.findFirstOrThrow({
-    where: { slug: input.modelSlug, brandId: brand.id, vehicleTypeId: vehicleTypeRow.id },
-  });
-  // La versión es opcional — si se eligió una de la cascada, se resuelve acá
-  // y se sincroniza el texto libre histórico (`version`) con su nombre real.
-  const version = input.versionSlug
-    ? await prisma.version.findFirst({ where: { slug: input.versionSlug, modelId: model.id } })
-    : null;
-  const locationPatch = await resolveLocationPatch(input.provinceSlug, input.localitySlug, {
+
+  let brand: { id: string; name: string } | null = null;
+  let model: { id: string; name: string } | null = null;
+  let version: { id: string; name: string } | null = null;
+  let pendingTaxonomyRequestId: string | null = null;
+
+  if (hasPendingVehicle) {
+    const dedupeKey = slugify(
+      `${vehicleTypeRow.code}-${input.pendingBrandName}-${input.pendingModelName}-${input.pendingVersionName}-${input.year}`
+    );
+    // Si la marca tecleada coincide con una ya existente, se linkea — puede
+    // que solo falte el modelo/versión, no la marca entera.
+    const matchedBrand = await prisma.brand.findFirst({
+      where: { name: { equals: input.pendingBrandName, mode: "insensitive" }, isActive: true },
+    });
+    const request = await prisma.taxonomyRequest.upsert({
+      where: { dedupeKey },
+      update: {},
+      create: {
+        vehicleTypeId: vehicleTypeRow.id,
+        brandId: matchedBrand?.id,
+        brandName: input.pendingBrandName!,
+        modelName: input.pendingModelName!,
+        versionName: input.pendingVersionName!,
+        year: input.year,
+        dedupeKey,
+      },
+    });
+    pendingTaxonomyRequestId = request.id;
+  } else {
+    brand = await prisma.brand.findUniqueOrThrow({ where: { slug: input.brandSlug! } });
+    model = await prisma.model.findFirstOrThrow({
+      where: { slug: input.modelSlug!, brandId: brand.id, vehicleTypeId: vehicleTypeRow.id },
+    });
+    // La versión es opcional — si se eligió una de la cascada, se resuelve
+    // acá y se sincroniza el texto libre histórico (`version`) con su nombre.
+    version = input.versionSlug
+      ? await prisma.version.findFirst({ where: { slug: input.versionSlug, modelId: model.id } })
+      : null;
+  }
+
+  let locationPatch = await resolveLocationPatch(input.provinceSlug, input.localitySlug, {
     provinceId: null,
     localityId: null,
   });
+  let pendingLocalityRequestId: string | null = null;
+  if (hasPendingLocality) {
+    // La provincia siempre es real (lista fija) — se exige acá en vez de
+    // confiar en el formulario, mismo criterio de "nunca confiar en el
+    // cliente" que el resto de la capa de datos.
+    const province = await prisma.province.findFirstOrThrow({ where: { slug: input.provinceSlug! } });
+    const dedupeKey = slugify(`${province.id}-${input.pendingLocalityName}`);
+    const request = await prisma.localityRequest.upsert({
+      where: { dedupeKey },
+      update: {},
+      create: { provinceId: province.id, name: input.pendingLocalityName!, dedupeKey },
+    });
+    pendingLocalityRequestId = request.id;
+    locationPatch = { province: province.name, provinceId: province.id };
+  }
 
-  // El título siempre se compone Marca + Modelo + Año, nunca es texto libre.
-  const title = `${brand.name} ${model.name} ${input.year}`;
+  // El título siempre se compone Marca + Modelo + Año — para un vehículo
+  // pendiente, con el texto tecleado (se recompone con los datos reales
+  // recién al aprobar la solicitud de catálogo).
+  const title = hasPendingVehicle
+    ? `${input.pendingBrandName} ${input.pendingModelName} ${input.year}`
+    : `${brand!.name} ${model!.name} ${input.year}`;
   const baseSlug = slugify(title);
   let slug = baseSlug;
   let attempt = 1;
@@ -538,12 +609,18 @@ export async function createListing(input: {
     slug,
     userId: input.userId,
     vehicleTypeId: vehicleTypeRow.id,
-    brandId: brand.id,
-    modelId: model.id,
+    brandId: brand?.id,
+    modelId: model?.id,
     year: input.year,
     title,
     version: version?.name,
     versionId: version?.id,
+    pendingBrandName: hasPendingVehicle ? input.pendingBrandName : undefined,
+    pendingModelName: hasPendingVehicle ? input.pendingModelName : undefined,
+    pendingVersionName: hasPendingVehicle ? input.pendingVersionName : undefined,
+    pendingTaxonomyRequestId,
+    pendingLocalityName: hasPendingLocality ? input.pendingLocalityName : undefined,
+    pendingLocalityRequestId,
     condition: input.condition,
     transmission: input.transmission,
     description: input.description,
@@ -555,7 +632,11 @@ export async function createListing(input: {
     mileageKm: input.mileageKm,
     ...locationPatch,
     contactAddress: input.contactAddress,
-    ...(input.asDraft ? { status: "DRAFT" as const } : activationEffect!.listingPatch),
+    ...(input.asDraft
+      ? { status: "DRAFT" as const }
+      : pendingReview
+        ? { status: "PENDIENTE_APROBACION" as const }
+        : activationEffect!.listingPatch),
   };
 
   // Un borrador no "pasó por activa" todavía, así que no suma ni al contador
@@ -724,7 +805,9 @@ export async function updateOwnedListing(
   assertListingNotSuspended(current.suspendedUntil);
 
   const { versionSlug, provinceSlug, localitySlug, ...restData } = data;
-  const versionPatch = await resolveVersionPatch(current.modelId, versionSlug, current.versionId);
+  // Mismo criterio que `adminUpdateListing`: un listing PENDIENTE_APROBACION
+  // todavía no tiene `modelId` real, no hay contra qué resolver una versión.
+  const versionPatch = current.modelId ? await resolveVersionPatch(current.modelId, versionSlug, current.versionId) : {};
   const locationPatch = await resolveLocationPatch(provinceSlug, localitySlug, {
     provinceId: current.provinceId,
     localityId: current.localityId,

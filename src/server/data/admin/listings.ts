@@ -2,7 +2,14 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { ListingStatus, Prisma } from "@/generated/prisma/client";
 import type { UpdateListingInput } from "@/lib/validations/listing";
-import { resolveLocationPatch, resolveVersionPatch } from "@/server/data/listings";
+import {
+  assertAvailable,
+  assertNotSuspended,
+  buildActivationEffect,
+  loadActivationContext,
+  resolveLocationPatch,
+  resolveVersionPatch,
+} from "@/server/data/listings";
 
 export type AdminListingFilters = {
   search?: string;
@@ -97,7 +104,10 @@ export async function adminUpdateListing(listingId: string, data: UpdateListingI
     select: { modelId: true, versionId: true, provinceId: true, localityId: true },
   });
   const { versionSlug, provinceSlug, localitySlug, ...rest } = data;
-  const versionPatch = await resolveVersionPatch(current.modelId, versionSlug, current.versionId);
+  // Un listing PENDIENTE_APROBACION todavía no tiene `modelId` real (ver
+  // schema.prisma) — no hay contra qué resolver una versión hasta que se
+  // apruebe su `TaxonomyRequest`, así que se ignora sin tocar nada.
+  const versionPatch = current.modelId ? await resolveVersionPatch(current.modelId, versionSlug, current.versionId) : {};
   const locationPatch = await resolveLocationPatch(provinceSlug, localitySlug, {
     provinceId: current.provinceId,
     localityId: current.localityId,
@@ -217,4 +227,44 @@ export async function setListingFeatured(
     where: { id: listingId },
     data: featuredSince === undefined ? { featured, featuredUntil } : { featured, featuredUntil, featuredSince },
   });
+}
+
+// --- Aprobación de publicaciones pendientes ---
+
+export class TaxonomyPendingError extends Error {
+  constructor() {
+    super("Todavía hay datos de catálogo sin resolver — aprobá la solicitud correspondiente primero.");
+    this.name = "TaxonomyPendingError";
+  }
+}
+
+/**
+ * "Validar datos": paso SEPARADO de aprobar la solicitud de catálogo/
+ * ubicación (`approveTaxonomyRequest`/`approveLocalityRequest`) — a
+ * propósito, por decisión explícita del usuario (dos pasos: primero se
+ * resuelve el dato de catálogo, después se revisa CADA publicación puntual
+ * antes de publicarla y recién ahí se descuenta el crédito). Reusa
+ * `buildActivationEffect`, el mismo helper que `createListing`/
+ * `updateOwnedListing`/`reactivateListing` — ver Fase 1 del catálogo
+ * administrable en ARCHITECTURE.md.
+ */
+export async function validateAndActivateListing(listingId: string) {
+  const listing = await prisma.listing.findUniqueOrThrow({ where: { id: listingId } });
+  if (listing.status !== "PENDIENTE_APROBACION") {
+    throw new Error("Esta publicación no está pendiente de aprobación.");
+  }
+  if (listing.pendingTaxonomyRequestId || listing.pendingLocalityRequestId) {
+    throw new TaxonomyPendingError();
+  }
+
+  const activation = await loadActivationContext(listing.userId);
+  assertNotSuspended(activation.isSuspended);
+  assertAvailable(activation.available);
+  const { listingPatch, userPatch } = buildActivationEffect(activation, { countsAsNewListing: true, consumesQuota: true });
+
+  const [updated] = await prisma.$transaction([
+    prisma.listing.update({ where: { id: listingId }, data: listingPatch }),
+    prisma.user.update({ where: { id: listing.userId }, data: userPatch }),
+  ]);
+  return updated;
 }

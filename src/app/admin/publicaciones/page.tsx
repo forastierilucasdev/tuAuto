@@ -25,6 +25,7 @@ const STATUS_LABEL: Record<ListingStatus, string> = {
   // filtro de abajo nunca la ofrece como opción. Se muestra igual como
   // badge computado (columna "Estado" de la tabla).
   SUSPENDIDA: "Suspendida",
+  PENDIENTE_APROBACION: "Pendiente de aprobación",
 };
 
 const STATUS_VARIANT: Record<ListingStatus, "success" | "info" | "default" | "danger"> = {
@@ -35,9 +36,18 @@ const STATUS_VARIANT: Record<ListingStatus, "success" | "info" | "default" | "da
   EXPIRED: "danger",
   SOLD: "default",
   SUSPENDIDA: "danger",
+  PENDIENTE_APROBACION: "info",
 };
 
-const FILTERABLE_STATUSES: ListingStatus[] = ["DRAFT", "ACTIVE", "RESERVADA", "PAUSADA", "EXPIRED", "SOLD"];
+const FILTERABLE_STATUSES: ListingStatus[] = [
+  "DRAFT",
+  "ACTIVE",
+  "RESERVADA",
+  "PAUSADA",
+  "EXPIRED",
+  "SOLD",
+  "PENDIENTE_APROBACION",
+];
 
 function param(sp: Record<string, string | string[] | undefined>, key: string) {
   const value = sp[key];
