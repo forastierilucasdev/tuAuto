@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { PENDING_APPROVAL_MESSAGE } from "@/lib/constants";
 import type { ListingStatus } from "@/generated/prisma/client";
 
 export function PublishedListingModal({ slug, status }: { slug: string | undefined; status?: ListingStatus }) {
@@ -40,9 +41,7 @@ export function PublishedListingModal({ slug, status }: { slug: string | undefin
           {isPending ? "Tu publicación quedó pendiente de revisión" : "Tu anuncio fue publicado con éxito"}
         </p>
         <p className="text-sm text-muted-foreground">
-          {isPending
-            ? "Cargaste datos que todavía no están en nuestro catálogo. La vamos a validar y se publicará a la brevedad — mientras tanto está inactiva y no se descontó ninguna publicación disponible de tu cuenta."
-            : "Ya está visible en el catálogo."}
+          {isPending ? PENDING_APPROVAL_MESSAGE : "Ya está visible en el catálogo."}
         </p>
         <div className="mt-2 flex w-full gap-2">
           <Button type="button" variant="outline" className="flex-1" onClick={close}>

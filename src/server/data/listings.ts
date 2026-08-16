@@ -64,7 +64,7 @@ const EXPIRABLE_STATUSES: ListingStatus[] = ["ACTIVE", "RESERVADA", "PAUSADA"];
 // `visibleStatusWhere()` más abajo). 100% computado, nunca se reescribe
 // `status` — mismo criterio que ya usa EXPIRED, se chequea primero porque
 // una suspensión pisa cualquier otro estado mientras está vigente.
-function getEffectiveStatus(status: ListingStatus, expiresAt: Date | null, suspendedUntil?: Date | null): ListingStatus {
+export function getEffectiveStatus(status: ListingStatus, expiresAt: Date | null, suspendedUntil?: Date | null): ListingStatus {
   if (suspendedUntil && suspendedUntil.getTime() > Date.now()) return "SUSPENDIDA";
   if (EXPIRABLE_STATUSES.includes(status) && expiresAt && expiresAt.getTime() < Date.now()) {
     return "EXPIRED";
@@ -206,10 +206,13 @@ export async function getFeaturedListings(limit = 3) {
 
 /**
  * El dueño puede abrir su propia publicación en cualquier estado (borrador,
- * pausada, vencida, vendida) desde "Mis publicaciones" — para cualquier
- * otro visitante se aplica el filtro de visibilidad pública normal.
+ * pausada, vencida, vendida) desde "Mis publicaciones", y un Superadmin
+ * puede abrir cualquier publicación de cualquiera (mismo nivel de acceso
+ * que ya tiene en `/admin/publicaciones/[id]`, solo que en esta pantalla)
+ * — para cualquier otro visitante se aplica el filtro de visibilidad
+ * pública normal.
  */
-export async function getListingBySlug(slug: string, viewerUserId?: string) {
+export async function getListingBySlug(slug: string, viewerUserId?: string, viewerIsSuperadmin?: boolean) {
   const listing = await prisma.listing.findUnique({
     where: { slug },
     include: {
@@ -248,7 +251,7 @@ export async function getListingBySlug(slug: string, viewerUserId?: string) {
   if (!listing || listing.deletedAt) return null;
 
   const isOwner = viewerUserId && listing.userId === viewerUserId;
-  if (isOwner) return listing;
+  if (isOwner || viewerIsSuperadmin) return listing;
 
   const effectiveStatus = getEffectiveStatus(listing.status, listing.expiresAt, listing.suspendedUntil);
   const isVisible = PUBLICLY_VISIBLE_STATUSES.includes(

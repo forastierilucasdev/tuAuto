@@ -79,6 +79,7 @@ export default async function AdministradorAnunciosPage() {
           href="/dashboard/compra?vista=individual"
           linkLabel="Comprar"
         />
+        <StatCard label="Activas" value={groups.activas.length} href="/dashboard/publicaciones?tab=activas" />
         <StatCard
           label="Publicaciones destacadas"
           value={groups.destacadas.length}

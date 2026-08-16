@@ -5,6 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Added (2026-08-16) — Panel de detalle privado (estado/fechas/vistas) + Activas en Resumen
+En `/catalogo/[slug]`, el dueño de la publicación y un Superadmin ven ahora un panel privado debajo del título — estado real (con ícono de info en "Pendiente de aprobación" que explica qué significa, mismo texto del wizard), fecha de creación, "Visible en catálogo hasta: [fecha]" y vistas acumuladas. Nunca visible para otro visitante.
+
+- `getListingBySlug()` gana un bypass para Superadmin (antes solo el dueño podía abrir una publicación no pública propia; un Superadmin recibía 404 con la de otro usuario).
+- "Volver" en esa página deja de ser un `href` fijo a `/catalogo` — depende de quién mira (dueño → Mis publicaciones, Superadmin → admin, resto → catálogo). Corrige que el dueño quedara varado en el catálogo general sin poder volver ni con el botón del navegador.
+- "Administrador de anuncios" (Resumen) tenía Destacadas/Reservadas/Inactivas/Vendidas pero no Activas — por eso los totales no coincidían con "Mis publicaciones". Agregado, misma fuente de datos.
+- **Limpieza de duplicación centralizada** (a pedido explícito): `PENDING_APPROVAL_MESSAGE` (antes copiado en 4 lugares) y `LISTING_STATUS_LABEL`/`LISTING_STATUS_BADGE_VARIANT` (antes copiados en 2) pasan a `constants.ts`, una sola fuente de verdad. Nuevo `InfoModalButton` genérico reutilizable.
+
+`tsc --noEmit`, `eslint`, `npm run build` limpios.
+
 ### Fixed (2026-08-15) — Ronda de bugs reportados en producción
 Más de 10 reportes de una sesión de prueba real, más pedidos de seguimiento en la misma ronda.
 

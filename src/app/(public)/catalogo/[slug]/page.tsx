@@ -12,13 +12,15 @@ import {
   MessageCircle,
   Phone,
 } from "lucide-react";
+import { Eye } from "lucide-react";
 import { VehicleGallery } from "@/components/vehicles/VehicleGallery";
 import { VerticalTabs, type VerticalTabItem } from "@/components/ui/VerticalTabs";
 import { buttonVariants } from "@/components/ui/Button";
 import { BackButton } from "@/components/ui/BackButton";
 import { Badge } from "@/components/ui/Badge";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import { getEffectiveFeatured, getListingBySlug } from "@/server/data/listings";
+import { InfoModalButton } from "@/components/ui/InfoModalButton";
+import { getEffectiveFeatured, getEffectiveStatus, getListingBySlug } from "@/server/data/listings";
 import { auth } from "@/lib/auth";
 import { getClientIp } from "@/lib/rate-limit";
 import { recordListingView } from "@/lib/listing-views";
@@ -29,11 +31,15 @@ import {
   isBusinessAccountType,
   mileageUnitFor,
   transmissionLabel,
+  LISTING_STATUS_BADGE_VARIANT,
+  LISTING_STATUS_LABEL,
+  PENDING_APPROVAL_MESSAGE,
 } from "@/lib/constants";
 
 export async function generateMetadata(props: PageProps<"/catalogo/[slug]">): Promise<Metadata> {
   const { slug } = await props.params;
-  const listing = await getListingBySlug(slug);
+  const session = await auth();
+  const listing = await getListingBySlug(slug, session?.user?.id, session?.user?.adminRole === "SUPERADMIN");
   return { title: listing?.title ?? "Publicación no encontrada" };
 }
 
@@ -46,15 +52,23 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+const dateFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
 export default async function ListingDetailPage(props: PageProps<"/catalogo/[slug]">) {
   const { slug } = await props.params;
   const session = await auth();
-  const listing = await getListingBySlug(slug, session?.user?.id);
+  const isSuperadmin = session?.user?.adminRole === "SUPERADMIN";
+  const listing = await getListingBySlug(slug, session?.user?.id, isSuperadmin);
   if (!listing) notFound();
 
   const isFeatured = getEffectiveFeatured(listing.featured, listing.featuredUntil);
   const isBusiness = isBusinessAccountType(listing.user.accountType);
   const isOwner = session?.user?.id === listing.userId;
+  // Estado, fechas y vistas acumuladas son datos privados de gestión — solo
+  // el dueño y un Superadmin los ven; cualquier otro visitante (incluida
+  // una publicación pública normal) no ve este bloque.
+  const canSeeOwnerPanel = isOwner || isSuperadmin;
+  const effectiveStatus = getEffectiveStatus(listing.status, listing.expiresAt, listing.suspendedUntil);
 
   // No cuenta como vista al dueño mirando su propia publicación. `headers()`
   // se lee acá (durante el render) porque `after()` en un Server Component
@@ -66,6 +80,12 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
     const viewerId = session?.user?.id;
     after(() => recordListingView({ listingId: listing.id, userId: viewerId, ip, userAgent }));
   }
+
+  // "Volver" es siempre una ruta fija (nunca `router.back()`, ver
+  // `BackButton`) — pero la ruta fija correcta depende de quién mira: el
+  // dueño viene de "Mis publicaciones", un Superadmin probablemente del
+  // listado de admin, cualquier otro visitante del catálogo público.
+  const backHref = isOwner ? "/dashboard/publicaciones" : isSuperadmin ? "/admin/publicaciones" : "/catalogo";
 
   const businessName = listing.user.agencyProfile?.businessName;
   const contactAddress = listing.contactAddress ?? listing.user.agencyProfile?.address ?? null;
@@ -205,13 +225,31 @@ export default async function ListingDetailPage(props: PageProps<"/catalogo/[slu
       {/* Mismo orden en mobile y desktop: Volver arriba de todo, después el
           título, después las fotos. */}
       <div className="flex justify-end">
-        <BackButton href="/catalogo" />
+        <BackButton href={backHref} />
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <h1 className="text-2xl font-bold text-navy sm:text-3xl">{listing.title}</h1>
         {isFeatured && <Badge variant="featured">Destacado</Badge>}
       </div>
+
+      {/* Estado, fechas y vistas: privado (dueño + Superadmin), nunca visible para el resto de los visitantes. */}
+      {canSeeOwnerPanel && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <Badge variant={LISTING_STATUS_BADGE_VARIANT[effectiveStatus]}>{LISTING_STATUS_LABEL[effectiveStatus]}</Badge>
+            {effectiveStatus === "PENDIENTE_APROBACION" && (
+              <InfoModalButton title="Pendiente de aprobación" message={PENDING_APPROVAL_MESSAGE} />
+            )}
+          </span>
+          <span>Creada el {dateFormatter.format(listing.createdAt)}</span>
+          {listing.expiresAt && <span>Visible en catálogo hasta: {dateFormatter.format(listing.expiresAt)}</span>}
+          <span className="inline-flex items-center gap-1">
+            <Eye className="h-3.5 w-3.5" />
+            {listing.viewCount} vista{listing.viewCount === 1 ? "" : "s"}
+          </span>
+        </div>
+      )}
 
       <div className="mt-4 sm:mt-6">
         <VehicleGallery images={listing.images} title={listing.title} />

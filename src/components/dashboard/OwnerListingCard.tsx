@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { FieldError } from "@/components/ui/FieldError";
-import { mileageUnitFor } from "@/lib/constants";
+import { LISTING_STATUS_BADGE_VARIANT, LISTING_STATUS_LABEL, mileageUnitFor } from "@/lib/constants";
 import { cn, daysRemaining, formatCurrency, formatKm } from "@/lib/utils";
 import {
   deleteListingAction,
@@ -21,28 +21,6 @@ import {
   reactivateListingAction,
 } from "@/server/actions/listing.actions";
 import type { OwnerListingData } from "@/server/data/listings";
-
-const STATUS_LABEL: Record<OwnerListingData["status"], string> = {
-  DRAFT: "Borrador",
-  ACTIVE: "Activa",
-  RESERVADA: "Reservada",
-  PAUSADA: "Pausada",
-  EXPIRED: "Vencida",
-  SOLD: "Vendida",
-  SUSPENDIDA: "Suspendida",
-  PENDIENTE_APROBACION: "Pendiente de aprobación",
-};
-
-const STATUS_BADGE_VARIANT: Record<OwnerListingData["status"], "success" | "info" | "default" | "danger"> = {
-  DRAFT: "default",
-  ACTIVE: "success",
-  RESERVADA: "info",
-  PAUSADA: "default",
-  EXPIRED: "danger",
-  SOLD: "default",
-  SUSPENDIDA: "danger",
-  PENDIENTE_APROBACION: "info",
-};
 
 const REACTIVATABLE: OwnerListingData["status"][] = ["RESERVADA", "PAUSADA", "EXPIRED", "DRAFT"];
 
@@ -209,7 +187,7 @@ export function OwnerListingCard({ listing }: { listing: OwnerListingData }) {
       <Image src={listing.imageUrl} alt={listing.title} fill sizes="300px" className="object-cover" />
       <div className="absolute left-3 top-3 flex flex-wrap gap-2">
         {listing.featured && <Badge variant="featured">Destacado</Badge>}
-        <Badge variant={STATUS_BADGE_VARIANT[listing.status]}>{STATUS_LABEL[listing.status]}</Badge>
+        <Badge variant={LISTING_STATUS_BADGE_VARIANT[listing.status]}>{LISTING_STATUS_LABEL[listing.status]}</Badge>
       </div>
     </div>
   );

@@ -16,6 +16,7 @@ import {
   VEHICLE_TYPES,
   CONDITION_OPTIONS,
   TRANSMISSION_OPTIONS,
+  PENDING_APPROVAL_MESSAGE,
   conditionLabel,
   mileageUnitFor,
   transmissionLabel,
@@ -1103,11 +1104,7 @@ export function ListingForm(props: ListingFormProps) {
       >
         <div className="space-y-3 text-sm">
           {hasPendingData ? (
-            <p className="text-muted-foreground">
-              Los datos ingresados serán validados por el administrador, una vez aprobados, la publicación será
-              visible en el catálogo del sitio, mientras tanto estará inactiva y no te descontará publicaciones
-              disponibles.
-            </p>
+            <p className="text-muted-foreground">{PENDING_APPROVAL_MESSAGE}</p>
           ) : (
             <p className="text-muted-foreground">¿Querés revisar los datos antes de publicar?</p>
           )}

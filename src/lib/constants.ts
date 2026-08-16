@@ -112,6 +112,43 @@ export function usesTransmission(vehicleType: string): boolean {
   return TRANSMISSION_VEHICLE_TYPES.includes(vehicleType as VehicleTypeValue);
 }
 
+/**
+ * Texto literal pedido por el usuario para el flujo de aprobación en dos
+ * pasos (catálogo administrable, Fase 7) — se muestra en los modales
+ * "no está en la lista" del wizard, en el resumen antes de publicar, en el
+ * modal de confirmación al enviar, y en el ícono de info de una publicación
+ * pendiente en su propia página de detalle. Nunca se reescribe a mano en
+ * más de un lugar — todos importan esta constante.
+ */
+export const PENDING_APPROVAL_MESSAGE =
+  "Los datos ingresados serán validados por el administrador, una vez aprobados, la publicación será visible en el catálogo del sitio, mientras tanto estará inactiva y no te descontará publicaciones disponibles.";
+
+/** Mismas 8 etiquetas usadas en "Mis publicaciones" (`OwnerListingCard`) y en la página de detalle — única fuente de verdad para no divergir entre las dos. */
+export const LISTING_STATUS_LABEL: Record<
+  "DRAFT" | "ACTIVE" | "RESERVADA" | "PAUSADA" | "EXPIRED" | "SOLD" | "SUSPENDIDA" | "PENDIENTE_APROBACION",
+  string
+> = {
+  DRAFT: "Borrador",
+  ACTIVE: "Activa",
+  RESERVADA: "Reservada",
+  PAUSADA: "Pausada",
+  EXPIRED: "Vencida",
+  SOLD: "Vendida",
+  SUSPENDIDA: "Suspendida",
+  PENDIENTE_APROBACION: "Pendiente de aprobación",
+};
+
+export const LISTING_STATUS_BADGE_VARIANT: Record<keyof typeof LISTING_STATUS_LABEL, "success" | "info" | "default" | "danger"> = {
+  DRAFT: "default",
+  ACTIVE: "success",
+  RESERVADA: "info",
+  PAUSADA: "default",
+  EXPIRED: "danger",
+  SOLD: "default",
+  SUSPENDIDA: "danger",
+  PENDIENTE_APROBACION: "info",
+};
+
 export const CONDITION_OPTIONS = [
   { value: "NUEVO", label: "Nuevo" },
   { value: "USADO", label: "Usado" },

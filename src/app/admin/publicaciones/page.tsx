@@ -9,36 +9,15 @@ import { Button, buttonVariants } from "@/components/ui/Button";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { ListingRowActions } from "@/components/admin/ListingRowActions";
 import { cn, formatCurrency } from "@/lib/utils";
+import { LISTING_STATUS_BADGE_VARIANT, LISTING_STATUS_LABEL } from "@/lib/constants";
 import type { ListingStatus } from "@/generated/prisma/client";
 
 export const metadata: Metadata = { title: "Publicaciones | Admin" };
 
-const STATUS_LABEL: Record<ListingStatus, string> = {
-  DRAFT: "Borrador",
-  ACTIVE: "Activa",
-  RESERVADA: "Reservada",
-  PAUSADA: "Pausada",
-  EXPIRED: "Vencida",
-  SOLD: "Vendida",
-  // Nunca se escribe literal en la columna `status` (ver `getEffectiveStatus`
-  // en `server/data/listings.ts`) — no entra en `FILTERABLE_STATUSES`, el
-  // filtro de abajo nunca la ofrece como opción. Se muestra igual como
-  // badge computado (columna "Estado" de la tabla).
-  SUSPENDIDA: "Suspendida",
-  PENDIENTE_APROBACION: "Pendiente de aprobación",
-};
-
-const STATUS_VARIANT: Record<ListingStatus, "success" | "info" | "default" | "danger"> = {
-  DRAFT: "default",
-  ACTIVE: "success",
-  RESERVADA: "info",
-  PAUSADA: "default",
-  EXPIRED: "danger",
-  SOLD: "default",
-  SUSPENDIDA: "danger",
-  PENDIENTE_APROBACION: "info",
-};
-
+// SUSPENDIDA nunca se escribe literal en la columna `status` (ver
+// `getEffectiveStatus` en `server/data/listings.ts`) — no entra en
+// `FILTERABLE_STATUSES`, el filtro de abajo nunca la ofrece como opción.
+// Se muestra igual como badge computado (columna "Estado" de la tabla).
 const FILTERABLE_STATUSES: ListingStatus[] = [
   "DRAFT",
   "ACTIVE",
@@ -93,7 +72,7 @@ export default async function AdminPublicacionesPage(props: { searchParams: Prom
           <Select id="estado" name="estado" defaultValue={status ?? ""}>
             <option value="">Todos</option>
             {FILTERABLE_STATUSES.map((value) => (
-              <option key={value} value={value}>{STATUS_LABEL[value]}</option>
+              <option key={value} value={value}>{LISTING_STATUS_LABEL[value]}</option>
             ))}
           </Select>
         </div>
@@ -125,7 +104,7 @@ export default async function AdminPublicacionesPage(props: { searchParams: Prom
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{listing.user.email}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANT[listing.status]}>{STATUS_LABEL[listing.status]}</Badge>
+                  <Badge variant={LISTING_STATUS_BADGE_VARIANT[listing.status]}>{LISTING_STATUS_LABEL[listing.status]}</Badge>
                   {isListingSuspended(listing.suspendedUntil) && (
                     <Badge variant="danger" className="ml-1.5">Suspendida</Badge>
                   )}

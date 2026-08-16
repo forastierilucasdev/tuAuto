@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
-import { VEHICLE_TYPES } from "@/lib/constants";
+import { PENDING_APPROVAL_MESSAGE, VEHICLE_TYPES } from "@/lib/constants";
 
 export type PendingVehicle = {
   vehicleType: string;
@@ -72,11 +72,7 @@ export function VehicleNotListedModal({ onSave }: { onSave: (data: PendingVehicl
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="Cargar vehículo">
         <div className="space-y-3 text-sm">
-          <p className="rounded-lg bg-surface-muted p-3 text-xs text-muted-foreground">
-            Los datos ingresados serán validados por el administrador, una vez aprobados, la publicación será
-            visible en el catálogo del sitio, mientras tanto estará inactiva y no te descontará publicaciones
-            disponibles.
-          </p>
+          <p className="rounded-lg bg-surface-muted p-3 text-xs text-muted-foreground">{PENDING_APPROVAL_MESSAGE}</p>
           <div>
             <Label htmlFor="pending-vehicleType">Tipo de vehículo</Label>
             <Select id="pending-vehicleType" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)}>

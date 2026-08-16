@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
 import { useLocationTaxonomy } from "@/hooks/useLocationTaxonomy";
+import { PENDING_APPROVAL_MESSAGE } from "@/lib/constants";
 
 export type PendingLocality = {
   provinceSlug: string;
@@ -52,11 +53,7 @@ export function LocalityNotListedModal({ onSave }: { onSave: (data: PendingLocal
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="Cargar localidad">
         <div className="space-y-3 text-sm">
-          <p className="rounded-lg bg-surface-muted p-3 text-xs text-muted-foreground">
-            Los datos ingresados serán validados por el administrador, una vez aprobados, la publicación será
-            visible en el catálogo del sitio, mientras tanto estará inactiva y no te descontará publicaciones
-            disponibles.
-          </p>
+          <p className="rounded-lg bg-surface-muted p-3 text-xs text-muted-foreground">{PENDING_APPROVAL_MESSAGE}</p>
           <div>
             <Label htmlFor="pending-provinceSlug">Provincia</Label>
             <Select id="pending-provinceSlug" value={provinceSlug} onChange={(e) => setProvinceSlug(e.target.value)}>
