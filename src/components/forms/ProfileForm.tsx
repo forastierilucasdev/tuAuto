@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
+import { Modal } from "@/components/ui/Modal";
+import { SuccessModalBody } from "@/components/ui/SuccessModalBody";
 import { ImagePositionPicker } from "@/components/ui/ImagePositionPicker";
 import { getInitials } from "@/lib/utils";
 import type { AccountTypeValue } from "@/lib/constants";
@@ -23,6 +25,8 @@ type ProfileFormProps = {
   avatarUrl: string | null;
   avatarPositionX: number;
   avatarPositionY: number;
+  /** Identidad ya validada por un admin — nombre y DNI quedan bloqueados (ver `profile.actions.ts`). */
+  isVerified: boolean;
   // Los datos de negocio (razón social, CUIT, ciudad, etc.) ya no se editan
   // acá — viven en la pantalla "Tipo de cuenta" — pero igual hay que
   // reenviarlos sin cambios en cada guardado, porque `updateProfileAction`
@@ -49,6 +53,7 @@ export function ProfileForm({
   avatarUrl,
   avatarPositionX,
   avatarPositionY,
+  isVerified,
   agency,
   onSaved,
 }: ProfileFormProps) {
@@ -60,10 +65,22 @@ export function ProfileForm({
   const [nameForInitials, setNameForInitials] = React.useState(fullName);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Patrón "ajustar estado durante el render" (no en un efecto, evita
+  // cascading renders): cada vez que `useActionState` arma un `state`
+  // nuevo (identidad de objeto distinta en cada envío, incluso si dos
+  // guardados seguidos son ambos exitosos), el modal vuelve a mostrarse.
+  const [prevState, setPrevState] = React.useState(state);
+  const [savedModalDismissed, setSavedModalDismissed] = React.useState(false);
+  if (state !== prevState) {
+    setPrevState(state);
+    setSavedModalDismissed(false);
+  }
+  const showSavedModal = Boolean(state?.success) && !savedModalDismissed;
+
   React.useEffect(() => {
     if (state?.success) onSaved?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state?.success]);
+  }, [state]);
 
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -152,6 +169,11 @@ export function ProfileForm({
           name="fullName"
           defaultValue={fullName}
           onChange={(e) => setNameForInitials(e.target.value)}
+          // `readOnly`, no `disabled`: un input deshabilitado no manda su
+          // valor en el FormData, lo que rompería la validación del resto
+          // del formulario (el schema pide `fullName` siempre presente).
+          readOnly={isVerified}
+          className={isVerified ? "cursor-not-allowed bg-surface-muted" : undefined}
           required
         />
         <FieldError messages={state?.fieldErrors?.fullName} />
@@ -160,7 +182,14 @@ export function ProfileForm({
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <Label htmlFor="dni">DNI</Label>
-          <Input id="dni" name="dni" defaultValue={dni} required />
+          <Input
+            id="dni"
+            name="dni"
+            defaultValue={dni}
+            readOnly={isVerified}
+            className={isVerified ? "cursor-not-allowed bg-surface-muted" : undefined}
+            required
+          />
           <FieldError messages={state?.fieldErrors?.dni} />
         </div>
         <div>
@@ -170,14 +199,24 @@ export function ProfileForm({
         </div>
       </div>
 
+      {isVerified && (
+        <p className="text-xs text-muted-foreground">
+          Tu identidad ya fue verificada — el apellido, nombre y DNI quedaron bloqueados para protegerte. Escribinos
+          a soporte si necesitás corregir alguno.
+        </p>
+      )}
+
       {state?.error && <p className="text-sm text-danger">{state.error}</p>}
-      {state?.success && <p className="text-sm text-success">Perfil actualizado correctamente.</p>}
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? "Guardando..." : "Guardar cambios"}
         </Button>
       </div>
+
+      <Modal open={showSavedModal} onClose={() => setSavedModalDismissed(true)} title="¡Listo!">
+        <SuccessModalBody message="Perfil actualizado correctamente." onClose={() => setSavedModalDismissed(true)} />
+      </Modal>
     </form>
   );
 }

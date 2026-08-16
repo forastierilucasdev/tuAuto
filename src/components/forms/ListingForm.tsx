@@ -491,25 +491,6 @@ export function ListingForm(props: ListingFormProps) {
                   </div>
 
                   <div>
-                    <Label htmlFor="year">Año</Label>
-                    <Select
-                      id="year"
-                      value={year}
-                      aria-invalid={showInvalid(!year)}
-                      disabled={isEdit}
-                      onChange={(e) => setYear(e.target.value)}
-                    >
-                      <option value="">Elegí un año</option>
-                      {YEARS.map((y) => (
-                        <option key={y} value={y}>
-                          {y}
-                        </option>
-                      ))}
-                    </Select>
-                    <FieldError messages={state?.fieldErrors?.year} />
-                  </div>
-
-                  <div>
                     <Label htmlFor="brandSlug">Marca</Label>
                     <Select
                       id="brandSlug"
@@ -558,32 +539,51 @@ export function ListingForm(props: ListingFormProps) {
                     </Select>
                     <FieldError messages={state?.fieldErrors?.modelSlug} />
                   </div>
+
+                  <div>
+                    <Label htmlFor="versionSlug">Versión (opcional)</Label>
+                    <Select
+                      id="versionSlug"
+                      value={versionSlug}
+                      onChange={(e) => setVersionSlug(e.target.value)}
+                      disabled={!modelSlug}
+                    >
+                      <option value="">Sin versión especificada</option>
+                      {versions.map((v) => (
+                        <option key={v.id} value={v.slug}>
+                          {v.name}
+                        </option>
+                      ))}
+                      {isEdit && versionSlug && !versions.some((v) => v.slug === versionSlug) && (
+                        <option value={versionSlug}>{props.mode === "edit" ? (props.versionName ?? "") : ""}</option>
+                      )}
+                    </Select>
+                    {isEdit && !versionSlug && props.defaultValues.version && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Versión actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.version}
+                        &quot;. Si aparece en la lista, elegila para dejarla vinculada.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="versionSlug">Versión (opcional)</Label>
+                  <Label htmlFor="year">Año</Label>
                   <Select
-                    id="versionSlug"
-                    value={versionSlug}
-                    onChange={(e) => setVersionSlug(e.target.value)}
-                    disabled={!modelSlug}
+                    id="year"
+                    value={year}
+                    aria-invalid={showInvalid(!year)}
+                    disabled={isEdit}
+                    onChange={(e) => setYear(e.target.value)}
                   >
-                    <option value="">Sin versión especificada</option>
-                    {versions.map((v) => (
-                      <option key={v.id} value={v.slug}>
-                        {v.name}
+                    <option value="">Elegí un año</option>
+                    {YEARS.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
                       </option>
                     ))}
-                    {isEdit && versionSlug && !versions.some((v) => v.slug === versionSlug) && (
-                      <option value={versionSlug}>{props.mode === "edit" ? (props.versionName ?? "") : ""}</option>
-                    )}
                   </Select>
-                  {isEdit && !versionSlug && props.defaultValues.version && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Versión actual (texto libre, de antes de este catálogo): &quot;{props.defaultValues.version}
-                      &quot;. Si aparece en la lista, elegila para dejarla vinculada.
-                    </p>
-                  )}
+                  <FieldError messages={state?.fieldErrors?.year} />
                 </div>
 
                 {!isEdit && (
@@ -1044,7 +1044,7 @@ export function ListingForm(props: ListingFormProps) {
         )}
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="sticky bottom-0 z-10 mt-5 flex flex-col gap-3 border-t border-border bg-surface py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"

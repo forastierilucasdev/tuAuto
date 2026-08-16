@@ -59,6 +59,7 @@ export default async function PerfilPage() {
         avatarUrl={profile.avatarUrl}
         avatarPositionX={profile.avatarPositionX}
         avatarPositionY={profile.avatarPositionY}
+        isVerified={profile.isVerified}
         agency={profile.agencyProfile}
       />
     </div>

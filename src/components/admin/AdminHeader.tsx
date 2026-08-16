@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
+import { SITE_NAME } from "@/lib/constants";
 import type { AdminRole } from "@/generated/prisma/client";
 
 const ROLE_LABEL: Record<AdminRole, string> = {
@@ -32,8 +33,10 @@ export function AdminHeader({ adminRole }: { adminRole: AdminRole }) {
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
-          <Link href="/admin" className="text-lg font-bold text-navy">
-            Motoresya <span className="text-muted-foreground">Admin</span>
+          <Link href="/admin" className="flex items-center gap-2 text-lg font-bold text-navy">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-v3.svg" alt={SITE_NAME} className="h-7 w-auto" />
+            <span className="text-muted-foreground">Admin</span>
           </Link>
           <Badge variant="info">{ROLE_LABEL[adminRole]}</Badge>
         </div>

@@ -43,7 +43,11 @@ const nextConfig: NextConfig = {
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline'",
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: https://picsum.photos https://*.supabase.co",
+        // blob: habilita las vistas previas locales (URL.createObjectURL) de
+        // fotos recién elegidas por el usuario, antes de subirlas — auto,
+        // avatar, logo de agencia — nunca aparece de otra fuente que no sea
+        // el propio navegador procesando un archivo local.
+        "img-src 'self' data: blob: https://picsum.photos https://*.supabase.co",
         "font-src 'self' data:",
         "connect-src 'self' https://*.supabase.co",
         "object-src 'none'",

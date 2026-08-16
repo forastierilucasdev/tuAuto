@@ -55,6 +55,7 @@ export default async function AccountTypePage() {
         fullName={profile.fullName}
         dni={profile.dni}
         phone={profile.phone}
+        isVerified={profile.isVerified}
         agency={profile.agencyProfile}
       />
     </div>

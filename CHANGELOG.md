@@ -5,6 +5,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed (2026-08-15) — Ronda de bugs reportados en producción
+Más de 10 reportes de una sesión de prueba real, más pedidos de seguimiento en la misma ronda.
+
+- **CSP sin `blob:` en `img-src`** (causa raíz de varios reportes): las vistas previas locales de fotos (auto, avatar, logo de agencia) se bloqueaban en producción — explicaba la vista previa rota, el picker de posición "sin efecto hasta guardar", y la estrella de foto destacada "sin efecto" (reordenaba, pero no se veía nada).
+- Wizard: orden de campos corregido a Tipo → Marca → Modelo → Versión → Año; barra de botones pasa a `sticky bottom-0` para no quedar ambigua al hacer scroll.
+- `RegisterForm.tsx`: faltaba `try/catch/finally` — una excepción dejaba el botón trabado en "Creando cuenta..." sin ningún mensaje; se agregó, más el modal de "Cuenta creada exitosamente" pedido.
+- `PublishedListingModal.tsx` pasa a mostrar el mensaje correcto ("quedó pendiente de revisión") para una publicación `PENDIENTE_APROBACION`, en vez de "ya está visible en el catálogo".
+- **Bug real encontrado**: `validateAndActivateListingAction` no revalidaba `/dashboard/publicaciones`/`/dashboard/anuncios` — el cupo se descontaba bien en la base, pero el dueño podía seguir viendo el contador viejo cacheado.
+- Selector Particular/Agencia/Concesionaria: "Concesionaria" desbordaba su columna en pantallas angostas (`min-w-0 truncate` + tamaño responsive).
+- Identidad verificada (`isVerified`) bloquea apellido/nombre/DNI y razón social/CUIT — `readOnly` (no `disabled`, para no romper el envío del resto del formulario) + reforzado server-side, con la excepción de no bloquear al pasar de Particular a Agencia por primera vez.
+
+### Added (2026-08-15) — Confirmación centralizada de acciones ("¡Listo!" con tilde)
+Nuevo `SuccessModalBody` (`components/ui/`) — tilde + mensaje + cruz para cerrar, reutilizado en vez de duplicado. Aplicado a `AdminConfirmButton`/`ReasonConfirmModal`/`SuspendActionModal` (cubre automáticamente Marcar Activa/Vendida, Pausar, Suspender, Dar de baja, Validar datos y todos los toggles de baja/reactivar del catálogo administrable), `ProfileForm`, `RegisterForm`, `ListingEditForm`, `TaxonomyRequestRowActions`, `LocalityRequestRowActions`. En todos, la acción ya no cierra el modal sola: pasa a una pantalla de "¡Listo!", y `onSuccess`/`router.refresh()` se dispara recién al cerrarla.
+
+Además: logo real del sitio en el header del panel admin (antes texto plano); y en `SupportForm.tsx`, el ID de publicación pasa a obligatorio y de solo lectura cuando se llega desde "Reportar error" de una publicación puntual (antes era editable y opcional incluso ahí, arriesgando revisar el error equivocado).
+
+`tsc --noEmit`, `eslint`, `npm run build` limpios. No se pudo hacer una prueba interactiva en navegador desde esta sesión — la ronda se corrigió a partir de capturas de pantalla y razonamiento sobre el código.
+
 ### Added (2026-08-15) — Reposicionar foto de perfil y foto de portada de agencia
 La foto de perfil y la foto de portada de agencia/concesionaria dejan de centrarse automáticamente — el usuario arrastra la imagen (sin cambiar el zoom) para elegir qué parte queda visible.
 

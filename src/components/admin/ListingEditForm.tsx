@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { SuccessModalBody } from "@/components/ui/SuccessModalBody";
 import { adminUpdateListingAction, type AdminActionState } from "@/server/actions/admin/listings.actions";
 import { useLocationTaxonomy } from "@/hooks/useLocationTaxonomy";
 
@@ -48,6 +50,17 @@ export function ListingEditForm({
   const [provinceSlug, setProvinceSlug] = React.useState(currentProvinceSlug ?? "");
   const [localitySlug, setLocalitySlug] = React.useState(currentLocalitySlug ?? "");
   const { provinces, localities } = useLocationTaxonomy(provinceSlug);
+
+  // Mismo patrón "ajustar estado durante el render" que `ProfileForm` — el
+  // modal de "¡Listo!" vuelve a aparecer en cada guardado exitoso, incluso
+  // si dos guardados seguidos son ambos exitosos.
+  const [prevState, setPrevState] = React.useState(state);
+  const [savedModalDismissed, setSavedModalDismissed] = React.useState(false);
+  if (state !== prevState) {
+    setPrevState(state);
+    setSavedModalDismissed(false);
+  }
+  const showSavedModal = Boolean(state?.success) && !savedModalDismissed;
 
   return (
     <form action={formAction} className="space-y-4">
@@ -184,11 +197,14 @@ export function ListingEditForm({
       </div>
 
       {state?.error && <p className="text-sm text-danger">{state.error}</p>}
-      {state?.success && <p className="text-sm text-success">Cambios guardados.</p>}
 
       <Button type="submit" disabled={disabled || pending}>
         {pending ? "Guardando..." : "Guardar cambios"}
       </Button>
+
+      <Modal open={showSavedModal} onClose={() => setSavedModalDismissed(true)} title="¡Listo!">
+        <SuccessModalBody message="Cambios guardados." onClose={() => setSavedModalDismissed(true)} />
+      </Modal>
     </form>
   );
 }

@@ -121,6 +121,11 @@ export async function validateAndActivateListingAction(listingId: string): Promi
   revalidatePath("/admin/publicaciones");
   revalidatePath(`/admin/publicaciones/${listingId}`);
   revalidatePath("/catalogo");
+  // Recién acá se descuenta el cupo del dueño (ver `validateAndActivateListing`)
+  // — sin esto, "Publicaciones realizadas"/"disponibles" en su propio panel
+  // quedaban con el valor cacheado de antes de aprobar.
+  revalidatePath("/dashboard/publicaciones");
+  revalidatePath("/dashboard/anuncios");
   return { success: true };
 }
 

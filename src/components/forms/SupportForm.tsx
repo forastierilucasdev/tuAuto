@@ -38,13 +38,26 @@ export function SupportForm({ defaultListingId }: { defaultListingId?: string })
       </div>
 
       <div>
-        <Label htmlFor="listingId">ID de la publicación (opcional)</Label>
+        <Label htmlFor="listingId">ID de la publicación{defaultListingId ? "" : " (opcional)"}</Label>
         <Input
           id="listingId"
           name="listingId"
           defaultValue={defaultListingId ?? ""}
           placeholder="Lo encontrás en la tarjeta, dentro de Mis publicaciones"
+          // Si se llegó acá desde "Reportar error" de una publicación puntual
+          // (`defaultListingId` viene de un ID real, no tecleado), el campo
+          // queda fijo — es el dato necesario para poder revisar el error, no
+          // tiene sentido dejar que se edite o se borre por accidente.
+          // `readOnly`, no `disabled`, para que el valor se siga mandando.
+          readOnly={Boolean(defaultListingId)}
+          required={Boolean(defaultListingId)}
+          className={defaultListingId ? "cursor-not-allowed bg-surface-muted" : undefined}
         />
+        {defaultListingId && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Estás reportando un error sobre esta publicación puntual — el ID no se puede modificar.
+          </p>
+        )}
       </div>
 
       <div>

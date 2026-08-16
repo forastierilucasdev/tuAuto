@@ -68,6 +68,21 @@ export async function updateProfileAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
 
+  // Una vez que un admin valida la identidad (`isVerified`), nombre/DNI —y
+  // razón social/CUIT si es cuenta de negocio— quedan bloqueados: evita que
+  // alguien cambie de identidad después de validado y se quede con la
+  // insignia de "Vendedor verificado". Los inputs ya vienen deshabilitados
+  // en el formulario, esto es el resguardo del lado del servidor (nunca se
+  // confía solo en `disabled` del cliente).
+  if (currentProfile.isVerified) {
+    parsed.data.fullName = currentProfile.fullName;
+    parsed.data.dni = currentProfile.dni;
+    if (parsed.data.accountType !== "PARTICULAR" && currentProfile.agencyProfile) {
+      parsed.data.businessName = currentProfile.agencyProfile.businessName;
+      parsed.data.cuit = currentProfile.agencyProfile.cuit;
+    }
+  }
+
   const avatarFile = formData.get("avatar");
   const hasNewAvatar = avatarFile instanceof File && avatarFile.size > 0;
   if (hasNewAvatar) {

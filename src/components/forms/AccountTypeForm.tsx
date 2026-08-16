@@ -21,6 +21,8 @@ type AccountTypeFormProps = {
   fullName: string;
   dni: string;
   phone: string;
+  /** Identidad ya validada por un admin — razón social y CUIT quedan bloqueados (ver `profile.actions.ts`). */
+  isVerified: boolean;
   agency?: {
     businessName: string;
     cuit: string;
@@ -41,10 +43,14 @@ type AccountTypeFormProps = {
  * `updateProfileAction` — manda como ocultos nombre/DNI/teléfono, que no se
  * editan acá, para no pisarlos con vacío.
  */
-export function AccountTypeForm({ accountType: initialAccountType, fullName, dni, phone, agency }: AccountTypeFormProps) {
+export function AccountTypeForm({ accountType: initialAccountType, fullName, dni, phone, isVerified, agency }: AccountTypeFormProps) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
   const [accountType, setAccountType] = React.useState<AccountTypeValue>(initialAccountType);
   const isBusiness = isBusinessAccountType(accountType);
+  // Solo bloquea si YA tenía un perfil de negocio verificado — si está
+  // pasando de Particular a Agencia/Concesionaria por primera vez, todavía
+  // no hay razón social/CUIT que proteger (bloquearía la carga inicial).
+  const lockBusinessFields = isVerified && Boolean(agency);
 
   const [logoPreview, setLogoPreview] = React.useState<string | null>(agency?.logoUrl ?? null);
   const [logoPositionX, setLogoPositionX] = React.useState(agency?.logoPositionX ?? 50);
@@ -87,7 +93,13 @@ export function AccountTypeForm({ accountType: initialAccountType, fullName, dni
               type="button"
               onClick={() => setAccountType(option.value)}
               className={cn(
-                "rounded-md px-2 py-2 text-center transition-colors",
+                // `min-w-0` es necesario: sin esto, una palabra sin espacios
+                // como "Concesionaria" fuerza esa columna del grid a
+                // ensancharse más allá de su 1/3 (el mínimo implícito de
+                // una celda de grid es el ancho de su contenido, no 0),
+                // empujando el botón fuera del contenedor en pantallas
+                // angostas. `truncate` contiene cualquier desborde restante.
+                "min-w-0 truncate rounded-md px-1 py-2 text-center text-xs transition-colors sm:px-2 sm:text-sm",
                 accountType === option.value
                   ? "bg-surface text-primary shadow-card"
                   : "text-muted-foreground hover:text-foreground"
@@ -112,14 +124,36 @@ export function AccountTypeForm({ accountType: initialAccountType, fullName, dni
             <Label htmlFor="businessName">
               Nombre de la {accountType === "CONCESIONARIA" ? "concesionaria" : "agencia"}
             </Label>
-            <Input id="businessName" name="businessName" defaultValue={agency?.businessName} required />
+            <Input
+              id="businessName"
+              name="businessName"
+              defaultValue={agency?.businessName}
+              // `readOnly`, no `disabled`: mantiene el valor en el FormData.
+              readOnly={lockBusinessFields}
+              className={lockBusinessFields ? "cursor-not-allowed bg-surface-muted" : undefined}
+              required
+            />
             <FieldError messages={state?.fieldErrors?.businessName} />
           </div>
           <div>
             <Label htmlFor="cuit">CUIT</Label>
-            <Input id="cuit" name="cuit" placeholder="30-71234567-1" defaultValue={agency?.cuit} required />
+            <Input
+              id="cuit"
+              name="cuit"
+              placeholder="30-71234567-1"
+              defaultValue={agency?.cuit}
+              readOnly={lockBusinessFields}
+              className={lockBusinessFields ? "cursor-not-allowed bg-surface-muted" : undefined}
+              required
+            />
             <FieldError messages={state?.fieldErrors?.cuit} />
           </div>
+          {lockBusinessFields && (
+            <p className="-mt-2 text-xs text-muted-foreground">
+              Tu identidad ya fue verificada — la razón social y el CUIT quedaron bloqueados para protegerte.
+              Escribinos a soporte si necesitás corregir alguno.
+            </p>
+          )}
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
@@ -196,7 +230,7 @@ export function AccountTypeForm({ accountType: initialAccountType, fullName, dni
               <Input id="address" name="address" defaultValue={agency?.address ?? ""} />
             </div>
             <div>
-              <Label htmlFor="website">Sitio web</Label>
+              <Label htmlFor="website">Sitio web (opcional)</Label>
               <Input id="website" name="website" placeholder="https://" defaultValue={agency?.website ?? ""} />
             </div>
           </div>

@@ -33,6 +33,7 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
     getAvailablePublications(session!.user.id),
   ]);
   const allListings = PUBLICACIONES_TABS.flatMap((tab) => groups[tab.key]);
+  const publishedListing = publishedSlug ? allListings.find((l) => l.slug === publishedSlug) : undefined;
   const listings = activeTab === "todas" ? allListings : groups[activeTab];
   const counts = {
     todas: allListings.length,
@@ -45,7 +46,7 @@ export default async function MisPublicacionesPage(props: PageProps<"/dashboard/
 
   return (
     <div>
-      <PublishedListingModal slug={publishedSlug} />
+      <PublishedListingModal slug={publishedSlug} status={publishedListing?.status} />
 
       <div className="flex justify-end">
         <BackButton href="/dashboard/anuncios" />

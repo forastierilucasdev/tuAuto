@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
+import { SuccessModalBody } from "@/components/ui/SuccessModalBody";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -26,6 +27,7 @@ export function TaxonomyRequestRowActions({
 }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
+  const [approved, setApproved] = React.useState(false);
   const [editedBrand, setEditedBrand] = React.useState(brandName);
   const [editedModel, setEditedModel] = React.useState(modelName);
   const [editedVersion, setEditedVersion] = React.useState(versionName);
@@ -44,6 +46,12 @@ export function TaxonomyRequestRowActions({
     setOpen(true);
   }
 
+  function closeModal() {
+    setOpen(false);
+    if (approved) router.refresh();
+    setTimeout(() => setApproved(false), 200);
+  }
+
   async function confirmApprove() {
     setApproving(true);
     setApproveError(undefined);
@@ -57,8 +65,7 @@ export function TaxonomyRequestRowActions({
       setApproveError(result.error);
       return;
     }
-    setOpen(false);
-    router.refresh();
+    setApproved(true);
   }
 
   async function saveNote() {
@@ -78,34 +85,41 @@ export function TaxonomyRequestRowActions({
       <Button type="button" variant="success" size="sm" disabled={!canEdit} onClick={openModal}>
         Aprobar
       </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Aprobar vehículo pendiente">
-        <div className="space-y-3 text-sm">
-          <p className="text-muted-foreground">
-            Confirmá (o corregí) el nombre final antes de crear las filas reales del catálogo. Esto no publica las
-            publicaciones vinculadas — cada una todavía necesita su propia &quot;Validar datos&quot;.
-          </p>
-          <div>
-            <Label htmlFor="approve-brandName">Marca</Label>
-            <Input id="approve-brandName" value={editedBrand} onChange={(e) => setEditedBrand(e.target.value)} />
+      <Modal open={open} onClose={closeModal} title={approved ? "¡Listo!" : "Aprobar vehículo pendiente"}>
+        {approved ? (
+          <SuccessModalBody
+            message={`${editedBrand} ${editedModel} ${editedVersion} aprobado — las publicaciones vinculadas ya pueden validarse.`}
+            onClose={closeModal}
+          />
+        ) : (
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              Confirmá (o corregí) el nombre final antes de crear las filas reales del catálogo. Esto no publica las
+              publicaciones vinculadas — cada una todavía necesita su propia &quot;Validar datos&quot;.
+            </p>
+            <div>
+              <Label htmlFor="approve-brandName">Marca</Label>
+              <Input id="approve-brandName" value={editedBrand} onChange={(e) => setEditedBrand(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="approve-modelName">Modelo</Label>
+              <Input id="approve-modelName" value={editedModel} onChange={(e) => setEditedModel(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="approve-versionName">Versión</Label>
+              <Input id="approve-versionName" value={editedVersion} onChange={(e) => setEditedVersion(e.target.value)} />
+            </div>
+            {approveError && <p className="text-danger">{approveError}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button type="button" variant="outline" size="sm" onClick={closeModal} disabled={approving}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="success" size="sm" disabled={approving} onClick={confirmApprove}>
+                {approving ? "Aprobando..." : "Aprobar"}
+              </Button>
+            </div>
           </div>
-          <div>
-            <Label htmlFor="approve-modelName">Modelo</Label>
-            <Input id="approve-modelName" value={editedModel} onChange={(e) => setEditedModel(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="approve-versionName">Versión</Label>
-            <Input id="approve-versionName" value={editedVersion} onChange={(e) => setEditedVersion(e.target.value)} />
-          </div>
-          {approveError && <p className="text-danger">{approveError}</p>}
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)} disabled={approving}>
-              Cancelar
-            </Button>
-            <Button type="button" variant="success" size="sm" disabled={approving} onClick={confirmApprove}>
-              {approving ? "Aprobando..." : "Aprobar"}
-            </Button>
-          </div>
-        </div>
+        )}
       </Modal>
 
       <div>
